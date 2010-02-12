@@ -8,102 +8,109 @@
 #ifndef OCTREE_HPP_
 #define OCTREE_HPP_
 
-#include "AABB.hpp"
+#include "AABC.hpp"
 
 #include <vector>
 
-template<typename T, typename R>
+template<typename FLOAT, typename ELEMENT>
 class OctreeNode {
 public:
 
-	typedef R element_t;
+	typedef ELEMENT element_t;
+	typedef FLOAT float_t;
 
 	// Top/Bottom Left/Right Front/Back
 	enum {
 		xyz = 0, Xyz, xYz, XYz, xyZ, XyZ, xYZ, XYZ
 	};
 
-	template <typename U>
 	class Settings {
 	public:
 		virtual ~Settings() {
 		}
-		virtual AABB<U> calculateAABB(element_t element) = 0;
+		virtual AABC<float_t> calculateBounds(const element_t &element) = 0;
 		virtual unsigned int getLeafSize() = 0;
+		virtual float_t getLeafExtend() = 0;
 	};
 
 	class QueryCallback {
 	public:
-		virtual void visit(OctreeNode *node, element_t element) = 0;
+		virtual void visit(OctreeNode *leaf) = 0;
 	};
 
-	void insert(Settings<T> &settings, element_t element) {
-		AABB<T> aabb = settings.calculateAABB(element);
-		insert(settings, aabb, element);
+	void insert(Settings &settings, const element_t &element) {
+		AABC<float_t> bounds = settings.calculateBounds(element);
+		insert(settings, bounds, element);
 	}
 
-	void query(QueryCallback &callback, Settings<T> &settings, const AABB<T> &aabb) {
-		if (aabb.intersects(box) == false)
+	void query(QueryCallback &callback, Settings &settings,
+			const AABC<float_t> &bounds) {
+		if (bounds.intersects(box) == false)
 			return;
 
 		if (isLeaf()) {
-			for (int i = 0; i < elements.size(); i++) {
-				callback.visit(this, elements[i]);
-			}
+			callback.visit(this);
 		} else {
 			for (int i = 0; i < 8; i++)
-				children[i]->query(callback, settings, aabb);
+				children[i]->query(callback, settings, bounds);
 		}
 	}
 
-	void query(QueryCallback &callback, Settings<T> &settings, const Vector3<T> &v) {
+	const OctreeNode *queryLeafNode(Settings &settings, const Vector3<float_t> &v) {
 		if (box.contains(v) == false) {
-			return;
+			return 0;
 		}
 
 		if (isLeaf()) {
-			for (int i = 0; i < elements.size(); i++) {
-				callback.visit(this, elements[i]);
-			}
+			return this;
 		} else {
-			for (int i = 0; i < 8; i++)
-				children[i]->query(callback, settings, v);
+			OctreeNode *node;
+			for (int i = 0; i < 8; i++) {
+				node = children[i]->queryLeafNode(settings, v);
+				if (node)
+					return node;
+			}
 		}
 	}
 
-	void setAABB(const AABB<T> aabb) {
+	void setBoundingVolume(const AABC<float_t> aabb) {
 		box = aabb;
 	}
 
 private:
-	AABB<T> box;
-	std::vector< OctreeNode<T> > children;
+	AABC<float_t> box;
+	std::vector<OctreeNode<float_t, element_t> > children;
 	std::vector<element_t> elements;
+
+	const std::vector<element_t> &getElements() const;
 
 	bool isLeaf() {
 		return children.size() == 0;
 	}
 
-	void createChildren(Settings<T> &settings) {
-		Vector3<T> halfExtend = (box.max - box.min) / 2;
-		Vector3<T> halfExtendX = Vector3<T>(halfExtend.x, 0.0, 0.0);
-		Vector3<T> halfExtendY = Vector3<T>(0.0, halfExtend.y, 0.0);
-		Vector3<T> halfExtendZ = Vector3<T>(0.0, 0.0, halfExtend.z);
-		Vector3<T> min = box.min;
-		Vector3<T> max = box.min + halfExtend;
+	void createChildren(Settings &settings) {
+		float_t halfExtend = box.extend / 2;
+		Vector3<float_t> halfExtendX = Vector3<float_t> (box.extend, 0.0, 0.0);
+		Vector3<float_t> halfExtendY = Vector3<float_t> (0.0, box.extend, 0.0);
+		Vector3<float_t> halfExtendZ = Vector3<float_t> (0.0, 0.0, box.extend);
+		Vector3<float_t> min = box.center - Vector3<float_t> (box.extend,
+				box.extend, box.extend);
 		children.resize(8);
-		children[xyz].setAABB(AABB<T>(min, max));
-		children[Xyz].setAABB(AABB<T>(min + halfExtendX, max + halfExtendX));
-		children[xYz].setAABB(AABB<T>(min + halfExtendY, max + halfExtendY));
-		children[XYz].setAABB(AABB<T>(min + halfExtendX + halfExtendY, max
-				+ halfExtendX + halfExtendY));
+		children[xyz].setBoundingVolume(AABC<float_t> (min, halfExtend));
+		children[Xyz].setBoundingVolume(AABC<float_t> (min + halfExtendX,
+				halfExtend));
+		children[xYz].setBoundingVolume(AABC<float_t> (min + halfExtendY,
+				halfExtend));
+		children[XYz].setBoundingVolume(AABC<float_t> (min + halfExtendX
+				+ halfExtendY, halfExtend));
 		min = min + halfExtendZ;
-		max = max + halfExtendZ;
-		children[xyZ].setAABB(AABB<T>(min, max));
-		children[XyZ].setAABB(AABB<T>(min + halfExtendX, max + halfExtendX));
-		children[xYZ].setAABB(AABB<T>(min + halfExtendY, max + halfExtendY));
-		children[XYZ].setAABB(AABB<T>(min + halfExtendX + halfExtendY, max
-				+ halfExtendX + halfExtendY));
+		children[xyZ].setBoundingVolume(AABC<float_t> (min, halfExtend));
+		children[XyZ].setBoundingVolume(AABC<float_t> (min + halfExtendX,
+				halfExtend));
+		children[xYZ].setBoundingVolume(AABC<float_t> (min + halfExtendY,
+				halfExtend));
+		children[XYZ].setBoundingVolume(AABC<float_t> (min + halfExtendX
+				+ halfExtendY, halfExtend));
 
 		for (int i = 0; i < elements.size(); i++) {
 			insertIntoChildren(settings, settings.calculateAABB(elements[i]),
@@ -114,12 +121,14 @@ private:
 		std::vector<element_t>().swap(elements);
 	}
 
-	void insert(Settings<T> &settings, const AABB<T> &aabb, element_t element) {
+	void insert(Settings &settings, const AABC<float_t> &aabb,
+			const element_t &element) {
 		if (box.intersects(aabb) == false)
 			return;
 
 		if (isLeaf()) {
-			if (elements.size() < settings.getLeafSize()) {
+			if (elements.size() < settings.getLeafSize() || box.extend
+					< settings.getLeafExtend()) {
 				elements.push_back(element);
 			} else {
 				createChildren(settings);
@@ -130,12 +139,19 @@ private:
 		}
 	}
 
-	void insertIntoChildren(Settings<T> &settings, const AABB<T> &aabb,
-			element_t element) {
+	void insertIntoChildren(Settings &settings, const AABC<float_t> &aabb,
+			const element_t &element) {
 		for (int i = 0; i < 8; i++)
 			children[i]->insert(settings, aabb, element);
 	}
 
+	void stats(unsigned int depth, unsigned int &maxdepth, unsigned int &count) {
+		count++;
+		if (depth + 1 > maxdepth)
+			maxdepth = depth + 1;
+		for (int i = 0; i < children.size(); i++)
+			children[i]->stats(depth + 1, maxdepth, count);
+	}
 };
 
 #endif /* OCTREE_HPP_ */
