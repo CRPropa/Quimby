@@ -16,6 +16,9 @@ template<typename FLOAT, typename ELEMENT>
 class OctreeNode {
 public:
 
+	OctreeNode() {
+
+	}
 	typedef ELEMENT element_t;
 	typedef FLOAT float_t;
 
@@ -56,7 +59,8 @@ public:
 		}
 	}
 
-	const OctreeNode *queryLeafNode(Settings &settings, const Vector3<float_t> &v) {
+	const OctreeNode *queryLeafNode(Settings &settings,
+			const Vector3<float_t> &v) {
 		if (box.contains(v) == false) {
 			return 0;
 		}
@@ -145,7 +149,8 @@ private:
 			children[i]->insert(settings, aabb, element);
 	}
 
-	void stats(unsigned int depth, unsigned int &maxdepth, unsigned int &count) {
+	void stats(unsigned int &maxdepth, unsigned int &count, unsigned int depth =
+			0) {
 		count++;
 		if (depth + 1 > maxdepth)
 			maxdepth = depth + 1;

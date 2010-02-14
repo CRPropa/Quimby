@@ -1,0 +1,50 @@
+syntax: regexp
+\.a$
+syntax: regexp
+Makefile\.in$
+syntax: regexp
+\.o$
+syntax: regexp
+.*~$
+syntax: regexp
+\.lo$
+syntax: regexp
+Makefile$
+syntax: regexp
+\.la$
+syntax: regexp
+\.deps$
+syntax: regexp
+\.libs$
+syntax: regexp
+^doc/man$
+syntax: regexp
+^doc/crpropa_html$
+syntax: regexp
+\.aux$
+syntax: regexp
+\.dvi$
+syntax: regexp
+\.pdf$
+syntax: regexp
+^\.cproject$
+syntax: regexp
+^\.project$
+syntax: regexp
+^config\.status$
+syntax: regexp
+^libtool$
+syntax: regexp
+^stamp-h1$
+syntax: regexp
+^src/CRPropa$
+syntax: regexp
+^\.settings$
+syntax: regexp
+^\.kdev4$
+syntax: regexp
+^build$
+syntax: regexp
+\.ps$
+syntax: regexp
+\.log$

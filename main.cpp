@@ -8,6 +8,7 @@
 #include "GadgetFile.hpp"
 #include "Grid.hpp"
 #include "kernel.hpp"
+#include "Octree.hpp"
 
 #include <cmath>
 #include <cstdlib>
@@ -291,10 +292,6 @@ for (int iArg = 1; iArg < argc; iArg++) {
 
 exit(0);
 #endif
-
-struct Vector3f {
-	float x, y, z;
-};
 
 //class AbstractProcessor {
 //	std::vector<Vector3f> pos;
