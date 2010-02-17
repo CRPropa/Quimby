@@ -11,12 +11,14 @@
 #include <cmath>
 
 float kernel1d(float r) {
-	if (r < 1.0)
-		return 1.0 - 1.5 * pow(r, 2) + 0.75 * pow(r, 3);
-	else if (r < 2.0)
-		return 0.25 * pow((2.0 - r), 3);
-	else
+	if (r < 1.0) {
+		return 1.0 - 1.5 * r * r + 0.75 * r * r * r;
+	} else if (r < 2.0) {
+		float x = (2.0 - r);
+		return 0.25 * x * x * x;
+	} else {
 		return 0.0;
+	}
 
 }
 //

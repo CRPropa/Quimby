@@ -11,6 +11,7 @@
 #include "Octree.hpp"
 
 #include <cmath>
+#include <ctime>
 #include <cstdlib>
 #include <string>
 
@@ -353,9 +354,12 @@ int mass(Arguments &arguments) {
 
 #pragma omp parallel for
 		for (int iP = 0; iP < pn; iP++) {
-			if (iP % (pn / 100) == 0 && verbose)
-				std::cerr << "[" << omp_get_thread_num() << "] " << iP << " / "
-						<< pn << std::endl;
+			if (iP % (pn / 100) == 0 && verbose) {
+#ifdef _OPENMP
+				std::cerr << "[" << omp_get_thread_num() << "] ";
+#endif
+				std::cerr << iP << " / " << pn << std::endl;
+			}
 			float vol = M_PI / hsml[iP] / hsml[iP] / hsml[iP];
 			float pX = pos[iP * 3];
 			float pY = pos[iP * 3 + 1];
@@ -370,7 +374,7 @@ int mass(Arguments &arguments) {
 						float r = sqrt(x * x + y * y + z * z);
 						float w = kernel1d(r / hsml[iP]) * rho[iP] * vol;
 						float &f = grid.get(pX + x, pY + y, pZ + z);
-						#pragma omp atomic
+#pragma omp atomic
 						f += w;
 					}
 				}
@@ -524,26 +528,45 @@ int bfield(Arguments &arguments) {
 		}
 
 		std::cout << "Fill grid" << std::endl;
+
+#pragma omp parallel for schedule(dynamic, 10000)
 		for (int iP = 0; iP < pn; iP++) {
-			if (iP % (pn / 100) == 0 && verbose)
-				std::cerr << "[" << omp_get_thread_num() << "] " << iP << " / "
-						<< pn << std::endl;
-			float vol = M_PI / hsml[iP] / hsml[iP] / hsml[iP];
+			if (iP % (pn / 100) == 0 && verbose) {
+				std::cerr << clock() << " ";
+#ifdef _OPENMP
+				std::cerr << "[" << omp_get_thread_num() << "] ";
+#endif
+				std::cerr << iP << " / " << pn << std::endl;
+			}
+			float sl = hsml[iP];
+			float vol = M_PI / sl / sl / sl;
 			float pX = pos[iP * 3];
 			float pY = pos[iP * 3 + 1];
 			float pZ = pos[iP * 3 + 2];
-			int steps = ceil(hsml[iP] *2 / grid.getCellLength());
+			float bX = bfld[iP * 3] * vol;
+			float bY = bfld[iP * 3 + 1] * vol;
+			float bZ = bfld[iP * 3 + 2] * vol;
+			int steps = ceil(hsml[iP] * 2 / grid.getCellLength());
+			int iX = pX / grid.getCellLength();
+			int iY = pY / grid.getCellLength();
+			int iZ = pZ / grid.getCellLength();
 			for (int iStepX = -steps; iStepX <= steps; iStepX++) {
-				float x = iStepX * grid.getCellLength();
+				float x = iStepX * grid.getCellLength() / sl;
+				float vx = kernel1d(fabs(x)) * bX;
 				for (int iStepY = -steps; iStepY <= steps; iStepY++) {
-					float y = iStepY * grid.getCellLength();
+					float y = iStepY * grid.getCellLength() / sl;
+					float vy = kernel1d(fabs(y)) * bY;
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
-						float z = iStepZ * grid.getCellLength();
-						Vector3f &v = grid.get(pX + x, pY + y, pZ + z);
+						float z = iStepZ * grid.getCellLength() / sl;
+						float vz = kernel1d(fabs(z)) * bZ;
+
+						Vector3f &v = grid.get(iX + iStepX, iY + iStepY, iZ
+								+ iStepZ);
+#pragma omp critical
 						{
-							v.x += kernel1d(fabs(x / hsml[iP])) * bfld[iP * 3] * vol;
-							v.y += kernel1d(fabs(y / hsml[iP])) * bfld[iP * 3 + 1] * vol;
-							v.z += kernel1d(fabs(z / hsml[iP])) * bfld[iP * 3 + 2] * vol;
+							v.x += vx;
+							v.y += vy;
+							v.z += vz;
 						}
 					}
 				}
@@ -560,19 +583,19 @@ int bfield(Arguments &arguments) {
 		else
 			grid.acceptXYZ(visitor);
 	} else {
-	    DumpVectorGridVisitor visitor (output);
-	    if (arguments.hasFlag("-header")) {
-	      int intbins = bins;
-		visitor.outfile.write((char *)&intbins, sizeof(intbins));
-		visitor.outfile.write((char *)&intbins, sizeof(intbins));
-		visitor.outfile.write((char *)&intbins, sizeof(intbins));
-		double d = grid.getCellLength();
-		visitor.outfile.write((char *)&d, sizeof(d));
-		d = 0.0;
-		visitor.outfile.write((char *)&d, sizeof(double));
-		visitor.outfile.write((char *)&d, sizeof(double));
-		visitor.outfile.write((char *)&d, sizeof(double));
-	    }
+		DumpVectorGridVisitor visitor(output);
+		if (arguments.hasFlag("-header")) {
+			int intbins = bins;
+			visitor.outfile.write((char *) &intbins, sizeof(intbins));
+			visitor.outfile.write((char *) &intbins, sizeof(intbins));
+			visitor.outfile.write((char *) &intbins, sizeof(intbins));
+			double d = grid.getCellLength();
+			visitor.outfile.write((char *) &d, sizeof(d));
+			d = 0.0;
+			visitor.outfile.write((char *) &d, sizeof(double));
+			visitor.outfile.write((char *) &d, sizeof(double));
+			visitor.outfile.write((char *) &d, sizeof(double));
+		}
 		if (arguments.hasFlag("-zyx")) {
 			std::cout << "Dump ZYX vector grid" << std::endl;
 			grid.acceptZYX(visitor);
