@@ -320,7 +320,7 @@ int mass(Arguments &arguments) {
 
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
-	for (int iArg = 0; iArg < files.size(); iArg++) {
+	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << std::endl;
 
 		GadgetFile file;
@@ -390,6 +390,8 @@ int mass(Arguments &arguments) {
 		std::cout << "Dump XYZ grid" << std::endl;
 		grid.dump(output);
 	}
+
+	return 0;
 }
 
 int av(int argc, const char **argv) {
@@ -406,7 +408,7 @@ int av(int argc, const char **argv) {
 	}
 
 	file.readHeader();
-	int pn = file.getHeader().particleNumberList[0];
+	size_t pn = file.getHeader().particleNumberList[0];
 	std::cerr << "Number of #0 Particles: " << pn << std::endl;
 
 	std::vector<float> bfield;
@@ -492,7 +494,7 @@ int bfield(Arguments &arguments) {
 
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
-	for (int iArg = 0; iArg < files.size(); iArg++) {
+	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << std::endl;
 
 		GadgetFile file;
@@ -604,6 +606,8 @@ int bfield(Arguments &arguments) {
 			grid.acceptXYZ(visitor);
 		}
 	}
+
+	return 0;
 }
 
 int test(Arguments &arguments) {
@@ -630,6 +634,8 @@ int test(Arguments &arguments) {
 		grid.dumpZYX(filename);
 	else
 		grid.dump(filename);
+
+	return 0;
 }
 
 int main(int argc, const char **argv) {
