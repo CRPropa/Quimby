@@ -383,12 +383,16 @@ int mass(Arguments &arguments) {
 		}
 	}
 
-	if (arguments.hasFlag("-zyx")) {
-		std::cout << "Dump ZYX grid" << std::endl;
-		grid.dumpZYX(output);
+	if (arguments.hasFlag("-dump")) {
+		if (arguments.hasFlag("-zyx")) {
+			std::cout << "Dump ZYX grid" << std::endl;
+			grid.dumpZYX(output);
+		} else {
+			std::cout << "Dump XYZ grid" << std::endl;
+			grid.dump(output);
+		}
 	} else {
-		std::cout << "Dump XYZ grid" << std::endl;
-		grid.dump(output);
+		grid.save(output);
 	}
 
 	return 0;
@@ -642,10 +646,10 @@ int main(int argc, const char **argv) {
 	Arguments arguments(argc, argv);
 	if (arguments.getCount() < 2) {
 		std::cout << "Functions:" << std::endl;
-		std::cout << "  mg      mass grid" << std::endl;
-		std::cout << "  bg      bfield grid" << std::endl;
-		std::cout << "  av      average bfield" << std::endl;
-		std::cout << "  test    build test grid" << std::endl;
+		std::cout << "  mass        mass grid" << std::endl;
+		std::cout << "  bfield      bfield grid" << std::endl;
+		std::cout << "  av          average bfield" << std::endl;
+		std::cout << "  test        build test grid" << std::endl;
 		return 1;
 	}
 
@@ -658,6 +662,30 @@ int main(int argc, const char **argv) {
 		return av(argc, argv);
 	else if (function == "test")
 		return test(arguments);
+	else if (function == "writetest") {
+		if (arguments.hasFlag("-float")) {
+			Grid<float> fg;
+			fg.create(2, 1.0);
+			fg.save("ls_float.dat");
+		} else if (arguments.hasFlag("-vector")) {
+			Grid<Vector3<float> > fg;
+			fg.create(2, 1.0);
+			fg.save("ls_vector.dat");
+		}
+	}
+	else if (function == "readtest") {
+		if (arguments.hasFlag("-float")) {
+			Grid<float> fg;
+			fg.load("ls_float.dat");
+			std::cout << "Bins: " << fg.getBins() << std::endl;
+			std::cout << "Size: " << fg.getSize() << std::endl;
+		} else if (arguments.hasFlag("-vector")) {
+			Grid<Vector3<float> > fg;
+			fg.load("ls_vector.dat");
+			std::cout << "Bins: " << fg.getBins() << std::endl;
+			std::cout << "Size: " << fg.getSize() << std::endl;
+		}
+	}
 
 	return 0;
 }
