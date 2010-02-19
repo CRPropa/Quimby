@@ -621,6 +621,8 @@ int main(int argc, const char **argv) {
 		std::cout << "  mass        mass grid" << std::endl;
 		std::cout << "  bfield      bfield grid" << std::endl;
 		std::cout << "  av          average bfield" << std::endl;
+		std::cout << "  writetest   grid write test" << std::endl;
+		std::cout << "  readtest    grid read test" << std::endl;
 		return 1;
 	}
 
