@@ -633,8 +633,6 @@ int main(int argc, const char **argv) {
 		return bfield(arguments);
 	else if (function == "av")
 		return av(argc, argv);
-	else if (function == "test")
-		return test(arguments);
 	else if (function == "writetest") {
 		if (arguments.hasFlag("-float")) {
 			Grid<float> fg;
