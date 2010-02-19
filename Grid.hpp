@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 
 template<class T>
 class Grid {
@@ -41,6 +42,7 @@ public:
 
 	void create(unsigned int bins, float size) {
 		this->bins = bins;
+		this->size = size;
 		cellLength = size / (float) bins;
 		elements.resize(bins * bins * bins);
 	}
@@ -87,6 +89,44 @@ public:
 				* elements.size());
 	}
 
+	void save(const std::string &filename) {
+		std::ofstream outfile(filename.c_str(), std::ios::binary);
+		std::string type = typeid(element_t).name();
+		std::string::size_type type_size = type.size();
+		outfile.write((char *) &type_size, sizeof(std::string::size_type));
+		outfile.write((char *) &type.at(0), type.size() * sizeof(std::string::value_type));
+		outfile.write((char *) &size, sizeof(float));
+		outfile.write((char *) &bins, sizeof(unsigned int));
+		outfile.write((char *) &elements[0], sizeof(element_t)
+				* elements.size());
+	}
+
+	bool load(const std::string &filename) {
+		std::ifstream infile(filename.c_str(), std::ios::binary);
+		if (infile.bad())
+			return false;
+
+		std::string type;
+		std::string::size_type type_size;
+		infile.read((char *) &type_size, sizeof(std::string::size_type));
+		type.resize(type_size);
+		infile.read((char *) &type.at(0), type_size * sizeof(std::string::value_type));
+
+		if (type != typeid(element_t).name()) {
+			throw std::runtime_error("Grid type mismatch. file: " + type + " this: " + typeid(element_t).name());
+		}
+
+		float s;
+		infile.read((char *) &s, sizeof(float));
+		unsigned int b;
+		infile.read((char *) &b, sizeof(unsigned int));
+		create(b, s);
+
+		infile.read((char *) &elements[0], sizeof(element_t)
+				* elements.size());
+
+		return true;
+	}
 	void dumpZYX(const std::string &filename) {
 		std::ofstream outfile(filename.c_str(), std::ios::binary);
 		for (unsigned int iZ = 0; iZ < bins; iZ++) {
