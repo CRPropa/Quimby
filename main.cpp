@@ -614,34 +614,6 @@ int bfield(Arguments &arguments) {
 	return 0;
 }
 
-int test(Arguments &arguments) {
-	std::string filename = arguments.getString("-o");
-	if (filename.empty()) {
-		std::cerr << "missing filename (-o filename)" << std::endl;
-		return 1;
-	}
-
-	Grid<float> grid;
-	grid.create(10, 100.0);
-	grid.reset(0.0);
-	grid.get(1, 0, 0) = 1.0;
-	grid.get(2, 0, 0) = 1.0;
-	grid.get(3, 0, 0) = 1.0;
-	grid.get(3, 1, 0) = 1.0;
-	grid.get(3, 2, 0) = 1.0;
-	grid.get(3, 3, 0) = 1.0;
-	grid.get(3, 3, 1) = 1.0;
-	grid.get(3, 3, 2) = 1.0;
-	grid.get(3, 3, 3) = 1.0;
-
-	if (arguments.hasFlag("-zyx"))
-		grid.dumpZYX(filename);
-	else
-		grid.dump(filename);
-
-	return 0;
-}
-
 int main(int argc, const char **argv) {
 	Arguments arguments(argc, argv);
 	if (arguments.getCount() < 2) {
@@ -649,7 +621,6 @@ int main(int argc, const char **argv) {
 		std::cout << "  mass        mass grid" << std::endl;
 		std::cout << "  bfield      bfield grid" << std::endl;
 		std::cout << "  av          average bfield" << std::endl;
-		std::cout << "  test        build test grid" << std::endl;
 		return 1;
 	}
 
