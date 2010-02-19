@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+
 SET(CMAKE_CXX_FLAGS "-fopenmp")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
 SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
