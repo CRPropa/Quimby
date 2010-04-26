@@ -400,6 +400,136 @@ int bfield(Arguments &arguments) {
 	return 0;
 }
 
+struct file_sphs {
+	std::vector<float> pos;
+	std::vector<float> bfld;
+	std::vector<float> hsml;
+};
+
+void extract(file_sphs &fs, const std::string &filename) {
+	std::cout << "Open " << filename << std::endl;
+
+	GadgetFile file;
+	file.open(filename);
+	if (file.good() == false) {
+		std::cerr << "Failed to open file " << filename << std::endl;
+		return;
+	}
+
+	file.readHeader();
+	int pn = file.getHeader().particleNumberList[0];
+	std::cout << " Number of SmoothParticles: " << pn << std::endl;
+
+	std::cout << " Read POS block" << std::endl;
+	if (file.readFloatBlock("POS ", fs.pos) == false) {
+		std::cerr << "Failed to read POS block" << std::endl;
+		return;
+	}
+
+	std::cout << " Read BFLD block" << std::endl;
+	if (file.readFloatBlock("BFLD", fs.bfld) == false) {
+		std::cerr << "Failed to read BFLD block" << std::endl;
+		return;
+	}
+
+	std::cout << " Read HSML block" << std::endl;
+	if (file.readFloatBlock("HSML", fs.hsml) == false) {
+		std::cerr << "Failed to read HSML block" << std::endl;
+		return;
+	}
+}
+
+void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
+		float cellSize, std::ostream &output) {
+	std::cout << "dump " << x << "/" << y << "/" << z << std::endl;
+	std::vector<std::vector<size_t> > indices;
+	indices.resize(fs.size());
+
+	// find intersecting particles
+	Vector3<float> center(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2, z
+			* cellSize + cellSize / 2);
+	AABC<float> aabc(center, cellSize / 2);
+	std::cout << " bounding box: " << aabc << std::endl;
+	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
+		for (size_t iSPH = 0; iSPH < fs[iFile].pos.size() / 3; iSPH++) {
+			Vector3<float> v(fs[iFile].pos[iSPH * 3], fs[iFile].pos[iSPH * 3 + 1],
+					fs[iFile].pos[iSPH * 3 + 2]);
+			float l = fs[iFile].hsml[iSPH];
+			AABC<float> bb(v, l);
+			if (aabc.intersects(bb)) {
+				indices[iFile].push_back(iSPH);
+			}
+		}
+	}
+
+	std::cout << " write to file" << std::endl;
+
+	// dump particles
+	unsigned int tmp = x;
+	output.write((const char *)&x, sizeof(unsigned int));
+	tmp = y;
+	output.write((const char *)&tmp, sizeof(unsigned int));
+	tmp = z;
+	output.write((const char *)&tmp, sizeof(unsigned int));
+
+	unsigned int total = 0;
+	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
+		total += indices[iFile].size();
+	}
+	std::cout << " " << x << "/" << y << "/" << z << ": " << total << std::endl;
+	tmp = total;
+	output.write((const char *)&tmp, sizeof(unsigned int));
+
+	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
+		for (size_t iSPH = 0; iSPH < indices[iFile].size(); iSPH++) {
+			size_t index = indices[iFile][iSPH];
+			output.write((const char *)&fs[iFile].pos[index*3], sizeof(float));
+			output.write((const char *)&fs[iFile].pos[index*3+1], sizeof(float));
+			output.write((const char *)&fs[iFile].pos[index*3+2], sizeof(float));
+			output.write((const char *)&fs[iFile].bfld[index*3], sizeof(float));
+			output.write((const char *)&fs[iFile].bfld[index*3+1], sizeof(float));
+			output.write((const char *)&fs[iFile].bfld[index*3+2], sizeof(float));
+			output.write((const char *)&fs[iFile].hsml[index], sizeof(float));
+		}
+	}
+
+}
+
+int pp(Arguments &arguments) {
+	std::string filename = arguments.getString("-o");
+	std::cout << "Output: " << filename << std::endl;
+
+	std::ofstream output(filename.c_str());
+
+	unsigned int bins = arguments.getInt("-bins", 10);
+	std::cout << "Bins: " << bins << std::endl;
+
+	float size = arguments.getFloat("-size", 10);
+	std::cout << "Size: " << size << std::endl;
+
+	output.write((const char *)&size, sizeof(float));
+	output.write((const char *)&bins, sizeof(unsigned int));
+
+	std::vector<std::string> files;
+	arguments.getVector("-f", files);
+
+	std::vector<file_sphs> fs;
+	fs.resize(files.size());
+	for (size_t iFile = 0; iFile < files.size(); iFile++) {
+		extract(fs[iFile], files[iFile]);
+	}
+
+	for (size_t x = 0; x < bins; x++) {
+		for (size_t y = 0; y < bins; y++) {
+			for (size_t z = 0; z < bins; z++) {
+				dump(fs, x, y, z, size / bins, output);
+			}
+		}
+	}
+
+	return 0;
+}
+
 int main(int argc, const char **argv) {
 	Arguments arguments(argc, argv);
 	if (arguments.getCount() < 2) {
@@ -407,6 +537,7 @@ int main(int argc, const char **argv) {
 		std::cout << "  mass        mass grid" << std::endl;
 		std::cout << "  bfield      bfield grid" << std::endl;
 		std::cout << "  av          average bfield" << std::endl;
+		std::cout << "  pp          preprocess for use in CRPRopa" << std::endl;
 		std::cout << "  writetest   grid write test" << std::endl;
 		std::cout << "  readtest    grid read test" << std::endl;
 		return 1;
@@ -419,6 +550,8 @@ int main(int argc, const char **argv) {
 		return bfield(arguments);
 	else if (function == "av")
 		return av(argc, argv);
+	else if (function == "pp")
+		return pp(arguments);
 	else if (function == "writetest") {
 		if (arguments.hasFlag("-float")) {
 			Grid<float> fg;
@@ -429,8 +562,7 @@ int main(int argc, const char **argv) {
 			fg.create(2, 1.0);
 			fg.save("ls_vector.dat");
 		}
-	}
-	else if (function == "readtest") {
+	} else if (function == "readtest") {
 		if (arguments.hasFlag("-float")) {
 			Grid<float> fg;
 			fg.load("ls_float.dat");
