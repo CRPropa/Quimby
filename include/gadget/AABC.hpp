@@ -18,14 +18,15 @@ public:
 	Vector3<T> center;
 	T extend;
 
+	AABC() {
+	}
+
 	AABC(const AABC<T> &a) :
 		center(a.center), extend(a.extend) {
-
 	}
 
 	AABC(const Vector3<T> &c, T e) :
 		center(c), extend(e) {
-
 	}
 
 	bool intersects(const AABC<T> &a) const {
@@ -63,6 +64,29 @@ public:
 		return true;
 	}
 
+	T lowerX() const {
+		center.x - extend;
+	}
+
+	T lowerY() const {
+		center.y - extend;
+	}
+
+	T lowerZ() const {
+		center.z - extend;
+	}
+
+	T upperX() const {
+		center.x + extend;
+	}
+
+	T upperY() const {
+		center.y + extend;
+	}
+
+	T upperZ() const {
+		center.z + extend;
+	}
 };
 
 template<typename T>

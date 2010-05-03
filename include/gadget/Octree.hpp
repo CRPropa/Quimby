@@ -16,9 +16,6 @@ template<typename FLOAT, typename ELEMENT>
 class OctreeNode {
 public:
 
-	OctreeNode() {
-
-	}
 	typedef ELEMENT element_t;
 	typedef FLOAT float_t;
 
@@ -59,8 +56,8 @@ public:
 		}
 	}
 
-	const OctreeNode *queryLeafNode(Settings &settings,
-			const Vector3<float_t> &v) {
+	const OctreeNode *queryLeafNode(const Settings &settings, const Vector3<
+			float_t> &v) {
 		if (box.contains(v) == false) {
 			return 0;
 		}
@@ -68,12 +65,14 @@ public:
 		if (isLeaf()) {
 			return this;
 		} else {
-			OctreeNode *node;
+			const OctreeNode *node = 0;
 			for (int i = 0; i < 8; i++) {
-				node = children[i]->queryLeafNode(settings, v);
+				node = children[i].queryLeafNode(settings, v);
 				if (node)
 					return node;
 			}
+
+			return node;
 		}
 	}
 
@@ -81,12 +80,23 @@ public:
 		box = aabb;
 	}
 
+	void stats(unsigned int &maxdepth, unsigned int &count,
+			unsigned int &element_count, unsigned int depth = 0) {
+		count++;
+		element_count += elements.size();
+		if (depth + 1 > maxdepth)
+			maxdepth = depth + 1;
+		for (int i = 0; i < children.size(); i++)
+			children[i].stats(maxdepth, count, element_count, depth + 1);
+	}
+
+	const std::vector<element_t> &getElements() const {
+		return elements;
+	}
 private:
 	AABC<float_t> box;
 	std::vector<OctreeNode<float_t, element_t> > children;
 	std::vector<element_t> elements;
-
-	const std::vector<element_t> &getElements() const;
 
 	bool isLeaf() {
 		return children.size() == 0;
@@ -97,8 +107,8 @@ private:
 		Vector3<float_t> halfExtendX = Vector3<float_t> (box.extend, 0.0, 0.0);
 		Vector3<float_t> halfExtendY = Vector3<float_t> (0.0, box.extend, 0.0);
 		Vector3<float_t> halfExtendZ = Vector3<float_t> (0.0, 0.0, box.extend);
-		Vector3<float_t> min = box.center - Vector3<float_t> (box.extend,
-				box.extend, box.extend);
+		Vector3<float_t> min = box.center - Vector3<float_t> (box.extend / 2,
+				box.extend / 2, box.extend / 2);
 		children.resize(8);
 		children[xyz].setBoundingVolume(AABC<float_t> (min, halfExtend));
 		children[Xyz].setBoundingVolume(AABC<float_t> (min + halfExtendX,
@@ -117,8 +127,8 @@ private:
 				+ halfExtendY, halfExtend));
 
 		for (int i = 0; i < elements.size(); i++) {
-			insertIntoChildren(settings, settings.calculateAABB(elements[i]),
-					elements[i]);
+			AABC<float_t> aabc = settings.calculateBounds(elements[i]);
+			insertIntoChildren(settings, aabc, elements[i]);
 		}
 		elements.clear();
 		// make sure the memory is released
@@ -146,17 +156,9 @@ private:
 	void insertIntoChildren(Settings &settings, const AABC<float_t> &aabb,
 			const element_t &element) {
 		for (int i = 0; i < 8; i++)
-			children[i]->insert(settings, aabb, element);
+			children[i].insert(settings, aabb, element);
 	}
 
-	void stats(unsigned int &maxdepth, unsigned int &count, unsigned int depth =
-			0) {
-		count++;
-		if (depth + 1 > maxdepth)
-			maxdepth = depth + 1;
-		for (int i = 0; i < children.size(); i++)
-			children[i]->stats(depth + 1, maxdepth, count);
-	}
 };
 
 #endif /* OCTREE_HPP_ */

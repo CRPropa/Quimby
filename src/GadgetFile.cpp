@@ -5,7 +5,7 @@
  *      Author: gmueller
  */
 
-#include "GadgetFile.hpp"
+#include "gadget/GadgetFile.hpp"
 
 #include <stdexcept>
 

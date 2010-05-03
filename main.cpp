@@ -5,15 +5,17 @@
  *      Author: gmueller
  */
 
-#include "GadgetFile.hpp"
-#include "Grid.hpp"
-#include "kernel.hpp"
-#include "Octree.hpp"
+#include "gadget/GadgetFile.hpp"
+#include "gadget/Grid.hpp"
+#include "gadget/kernel.hpp"
+#include "gadget/Octree.hpp"
+#include "gadget/SmoothParticle.hpp"
 
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
 #include <string>
+#include <ctime>
 
 #include <omp.h>
 
@@ -158,7 +160,7 @@ int mass(Arguments &arguments) {
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
 						float z = iStepZ * grid.getCellLength();
 						float r = sqrt(x * x + y * y + z * z);
-						float w = kernel1d(r / hsml[iP]) * rho[iP] * vol;
+						float w = kernel(r / hsml[iP]) * rho[iP] * vol;
 						float &f = grid.get(pX + x, pY + y, pZ + z);
 #pragma omp atomic
 						f += w;
@@ -237,12 +239,12 @@ public:
 		this->logarithm = logarithm;
 	}
 
-	void visit(const size_t &x, const size_t &y, const size_t &z,
-			const Vector3f &value) {
-		float mag = sqrt(value.x * value.x + value.y * value.y + value.z
+	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
+			Vector3f &value) {
+		float mag = std::sqrt(value.x * value.x + value.y * value.y + value.z
 				* value.z);
 		if (logarithm) {
-			mag = log(mag + 1e-32);
+			mag = std::log(mag + 1e-32);
 		}
 		outfile.write((char *) &mag, sizeof(float));
 	}
@@ -255,8 +257,8 @@ public:
 		outfile.open(filename.c_str(), std::ios::binary);
 	}
 
-	void visit(const size_t &x, const size_t &y, const size_t &z,
-			const Vector3f &value) {
+	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
+			Vector3f &value) {
 		outfile.write((char *) &value, sizeof(Vector3f));
 	}
 };
@@ -344,13 +346,13 @@ int bfield(Arguments &arguments) {
 			int iZ = pZ / grid.getCellLength();
 			for (int iStepX = -steps; iStepX <= steps; iStepX++) {
 				float x = iStepX * grid.getCellLength() / sl;
-				float vx = kernel1d(fabs(x)) * bX;
+				float vx = kernel(fabs(x)) * bX;
 				for (int iStepY = -steps; iStepY <= steps; iStepY++) {
 					float y = iStepY * grid.getCellLength() / sl;
-					float vy = kernel1d(fabs(y)) * bY;
+					float vy = kernel(fabs(y)) * bY;
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
 						float z = iStepZ * grid.getCellLength() / sl;
-						float vz = kernel1d(fabs(z)) * bZ;
+						float vz = kernel(fabs(z)) * bZ;
 
 						Vector3f &v = grid.get(iX + iStepX, iY + iStepY, iZ
 								+ iStepZ);
@@ -396,6 +398,233 @@ int bfield(Arguments &arguments) {
 			grid.acceptXYZ(visitor);
 		}
 	}
+
+	return 0;
+}
+
+struct GridCell {
+	GridCell() :
+		ref_count(0) {
+	}
+	std::vector<float> data;
+	int64_t ref_count;
+};
+
+#if 0
+void ranges(size_t &start, size_t &end, size_t n, float x, float h, float s) {
+	int lowerX = floor((x - 2*h) / s);
+	if (lowerX < 0)
+	lowerX = 0;
+	else if (lowerX > n)
+	lowerX = n;
+	int upperX = ceil((x + 2*h) / s);
+	if (upperX < 0)
+	upperX = 0;
+	else if (upperX > n)
+	upperX = n;
+	start = lowerX;
+	end = upperX;
+}
+void TFloatMagField::readCellData(GridCell &cell, const Vector3<float> &offset, std::ifstream &in, unsigned int count) const {
+	Vector3<float> pos;
+	Vector3<float> bfld;
+	float hsml;
+	for (size_t i = 0; i < count; i++) {
+		in.read((char *)&pos.x, sizeof(float));
+		in.read((char *)&pos.y, sizeof(float));
+		in.read((char *)&pos.z, sizeof(float));
+		in.read((char *)&bfld.x, sizeof(float));
+		in.read((char *)&bfld.y, sizeof(float));
+		in.read((char *)&bfld.z, sizeof(float));
+		in.read((char *)&hsml, sizeof(float));
+		float vol = M_PI / hsml / hsml / hsml;
+		pos = pos - offset;
+		bfld /= vol;
+		size_t bX, eX, bY, eY, bZ, eZ;
+		ranges(bX, eX, _fN, pos.x, hsml, _fStepsize);
+		ranges(bY, eY, _fN, pos.y, hsml, _fStepsize);
+		ranges(bZ, eZ, _fN, pos.z, hsml, _fStepsize);
+		for (size_t x = bX; x < eX; x++) {
+			float fx = x * _fStepsize - pos.x;
+			float bx = kernel(fabs(fx)/hsml) * bfld.x;
+			for (size_t y = bY; y < eY; y++) {
+				float fy = y * _fStepsize - pos.y;
+				float by = kernel(fabs(fy)/hsml) * bfld.y;
+				for (size_t z = bZ; z < eZ; z++) {
+					float fz = z * _fStepsize - pos.z;
+					float bz = kernel(fabs(fz)/hsml) * bfld.z;
+					size_t n = x*_fN*_fN + y*_fN + z;
+					cell.data[n*3] += bx;
+					cell.data[n*3+1] += by;
+					cell.data[n*3+2] += bz;
+				}
+			}
+		}
+	}
+}
+
+#endif
+
+class SPVisitor: public Grid<Vector3f>::Visitor {
+public:
+	SmoothParticle particle;
+	size_t lastX, lastY, lastZ;
+	Vector3f b;
+
+	SPVisitor() :
+		lastX(-1), lastY(-1), lastZ(-1) {
+	}
+
+	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
+			Vector3f &value) {
+		if (x != lastX) {
+			b.x = kernel(particle.bfield.x, grid.toCellCenter(x),
+					particle.position.x, particle.smoothingLength);
+		}
+		if (y != lastY) {
+			b.y = kernel(particle.bfield.y, grid.toCellCenter(y),
+					particle.position.y, particle.smoothingLength);
+		}
+		if (z != lastZ) {
+			b.z = kernel(particle.bfield.z, grid.toCellCenter(z),
+					particle.position.z, particle.smoothingLength);
+		}
+
+#pragma omp critical
+		value += b;
+	}
+};
+
+class DumpBFieldGridVisitor: public Grid<Vector3f>::Visitor {
+private:
+	std::ostream &out;
+public:
+
+	DumpBFieldGridVisitor(std::ostream &out) :
+		out(out) {
+	}
+
+	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
+			Vector3f &value) {
+		out.write((char *) &value.x, sizeof(float));
+		out.write((char *) &value.y, sizeof(float));
+		out.write((char *) &value.z, sizeof(float));
+	}
+};
+
+void bfield_grid(std::vector<float> &pos, std::vector<float> &bfld,
+		std::vector<float>&hsml, Vector3f &offset, Grid<Vector3f> &grid,
+		size_t iP) {
+
+}
+
+int block(Arguments &arguments) {
+	unsigned int bins = arguments.getInt("-bins", 100);
+	std::cout << "Bins: " << bins << std::endl;
+
+	float size = arguments.getFloat("-size", 40000);
+	std::cout << "Size: " << size << std::endl;
+
+	std::string output = arguments.getString("-o");
+	std::cout << "Output: " << output << std::endl;
+
+	std::cout << "Create Grid" << std::endl;
+	Grid<Vector3f> grid;
+	grid.create(bins, size);
+	grid.reset(Vector3f(0, 0, 0));
+
+	std::cout << "Cell Size: " << grid.getCellLength() << std::endl;
+
+	Vector3f offset(arguments.getFloat("-offX", 0), arguments.getFloat("-offY",
+			0), arguments.getFloat("-offZ", 0));
+	std::cout << "Offset: " << offset << std::endl;
+
+	bool verbose = arguments.hasFlag("-v");
+
+	std::vector<std::string> files;
+	arguments.getVector("-f", files);
+	for (size_t iArg = 0; iArg < files.size(); iArg++) {
+		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
+				<< files.size() << ")" << std::endl;
+
+		GadgetFile file;
+		file.open(files[iArg]);
+		if (file.good() == false) {
+			std::cerr << "Failed to open file " << files[iArg] << std::endl;
+			return 1;
+		}
+
+		file.readHeader();
+		int pn = file.getHeader().particleNumberList[0];
+		std::cout << "  Number of SmoothParticles: " << pn << std::endl;
+
+		std::cerr << "  Read POS block" << std::endl;
+		std::vector<float> pos;
+		if (file.readFloatBlock("POS ", pos) == false) {
+			std::cerr << "Failed to read POS block" << std::endl;
+			return 1;
+		}
+
+		std::cerr << "  Read BFLD block" << std::endl;
+		std::vector<float> bfld;
+		if (file.readFloatBlock("BFLD", bfld) == false) {
+			std::cerr << "Failed to read BFLD block" << std::endl;
+			return 1;
+		}
+
+		std::cerr << "  Read HSML block" << std::endl;
+		std::vector<float> hsml;
+		if (file.readFloatBlock("HSML", hsml) == false) {
+			std::cerr << "Failed to read HSML block" << std::endl;
+			return 1;
+		}
+
+		std::cout << "  Fill grid";
+#ifdef _OPENMP
+		std::cout << " (" << omp_get_num_threads() << " threads)";
+#endif
+		std::cout << std::endl;
+
+		time_t start = std::time(0);
+#pragma omp parallel for schedule(dynamic, 10000)
+		for (int iP = 0; iP < pn; iP++) {
+			if (iP % (pn / 100) == 0 && verbose) {
+				std::cout << "  ";
+
+				std::cout << iP << ": " << (iP * 100) / pn << "%\r";
+				std::cout.flush();
+			}
+
+			SPVisitor v;
+			v.particle.smoothingLength = hsml[iP];
+			v.particle.position.x = pos[iP * 3] - offset.x;
+			v.particle.position.y = pos[iP * 3 + 1] - offset.y;
+			v.particle.position.z = pos[iP * 3 + 2] - offset.z;
+
+			float norm = 1.0 / M_PI / pow(v.particle.smoothingLength, 3);
+			v.particle.bfield.x = bfld[iP * 3] * norm;
+			v.particle.bfield.y = bfld[iP * 3 + 1] * norm;
+			v.particle.bfield.z = bfld[iP * 3 + 2] * norm;
+
+			AABC<float> aabc(v.particle.position, v.particle.smoothingLength
+					* 2);
+			grid.acceptZYX(v, aabc);
+		}
+
+		std::cout << "  Done                 " << std::endl;
+	}
+
+	std::cout << "Write output" << std::endl;
+
+	std::ofstream outfile;
+	outfile.open(output.c_str(), std::ios::binary);
+	outfile.write((const char *) &bins, sizeof(bins));
+	outfile.write((const char *) &size, sizeof(size));
+	outfile.write((const char *) &offset.x, sizeof(float));
+	outfile.write((const char *) &offset.y, sizeof(float));
+	outfile.write((const char *) &offset.z, sizeof(float));
+	DumpBFieldGridVisitor visitor(outfile);
+	grid.acceptZYX(visitor);
 
 	return 0;
 }
@@ -446,14 +675,14 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 	indices.resize(fs.size());
 
 	// find intersecting particles
-	Vector3<float> center(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2, z
-			* cellSize + cellSize / 2);
+	Vector3<float> center(x * cellSize + cellSize / 2, y * cellSize + cellSize
+			/ 2, z * cellSize + cellSize / 2);
 	AABC<float> aabc(center, cellSize / 2);
 	std::cout << " bounding box: " << aabc << std::endl;
 	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
 		for (size_t iSPH = 0; iSPH < fs[iFile].pos.size() / 3; iSPH++) {
-			Vector3<float> v(fs[iFile].pos[iSPH * 3], fs[iFile].pos[iSPH * 3 + 1],
-					fs[iFile].pos[iSPH * 3 + 2]);
+			Vector3<float> v(fs[iFile].pos[iSPH * 3], fs[iFile].pos[iSPH * 3
+					+ 1], fs[iFile].pos[iSPH * 3 + 2]);
 			float l = fs[iFile].hsml[iSPH];
 			AABC<float> bb(v, l);
 			if (aabc.intersects(bb)) {
@@ -466,11 +695,11 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 
 	// dump particles
 	unsigned int tmp = x;
-	output.write((const char *)&x, sizeof(unsigned int));
+	output.write((const char *) &tmp, sizeof(unsigned int));
 	tmp = y;
-	output.write((const char *)&tmp, sizeof(unsigned int));
+	output.write((const char *) &tmp, sizeof(unsigned int));
 	tmp = z;
-	output.write((const char *)&tmp, sizeof(unsigned int));
+	output.write((const char *) &tmp, sizeof(unsigned int));
 
 	unsigned int total = 0;
 	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
@@ -478,18 +707,24 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 	}
 	std::cout << " " << x << "/" << y << "/" << z << ": " << total << std::endl;
 	tmp = total;
-	output.write((const char *)&tmp, sizeof(unsigned int));
+	output.write((const char *) &tmp, sizeof(unsigned int));
 
 	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
 		for (size_t iSPH = 0; iSPH < indices[iFile].size(); iSPH++) {
 			size_t index = indices[iFile][iSPH];
-			output.write((const char *)&fs[iFile].pos[index*3], sizeof(float));
-			output.write((const char *)&fs[iFile].pos[index*3+1], sizeof(float));
-			output.write((const char *)&fs[iFile].pos[index*3+2], sizeof(float));
-			output.write((const char *)&fs[iFile].bfld[index*3], sizeof(float));
-			output.write((const char *)&fs[iFile].bfld[index*3+1], sizeof(float));
-			output.write((const char *)&fs[iFile].bfld[index*3+2], sizeof(float));
-			output.write((const char *)&fs[iFile].hsml[index], sizeof(float));
+			output.write((const char *) &fs[iFile].pos[index * 3],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].pos[index * 3 + 1],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].pos[index * 3 + 2],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].bfld[index * 3],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].bfld[index * 3 + 1],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].bfld[index * 3 + 2],
+					sizeof(float));
+			output.write((const char *) &fs[iFile].hsml[index], sizeof(float));
 		}
 	}
 
@@ -507,8 +742,8 @@ int pp(Arguments &arguments) {
 	float size = arguments.getFloat("-size", 10);
 	std::cout << "Size: " << size << std::endl;
 
-	output.write((const char *)&size, sizeof(float));
-	output.write((const char *)&bins, sizeof(unsigned int));
+	output.write((const char *) &size, sizeof(float));
+	output.write((const char *) &bins, sizeof(unsigned int));
 
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
@@ -531,51 +766,57 @@ int pp(Arguments &arguments) {
 }
 
 int main(int argc, const char **argv) {
-	Arguments arguments(argc, argv);
-	if (arguments.getCount() < 2) {
-		std::cout << "Functions:" << std::endl;
-		std::cout << "  mass        mass grid" << std::endl;
-		std::cout << "  bfield      bfield grid" << std::endl;
-		std::cout << "  av          average bfield" << std::endl;
-		std::cout << "  pp          preprocess for use in CRPRopa" << std::endl;
-		std::cout << "  writetest   grid write test" << std::endl;
-		std::cout << "  readtest    grid read test" << std::endl;
-		return 1;
-	}
-
-	std::string function = argv[1];
-	if (function == "mass")
-		return mass(arguments);
-	else if (function == "bfield")
-		return bfield(arguments);
-	else if (function == "av")
-		return av(argc, argv);
-	else if (function == "pp")
-		return pp(arguments);
-	else if (function == "writetest") {
-		if (arguments.hasFlag("-float")) {
-			Grid<float> fg;
-			fg.create(2, 1.0);
-			fg.save("ls_float.dat");
-		} else if (arguments.hasFlag("-vector")) {
-			Grid<Vector3<float> > fg;
-			fg.create(2, 1.0);
-			fg.save("ls_vector.dat");
+	try {
+		Arguments arguments(argc, argv);
+		if (arguments.getCount() < 2) {
+			std::cout << "Functions:" << std::endl;
+			std::cout << "  mass        mass grid" << std::endl;
+			std::cout << "  bfield      bfield grid" << std::endl;
+			std::cout << "  av          average bfield" << std::endl;
+			std::cout << "  pp          preprocess for use in CRPRopa"
+					<< std::endl;
+			std::cout << "  writetest   grid write test" << std::endl;
+			std::cout << "  readtest    grid read test" << std::endl;
+			return 1;
 		}
-	} else if (function == "readtest") {
-		if (arguments.hasFlag("-float")) {
-			Grid<float> fg;
-			fg.load("ls_float.dat");
-			std::cout << "Bins: " << fg.getBins() << std::endl;
-			std::cout << "Size: " << fg.getSize() << std::endl;
-		} else if (arguments.hasFlag("-vector")) {
-			Grid<Vector3<float> > fg;
-			fg.load("ls_vector.dat");
-			std::cout << "Bins: " << fg.getBins() << std::endl;
-			std::cout << "Size: " << fg.getSize() << std::endl;
-		}
-	}
 
+		std::string function = argv[1];
+		if (function == "mass")
+			return mass(arguments);
+		else if (function == "bfield")
+			return bfield(arguments);
+		else if (function == "av")
+			return av(argc, argv);
+		else if (function == "pp")
+			return pp(arguments);
+		else if (function == "block")
+			return block(arguments);
+		else if (function == "writetest") {
+			if (arguments.hasFlag("-float")) {
+				Grid<float> fg;
+				fg.create(2, 1.0);
+				fg.save("ls_float.dat");
+			} else if (arguments.hasFlag("-vector")) {
+				Grid<Vector3<float> > fg;
+				fg.create(2, 1.0);
+				fg.save("ls_vector.dat");
+			}
+		} else if (function == "readtest") {
+			if (arguments.hasFlag("-float")) {
+				Grid<float> fg;
+				fg.load("ls_float.dat");
+				std::cout << "Bins: " << fg.getBins() << std::endl;
+				std::cout << "Size: " << fg.getSize() << std::endl;
+			} else if (arguments.hasFlag("-vector")) {
+				Grid<Vector3<float> > fg;
+				fg.load("ls_vector.dat");
+				std::cout << "Bins: " << fg.getBins() << std::endl;
+				std::cout << "Size: " << fg.getSize() << std::endl;
+			}
+		}
+	} catch (std::exception &e) {
+		std::cerr << "EXCEPTION: " << e.what() << std::endl;
+	}
 	return 0;
 }
 

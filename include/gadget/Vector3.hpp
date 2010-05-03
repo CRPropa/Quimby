@@ -54,29 +54,36 @@ public:
 		return true;
 	}
 
-	Vector3 operator -(const Vector3<T> &v) const {
+	Vector3<T> operator -(const Vector3<T> &v) const {
 		return Vector3(x - v.x, y - v.y, z - v.z);
 	}
 
-	Vector3 operator +(const Vector3<T> &v) const {
+	Vector3<T> operator +(const Vector3<T> &v) const {
 		return Vector3(x + v.x, y + v.y, z + v.z);
 	}
 
-	Vector3 operator /(const T &f) const {
+	Vector3<T> operator /(const T &f) const {
 		return Vector3(x / f, y / f, z / f);
 	}
 
-	Vector3 &operator /=(const T &f) {
+	Vector3<T> &operator /=(const T &f) {
 		x /= f;
 		y /= f;
 		z /= f;
 		return *this;
 	}
 
-	Vector3 &operator *=(const T &f) {
+	Vector3<T> &operator *=(const T &f) {
 		x *= f;
 		y *= f;
 		z *= f;
+		return *this;
+	}
+
+	Vector3<T> &operator +=(const Vector3<T> &v) {
+		x += v.x;
+		y += v.y;
+		z += v.z;
 		return *this;
 	}
 };
