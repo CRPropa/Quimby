@@ -101,7 +101,7 @@ public:
 
 		size_t i = (size_t) (x / cellLength);
 		if (i >= bins)
-			return bins;
+			return bins -1 ;
 
 		return i;
 	}
@@ -112,7 +112,7 @@ public:
 	}
 
 	float toCellCenter(size_t x) {
-		float a = (float) a + 0.5f;
+		float a = (float) x + 0.5f;
 		return cellLength * a;
 	}
 

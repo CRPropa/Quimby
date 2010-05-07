@@ -65,27 +65,27 @@ public:
 	}
 
 	T lowerX() const {
-		center.x - extend;
+		return center.x - extend;
 	}
 
 	T lowerY() const {
-		center.y - extend;
+		return center.y - extend;
 	}
 
 	T lowerZ() const {
-		center.z - extend;
+		return center.z - extend;
 	}
 
 	T upperX() const {
-		center.x + extend;
+		return center.x + extend;
 	}
 
 	T upperY() const {
-		center.y + extend;
+		return center.y + extend;
 	}
 
 	T upperZ() const {
-		center.z + extend;
+		return center.z + extend;
 	}
 };
 

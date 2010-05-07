@@ -11,7 +11,9 @@ add_library( Gadget SHARED
 )
 
 add_executable( gadget
-	main.cpp
+	main
+	arguments
+	paged_grid
 )
 add_dependencies(gadget Gadget) 
 

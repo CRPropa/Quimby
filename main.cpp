@@ -10,6 +10,9 @@
 #include "gadget/kernel.hpp"
 #include "gadget/Octree.hpp"
 #include "gadget/SmoothParticle.hpp"
+#include "gadget/PagedGrid.hpp"
+
+#include "arguments.hpp"
 
 #include <cmath>
 #include <ctime>
@@ -19,75 +22,7 @@
 
 #include <omp.h>
 
-class Arguments {
-	int argc;
-	const char **argv;
-public:
-	Arguments(int c, const char **v) :
-		argc(c), argv(v) {
-
-	}
-
-	int getCount() {
-		return argc;
-	}
-
-	bool hasFlag(const std::string &flag) {
-		int i;
-		for (i = 0; i < argc; i++) {
-			if (flag == argv[i])
-				return true;
-		}
-
-		return false;
-	}
-
-	int getInt(const std::string &flag, int def) {
-		int i;
-		for (i = 0; i < argc; i++) {
-			if (flag == argv[i] && (i + 1 < argc))
-				return atoi(argv[i + 1]);
-		}
-
-		return def;
-	}
-
-	int getFloat(const std::string &flag, float def) {
-		int i;
-		for (i = 0; i < argc; i++) {
-			if (flag == argv[i] && (i + 1 < argc))
-				return atof(argv[i + 1]);
-		}
-
-		return def;
-	}
-	std::string getString(const std::string &flag) {
-		int i;
-		for (i = 0; i < argc; i++) {
-			if (flag == argv[i] && (i + 1 < argc))
-				return std::string(argv[i + 1]);
-		}
-
-		return std::string();
-	}
-
-	void getVector(const std::string &flag, std::vector<std::string> &v) {
-		int i;
-
-		// find flag
-		for (i = 0; i < argc; i++) {
-			if (flag == argv[i])
-				break;
-		}
-
-		for (i++; i < argc; i++) {
-			if (argv[i][0] != '-')
-				v.push_back(argv[i]);
-		}
-
-	}
-
-};
+int paged_grid(Arguments &arguments);
 
 int mass(Arguments &arguments) {
 	unsigned int bins = arguments.getInt("-bins", 10);
@@ -96,7 +31,7 @@ int mass(Arguments &arguments) {
 	float size = arguments.getFloat("-size", 10);
 	std::cout << "Size: " << size << std::endl;
 
-	std::string output = arguments.getString("-o");
+	std::string output = arguments.getString("-o", "mass.raw");
 	std::cout << "Output: " << output << std::endl;
 
 	std::cout << "Create Grid" << std::endl;
@@ -270,7 +205,7 @@ int bfield(Arguments &arguments) {
 	float size = arguments.getFloat("-size", 10);
 	std::cout << "Size: " << size << std::endl;
 
-	std::string output = arguments.getString("-o");
+	std::string output = arguments.getString("-o", "bfield.raw");
 	std::cout << "Output: " << output << std::endl;
 
 	std::cout << "Create Grid" << std::endl;
@@ -481,14 +416,19 @@ public:
 			b.x = kernel(particle.bfield.x, grid.toCellCenter(x),
 					particle.position.x, particle.smoothingLength);
 		}
+		lastX = x;
+
 		if (y != lastY) {
 			b.y = kernel(particle.bfield.y, grid.toCellCenter(y),
 					particle.position.y, particle.smoothingLength);
 		}
+		lastY = y;
+
 		if (z != lastZ) {
 			b.z = kernel(particle.bfield.z, grid.toCellCenter(z),
 					particle.position.z, particle.smoothingLength);
 		}
+		lastZ = z;
 
 #pragma omp critical
 		value += b;
@@ -525,7 +465,7 @@ int block(Arguments &arguments) {
 	float size = arguments.getFloat("-size", 40000);
 	std::cout << "Size: " << size << std::endl;
 
-	std::string output = arguments.getString("-o");
+	std::string output = arguments.getString("-o", "block");
 	std::cout << "Output: " << output << std::endl;
 
 	std::cout << "Create Grid" << std::endl;
@@ -579,15 +519,17 @@ int block(Arguments &arguments) {
 			return 1;
 		}
 
-		std::cout << "  Fill grid";
-#ifdef _OPENMP
-		std::cout << " (" << omp_get_num_threads() << " threads)";
-#endif
-		std::cout << std::endl;
-
 		time_t start = std::time(0);
 #pragma omp parallel for schedule(dynamic, 10000)
 		for (int iP = 0; iP < pn; iP++) {
+			if (iP == 0) {
+				std::cout << "  Fill grid";
+#ifdef _OPENMP
+				std::cout << " (" << omp_get_num_threads() << " threads)";
+#endif
+				std::cout << std::endl;
+
+			}
 			if (iP % (pn / 100) == 0 && verbose) {
 				std::cout << "  ";
 
@@ -613,6 +555,9 @@ int block(Arguments &arguments) {
 
 		std::cout << "  Done                 " << std::endl;
 	}
+
+	std::cout << grid.get((size_t) bins / 2, (size_t) bins / 2, (size_t) bins
+			/ 2) << std::endl;
 
 	std::cout << "Write output" << std::endl;
 
@@ -731,7 +676,7 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 }
 
 int pp(Arguments &arguments) {
-	std::string filename = arguments.getString("-o");
+	std::string filename = arguments.getString("-o", "prepared.sph");
 	std::cout << "Output: " << filename << std::endl;
 
 	std::ofstream output(filename.c_str());
@@ -789,6 +734,8 @@ int main(int argc, const char **argv) {
 			return av(argc, argv);
 		else if (function == "pp")
 			return pp(arguments);
+		else if (function == "pg")
+			return paged_grid(arguments);
 		else if (function == "block")
 			return block(arguments);
 		else if (function == "writetest") {
