@@ -185,7 +185,7 @@ int paged_grid(Arguments &arguments) {
 				float pps = (float) n / elapsed;
 				float pps_average = (float) iP / (now - start);
 				time_t total = pn / pps;
-				time_t eta = (pn * (pps + pps_average) / 2 - now + start) / 60;
+				time_t eta = (pn * 2 / (pps + pps_average) - now + start) / 60;
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, active pages: " << grid.getActivePageCount()
 						<< ", pages loaded: " << io.loadedPages
