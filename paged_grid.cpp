@@ -72,6 +72,10 @@ inline size_t limit(const float &x, const size_t &lower, const size_t &upper) {
 	return r;
 }
 
+size_t dround(double d) {
+	return size_t(d + 0.5);
+}
+
 int paged_grid(Arguments &arguments) {
 	float pageSize = arguments.getInt("-pageSize", 100);
 	std::cout << "PageSize:       " << pageSize << " kpc " << std::endl;
@@ -90,13 +94,13 @@ int paged_grid(Arguments &arguments) {
 	std::cout << "Output Prefix:  " << io.prefix << std::endl;
 
 	size3_t lowerLimit, upperLimit;
-	lowerLimit.x = arguments.getFloat("-lx", 0.0) / res;
-	lowerLimit.y = arguments.getFloat("-ly", 0.0) / res;
-	lowerLimit.z = arguments.getFloat("-lz", 0.0) / res;
+	lowerLimit.x = dround(arguments.getFloat("-lx", 0.0) / res);
+	lowerLimit.y = dround(arguments.getFloat("-ly", 0.0) / res);
+	lowerLimit.z = dround(arguments.getFloat("-lz", 0.0) / res);
 
-	upperLimit.x = arguments.getFloat("-ux", size) / res;
-	upperLimit.y = arguments.getFloat("-uy", size) / res;
-	upperLimit.z = arguments.getFloat("-uz", size) / res;
+	upperLimit.x = dround(arguments.getFloat("-ux", size) / res);
+	upperLimit.y = dround(arguments.getFloat("-uy", size) / res);
+	upperLimit.z = dround(arguments.getFloat("-uz", size) / res);
 
 	std::cout << "Lower limit:    " << lowerLimit * res << " kpc" << std::endl;
 	std::cout << "Upper limit:    " << upperLimit * res << " kpc" << std::endl;
@@ -110,12 +114,12 @@ int paged_grid(Arguments &arguments) {
 
 	io.defaultValue = Vector3f(0.0f);
 
-	size_t pages_per_file = arguments.getInt("-fileSize", 100) * 1024 * 1024
-			/ page_byte_size;
-	io.fileSize = std::pow(pages_per_file, 1.0 / 3.0);
-	pages_per_file = std::pow(io.fileSize, 3);
-	std::cout << "FileSize:       " << (pages_per_file * page_byte_size / 1024
-			/ 1024) << " MiB -> " << pages_per_file << " pages" << std::endl;
+	size_t fileSizeKpc = arguments.getFloat("-fileSize", 10000);
+	io.fileSize = fileSizeKpc / pageSize;
+	size_t pages_per_file = std::pow(io.fileSize, 3);
+	std::cout << "FileSize:       " << fileSizeKpc << " kpc "
+			<< (pages_per_file * page_byte_size / 1024 / 1024) << " MiB -> "
+			<< pages_per_file << " pages" << std::endl;
 
 	LeastAccessPagingStrategy<Vector3f> strategy;
 	PagedGrid<Vector3f> grid(size3_t(size / res, size / res, size / res),
@@ -147,7 +151,7 @@ int paged_grid(Arguments &arguments) {
 		int pn = file.getHeader().particleNumberList[0];
 		std::cout << "  Number of SmoothParticles: " << pn << std::endl;
 
-		std::cerr << "  Read POS block" << std::endl;
+		std::cout << "  Read POS block" << std::endl;
 		std::vector<float> pos;
 		if (file.readFloatBlock("POS ", pos) == false) {
 			std::cerr << "Failed to read POS block" << std::endl;
@@ -176,13 +180,12 @@ int paged_grid(Arguments &arguments) {
 		for (int iP = 0; iP < pn; iP++) {
 			time_t now = std::time(0);
 			if ((now - last > 1) && verbose && iP) {
-				std::cout << "  ";
-
 				time_t elapsed = now - last;
 				size_t n = iP - lastN;
 				float pps = (float) n / elapsed;
+				float pps_average = (float) iP / (now - start);
 				time_t total = pn / pps;
-				time_t eta = (pn * (now - start) / iP - now + start) / 60;
+				time_t eta = (pn * (pps + pps_average) / 2 - now + start) / 60;
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, active pages: " << grid.getActivePageCount()
 						<< ", pages loaded: " << io.loadedPages
@@ -208,25 +211,31 @@ int paged_grid(Arguments &arguments) {
 			v.cellLength = res;
 
 			size3_t lower, upper;
-			lower.x = limit(
-					(v.particle.position.x - v.particle.smoothingLength) / res,
-					lowerLimit.x, upperLimit.x);
-			lower.y = limit(
-					(v.particle.position.y - v.particle.smoothingLength) / res,
-					lowerLimit.y, upperLimit.y);
-			lower.z = limit(
-					(v.particle.position.z - v.particle.smoothingLength) / res,
-					lowerLimit.z, upperLimit.z);
+			lower.x
+					= std::max(lowerLimit.x,
+							(size_t) std::floor((v.particle.position.x
+									- v.particle.smoothingLength) / res));
+			lower.y
+					= std::max(lowerLimit.y,
+							(size_t) std::floor((v.particle.position.y
+									- v.particle.smoothingLength) / res));
+			lower.z
+					= std::max(lowerLimit.z,
+							(size_t) std::floor((v.particle.position.z
+									- v.particle.smoothingLength) / res));
 
-			upper.x = limit(
-					(v.particle.position.x + v.particle.smoothingLength) / res,
-					lowerLimit.x, upperLimit.x);
-			upper.y = limit(
-					(v.particle.position.y + v.particle.smoothingLength) / res,
-					lowerLimit.y, upperLimit.y);
-			upper.z = limit(
-					(v.particle.position.z + v.particle.smoothingLength) / res,
-					lowerLimit.z, upperLimit.z);
+			upper.x
+					= std::min(upperLimit.x,
+							(size_t) std::ceil((v.particle.position.x
+									+ v.particle.smoothingLength) / res));
+			upper.y
+					= std::min(upperLimit.y,
+							(size_t) std::ceil((v.particle.position.y
+									+ v.particle.smoothingLength) / res));
+			upper.z
+					= std::min(upperLimit.z,
+							(size_t) std::ceil((v.particle.position.z
+									+ v.particle.smoothingLength) / res));
 
 			grid.acceptZYX(v, lower, upper);
 		}

@@ -170,7 +170,8 @@ public:
 		if (checkFile(filename, page) == false)
 			reserveFile(filename, page);
 
-		std::ofstream out(filename.c_str(), std::ios::binary);
+		std::fstream out(filename.c_str(), std::ios::in | std::ios::out
+				| std::ios::binary);
 		out.seekp(offset(page), std::ios::beg);
 		out.write((const char *) &page->elements.at(0), sizeof(element_t)
 				* page->elements.size());
@@ -181,9 +182,9 @@ public:
 private:
 
 	std::string createFilename(page_t *page) {
-		size_t ox = (page->origin.x / page->size) % fileSize;
-		size_t oy = (page->origin.y / page->size) % fileSize;
-		size_t oz = (page->origin.z / page->size) % fileSize;
+		size_t ox = (page->origin.x / page->size) / fileSize;
+		size_t oy = (page->origin.y / page->size) / fileSize;
+		size_t oz = (page->origin.z / page->size) / fileSize;
 		std::stringstream sstr;
 		sstr << prefix << "-" << fileSize << "-" << ox << "_" << oy << "_"
 				<< oz << ".raw";
@@ -191,34 +192,33 @@ private:
 	}
 
 	bool checkFile(const std::string &filename, page_t *page) {
-		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3)
-				* sizeof(element_t);
-
 		std::ifstream in(filename.c_str(), std::ios::binary);
-		if (in.bad())
+		if (in.good() == false) {
 			return false;
+		}
 
 		in.seekg(0, std::ios::end);
-		if (in.bad())
+		if (in.bad()) {
 			return false;
+		}
 
-		if (in.tellg() != needed)
+		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3)
+				* sizeof(element_t);
+		if (in.tellg() != needed) {
 			return false;
+		}
 
 		return true;
 
 	}
 
 	void reserveFile(const std::string &filename, page_t *page) {
-		std::cout << "[BinaryPageIO] reserve page file " << filename
-				<< std::endl;
-
-		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3)
-				* sizeof(element_t);
+		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3);
 
 		std::ofstream out(filename.c_str(), std::ios::trunc | std::ios::binary);
-		for (size_t i = 0; i < needed; i++)
+		for (size_t i = 0; i < needed; i++) {
 			out.write((const char *) &defaultValue, sizeof(defaultValue));
+		}
 		out.close();
 
 	}
@@ -449,13 +449,12 @@ public:
 
 	void acceptZYX(Visitor &v, const size3_t &l, const size3_t &u) {
 		size3_t index;
-		size3_t lower = clamp(l);
 		size3_t upper = clamp(u);
-		for (size_t iZ = lower.z; iZ <= upper.z; iZ++) {
+		for (size_t iZ = l.z; iZ < upper.z; iZ++) {
 			index.z = iZ;
-			for (size_t iY = lower.y; iY <= upper.y; iY++) {
+			for (size_t iY = l.y; iY < upper.y; iY++) {
 				index.y = iY;
-				for (size_t iX = lower.x; iX <= upper.x; iX++) {
+				for (size_t iX = l.x; iX < upper.x; iX++) {
 					index.x = iX;
 					v.visit(*this, iX, iY, iZ, getReadWrite(index));
 				}
