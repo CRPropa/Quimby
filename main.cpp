@@ -519,7 +519,6 @@ int block(Arguments &arguments) {
 			return 1;
 		}
 
-		time_t start = std::time(0);
 #pragma omp parallel for schedule(dynamic, 10000)
 		for (int iP = 0; iP < pn; iP++) {
 			if (iP == 0) {

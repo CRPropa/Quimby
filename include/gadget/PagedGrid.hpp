@@ -114,13 +114,14 @@ public:
 	std::string prefix;
 	element_t defaultValue;
 	bool readOnly;
-	size_t fileSize;
-
 	size_t loadedPages;
 	size_t savedPages;
+	size_t fileSize;
+	bool forceDump;
 
 	BinaryPageIO() :
-		readOnly(false), loadedPages(0), savedPages(0), fileSize(1) {
+		readOnly(false), loadedPages(0), savedPages(0), fileSize(1), forceDump(
+				false) {
 
 	}
 	void loadPage(page_t *page) {
@@ -130,6 +131,7 @@ public:
 #endif
 		page->elements.resize(page->size * page->size * page->size);
 		std::string filename = createFilename(page);
+		page->dirty = false;
 		if (checkFile(filename, page)) {
 			std::ifstream in(filename.c_str(), std::ios::binary);
 			in.seekg(offset(page), std::ios::beg);
@@ -139,8 +141,9 @@ public:
 			for (size_t i = 0; i < page->elements.size(); i++) {
 				page->elements[i] = defaultValue;
 			}
+			if (forceDump)
+				page->dirty = true;
 		}
-		page->dirty = false;
 
 		loadedPages += 1;
 	}
@@ -202,8 +205,8 @@ private:
 			return false;
 		}
 
-		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3)
-				* sizeof(element_t);
+		std::fstream::pos_type needed = std::pow(page->size, 3) * std::pow(
+				fileSize, 3) * sizeof(element_t);
 		if (in.tellg() != needed) {
 			return false;
 		}
@@ -308,10 +311,10 @@ public:
 	PagingStrategy<element_t> *strategy;
 	PageIO<element_t> *io;
 	std::list<page_t *> pages;
+	size3_t size;
 	size_t pageCount;
 	size_t pageSize;
 	size3_t origin;
-	size3_t size;
 
 	PagedGrid(size3_t grid_size, size_t page_size) :
 		size(grid_size), pageCount(1), pageSize(page_size) {

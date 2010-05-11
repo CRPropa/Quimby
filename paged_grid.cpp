@@ -91,6 +91,7 @@ int paged_grid(Arguments &arguments) {
 
 	BinaryPageIO<Vector3f> io;
 	io.prefix = arguments.getString("-prefix", "paged_grid");
+	io.forceDump = true;
 	std::cout << "Output Prefix:  " << io.prefix << std::endl;
 
 	size3_t lowerLimit, upperLimit;
@@ -184,7 +185,6 @@ int paged_grid(Arguments &arguments) {
 				size_t n = iP - lastN;
 				float pps = (float) n / elapsed;
 				float pps_average = (float) iP / (now - start);
-				time_t total = pn / pps;
 				time_t eta = (pn * 2 / (pps + pps_average) - now + start) / 60;
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, active pages: " << grid.getActivePageCount()
@@ -214,28 +214,28 @@ int paged_grid(Arguments &arguments) {
 			lower.x
 					= std::max(lowerLimit.x,
 							(size_t) std::floor((v.particle.position.x
-									- v.particle.smoothingLength) / res));
+									- v.particle.smoothingLength*2) / res));
 			lower.y
 					= std::max(lowerLimit.y,
 							(size_t) std::floor((v.particle.position.y
-									- v.particle.smoothingLength) / res));
+									- v.particle.smoothingLength*2) / res));
 			lower.z
 					= std::max(lowerLimit.z,
 							(size_t) std::floor((v.particle.position.z
-									- v.particle.smoothingLength) / res));
+									- v.particle.smoothingLength*2) / res));
 
 			upper.x
 					= std::min(upperLimit.x,
 							(size_t) std::ceil((v.particle.position.x
-									+ v.particle.smoothingLength) / res));
+									+ v.particle.smoothingLength*2) / res));
 			upper.y
 					= std::min(upperLimit.y,
 							(size_t) std::ceil((v.particle.position.y
-									+ v.particle.smoothingLength) / res));
+									+ v.particle.smoothingLength*2) / res));
 			upper.z
 					= std::min(upperLimit.z,
 							(size_t) std::ceil((v.particle.position.z
-									+ v.particle.smoothingLength) / res));
+									+ v.particle.smoothingLength*2) / res));
 
 			grid.acceptZYX(v, lower, upper);
 		}
