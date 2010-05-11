@@ -19,4 +19,5 @@ add_dependencies(gadget Gadget)
 
 target_link_libraries (gadget Gadget) 
 
-INSTALL(TARGETS gadget RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+INSTALL(TARGETS gadget RUNTIME DESTINATION bin)
+INSTALL(TARGETS Gadget LIBRARY DESTINATION lib)
