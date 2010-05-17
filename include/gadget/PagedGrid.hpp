@@ -11,7 +11,6 @@
 #include "Vector3.hpp"
 
 #include <MurmurHash2.cpp>
-#include <google/dense_hash_map>
 
 #include <algorithm>
 #include <vector>
