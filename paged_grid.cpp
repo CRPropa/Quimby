@@ -13,6 +13,7 @@
 
 #include <ctime>
 #include <limits>
+#include <algorithm>
 #include <omp.h>
 
 class PagedSPVisitor: public PagedGrid<Vector3f>::Visitor {
@@ -46,7 +47,6 @@ public:
 		}
 		lastZ = z;
 
-#pragma omp critical
 		value += b;
 	}
 
@@ -94,14 +94,14 @@ int paged_grid(Arguments &arguments) {
 	io.forceDump = true;
 	std::cout << "Output Prefix:  " << io.prefix << std::endl;
 
-	size3_t lowerLimit, upperLimit;
-	lowerLimit.x = dround(arguments.getFloat("-lx", 0.0) / res);
-	lowerLimit.y = dround(arguments.getFloat("-ly", 0.0) / res);
-	lowerLimit.z = dround(arguments.getFloat("-lz", 0.0) / res);
+	Vector3f lowerLimit, upperLimit;
+	lowerLimit.x = floor(arguments.getFloat("-lx", 0.0) / res);
+	lowerLimit.y = floor(arguments.getFloat("-ly", 0.0) / res);
+	lowerLimit.z = floor(arguments.getFloat("-lz", 0.0) / res);
 
-	upperLimit.x = dround(arguments.getFloat("-ux", size) / res);
-	upperLimit.y = dround(arguments.getFloat("-uy", size) / res);
-	upperLimit.z = dround(arguments.getFloat("-uz", size) / res);
+	upperLimit.x = ceil(arguments.getFloat("-ux", size) / res);
+	upperLimit.y = ceil(arguments.getFloat("-uy", size) / res);
+	upperLimit.z = ceil(arguments.getFloat("-uz", size) / res);
 
 	std::cout << "Lower limit:    " << lowerLimit * res << " kpc" << std::endl;
 	std::cout << "Upper limit:    " << upperLimit * res << " kpc" << std::endl;
@@ -109,7 +109,8 @@ int paged_grid(Arguments &arguments) {
 	int memory = arguments.getInt("-memory", 512);
 	size_t page_byte_size = pageLength * pageLength * pageLength
 			* sizeof(Vector3f);
-	int pageCount = (memory * 1024 * 1024) / page_byte_size;
+	int pageCount = std::max((size_t) 1, (memory * 1024 * 1024)
+			/ page_byte_size);
 	std::cout << "Memory:         " << memory << " MiB -> " << pageCount
 			<< " pages" << std::endl;
 
@@ -123,8 +124,7 @@ int paged_grid(Arguments &arguments) {
 			<< pages_per_file << " pages" << std::endl;
 
 	LeastAccessPagingStrategy<Vector3f> strategy;
-	PagedGrid<Vector3f> grid(size3_t(size / res, size / res, size / res),
-			pageLength);
+	PagedGrid<Vector3f> grid(size / res, pageLength);
 	grid.setStrategy(&strategy);
 	grid.setIO(&io);
 	grid.setPageCount(pageCount);
@@ -177,25 +177,27 @@ int paged_grid(Arguments &arguments) {
 
 		time_t start = std::time(0);
 		time_t last = std::time(0);
+		size3_t totalMin(size_t(-1)), totalMax(size_t(0));
+		float avgSL = 0.0;
 		size_t lastN = 0;
 		for (int iP = 0; iP < pn; iP++) {
 			time_t now = std::time(0);
-			if ((now - last > 1) && verbose && iP) {
+			if ((now - last >= 1) && verbose && iP) {
 				time_t elapsed = now - last;
 				size_t n = iP - lastN;
 				float pps = (float) n / elapsed;
-				float pps_average = (float) iP / (now - start);
-				time_t eta = (pn * 2 / (pps + pps_average) - now + start) / 60;
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
-						<< "%, active pages: " << grid.getActivePageCount()
-						<< ", pages loaded: " << io.loadedPages
-						<< ", throughput: " << pps << ", eta: " << eta
-						<< " minutes";
+						<< "%, pages: " << grid.getActivePageCount() << " ("
+						<< io.loadedPages << " loaded), throughput: " << pps
+						<< "               \r";
 				std::cout.flush();
 
 				last = now;
 				lastN = iP;
+				avgSL = 0.0;
 			}
+
+			avgSL += hsml[iP];
 
 			PagedSPVisitor v;
 			v.particle.smoothingLength = hsml[iP];
@@ -211,36 +213,46 @@ int paged_grid(Arguments &arguments) {
 			v.cellLength = res;
 
 			size3_t lower, upper;
-			lower.x
-					= std::max(lowerLimit.x,
-							(size_t) std::floor((v.particle.position.x
-									- v.particle.smoothingLength*2) / res));
-			lower.y
-					= std::max(lowerLimit.y,
-							(size_t) std::floor((v.particle.position.y
-									- v.particle.smoothingLength*2) / res));
-			lower.z
-					= std::max(lowerLimit.z,
-							(size_t) std::floor((v.particle.position.z
-									- v.particle.smoothingLength*2) / res));
+			lower.x = std::max(lowerLimit.x, std::floor((v.particle.position.x
+					- v.particle.smoothingLength * 2) / res));
+			lower.y = std::max(lowerLimit.y, std::floor((v.particle.position.y
+					- v.particle.smoothingLength * 2) / res));
+			lower.z = std::max(lowerLimit.z, std::floor((v.particle.position.z
+					- v.particle.smoothingLength * 2) / res));
 
-			upper.x
-					= std::min(upperLimit.x,
-							(size_t) std::ceil((v.particle.position.x
-									+ v.particle.smoothingLength*2) / res));
-			upper.y
-					= std::min(upperLimit.y,
-							(size_t) std::ceil((v.particle.position.y
-									+ v.particle.smoothingLength*2) / res));
-			upper.z
-					= std::min(upperLimit.z,
-							(size_t) std::ceil((v.particle.position.z
-									+ v.particle.smoothingLength*2) / res));
+			upper.x = std::min(upperLimit.x - 1, std::ceil(
+					(v.particle.position.x + v.particle.smoothingLength * 2)
+							/ res));
+			upper.y = std::min(upperLimit.y - 1, std::ceil(
+					(v.particle.position.y + v.particle.smoothingLength * 2)
+							/ res));
+			upper.z = std::min(upperLimit.z - 1, std::ceil(
+					(v.particle.position.z + v.particle.smoothingLength * 2)
+							/ res));
 
-			grid.acceptZYX(v, lower, upper);
+			grid.accept(v, lower, upper);
+
+			totalMin.x = std::min(totalMin.x, lower.x);
+			totalMin.y = std::min(totalMin.y, lower.y);
+			totalMin.z = std::min(totalMin.z, lower.z);
+
+			totalMax.x = std::max(totalMax.x, upper.x);
+			totalMax.y = std::max(totalMax.y, upper.y);
+			totalMax.z = std::max(totalMax.z, upper.z);
 		}
 
-		std::cout << "  Done                 " << std::endl;
+		size_t duration = time(0) - start;
+		std::cout << "\r  Done: " << duration / 3600 << "h " << (duration
+				% 3600) / 60 << "m " << duration % 60
+				<< "s                                                  "
+				<< std::endl;
+		totalMin *= res;
+		totalMax *= res;
+		std::cout << "  min: " << totalMin << " kpc" << std::endl;
+		std::cout << "  max: " << totalMax << " kpc" << std::endl;
+		std::cout << "  pages: " << grid.getActivePageCount() << " ("
+				<< io.loadedPages << " loaded)" << std::endl;
+
 	}
 
 	std::cout << "Write output" << std::endl;

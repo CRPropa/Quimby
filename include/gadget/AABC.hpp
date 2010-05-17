@@ -64,6 +64,14 @@ public:
 		return true;
 	}
 
+	Vector3<T> lower() {
+		return center - Vector3<T> (extend);
+	}
+
+	Vector3<T> upper() {
+		return center + Vector3<T> (extend);
+	}
+
 	T lowerX() const {
 		return center.x - extend;
 	}
@@ -86,6 +94,10 @@ public:
 
 	T upperZ() const {
 		return center.z + extend;
+	}
+
+	static AABC<T> fromOriginSize(const Vector3<T> &origin, T size) {
+		return AABC<T> (origin + Vector3<T> (size / 2.0), size / 2.0);
 	}
 };
 

@@ -32,11 +32,11 @@ public:
 		x(v[0]), y(v[1]), z(v[2]) {
 	}
 
-	Vector3(const double &X, const double &Y, const double &Z) :
+	explicit Vector3(const double &X, const double &Y, const double &Z) :
 		x(X), y(Y), z(Z) {
 	}
 
-	Vector3(T t) :
+	explicit Vector3(T t) :
 		x(t), y(t), z(t) {
 	}
 
@@ -60,6 +60,16 @@ public:
 		return true;
 	}
 
+	bool operator ==(const Vector3<T> &v) const {
+		if (x != v.x)
+			return false;
+		if (y != v.y)
+			return false;
+		if (z != v.z)
+			return false;
+		return true;
+	}
+
 	Vector3<T> operator -(const Vector3<T> &v) const {
 		return Vector3(x - v.x, y - v.y, z - v.z);
 	}
@@ -70,6 +80,10 @@ public:
 
 	Vector3<T> operator *(const Vector3<T> &v) const {
 		return Vector3(x * v.x, y * v.y, z * v.z);
+	}
+
+	Vector3<T> operator *(const T &v) const {
+		return Vector3(x * v, y * v, z * v);
 	}
 
 	Vector3<T> operator /(const T &f) const {
@@ -97,6 +111,13 @@ public:
 		return *this;
 	}
 
+	Vector3<T> &operator -=(const Vector3<T> &v) {
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
+		return *this;
+	}
+
 	Vector3<T> &operator =(const Vector3<T> &v) {
 		x = v.x;
 		y = v.y;
@@ -107,6 +128,22 @@ public:
 	T length() {
 		return std::sqrt(x * x + y * y + z * z);
 	}
+//
+//	bool operator <(const Vector3<T> &p) const {
+//		if (x < p.x)
+//			return true;
+//		else if (x > p.x)
+//			return false;
+//		if (y < p.y)
+//			return true;
+//		else if (y > p.y)
+//			return false;
+//		if (z < p.z)
+//			return true;
+//		else
+//			return false;
+//	}
+
 };
 
 #if 0
@@ -123,15 +160,15 @@ Vector3<T> interpolate(const Vector3<T> &a, const Vector3<T> &b) {
 template<typename T>
 Vector3<T> interpolate(const std::vector< T > &distances, const vector< Vector3<T> > &values) {
 	if (distances.size() != values.size())
-		throw std::runtime_error("interpolate: no. of positions not equal no. of values!");
+	throw std::runtime_error("interpolate: no. of positions not equal no. of values!");
 
 	T l = 0;
 	for (size_t i = 0; i < distances.size(); i++)
-		l += distances.size();
+	l += distances.size();
 
 	Vector3<T> v(0);
 	for (size_t i = 0; i < distances.size(); i++)
-		v += (l - distances[i]) * values[i];
+	v += (l - distances[i]) * values[i];
 
 	v /= l;
 

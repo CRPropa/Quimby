@@ -10,11 +10,17 @@
 
 #include "Vector3.hpp"
 
+#include <MurmurHash2.cpp>
+#include <google/dense_hash_map>
+
+#include <algorithm>
 #include <vector>
 #include <list>
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <assert.h>
+#include <inttypes.h>
 
 typedef Vector3<size_t> size3_t;
 
@@ -32,25 +38,33 @@ public:
 
 	}
 
-	bool contains(const size3_t index) {
-		if (index.x < origin.x)
-			return false;
-		if (index.y < origin.y)
-			return false;
-		if (index.z < origin.z)
-			return false;
-
-		if (index.x >= (origin.x + size))
-			return false;
-		if (index.y >= (origin.y + size))
-			return false;
-		if (index.z >= (origin.z + size))
-			return false;
-
-		return true;
-	}
+	//	bool contains(const size3_t index) {
+	//		if (index.x < origin.x)
+	//			return false;
+	//		if (index.y < origin.y)
+	//			return false;
+	//		if (index.z < origin.z)
+	//			return false;
+	//
+	//		if (index.x >= (origin.x + size))
+	//			return false;
+	//		if (index.y >= (origin.y + size))
+	//			return false;
+	//		if (index.z >= (origin.z + size))
+	//			return false;
+	//
+	//		return true;
+	//	}
 
 	element_t &get(const size3_t index) {
+#ifdef DEBUG
+		assert(index.x > orgin.x)
+		assert(index.x < orgin.x + size)
+		assert(index.y > orgin.y)
+		assert(index.Y < orgin.y + size)
+		assert(index.z > orgin.z)
+		assert(index.z < orgin.z + size)
+#endif
 		return elements[(index.x - origin.x) * size * size + (index.y
 				- origin.y) * size + (index.z - origin.z)];
 	}
@@ -125,9 +139,9 @@ public:
 
 	}
 	void loadPage(page_t *page) {
-#ifdef DEBUG
-		std::cout << "[BinaryPageIO] load page " << page->origin << ", size: "
-		<< page->size << std::endl;
+#if DEBUG
+		std::cerr << "[BinaryPageIO] load page " << page->origin << ", size: "
+				<< page->size << std::endl;
 #endif
 		page->elements.resize(page->size * page->size * page->size);
 		std::string filename = createFilename(page);
@@ -197,17 +211,21 @@ private:
 	bool checkFile(const std::string &filename, page_t *page) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (in.good() == false) {
+//			std::cerr << "[BinaryPageIO] could not open " << filename << std::endl;
 			return false;
 		}
 
 		in.seekg(0, std::ios::end);
 		if (in.bad()) {
+//			std::cerr << "[BinaryPageIO] bad seek " << filename << std::endl;
 			return false;
 		}
 
 		std::fstream::pos_type needed = std::pow(page->size, 3) * std::pow(
 				fileSize, 3) * sizeof(element_t);
 		if (in.tellg() != needed) {
+//			std::cerr << "baad size " << filename << std::endl;
+
 			return false;
 		}
 
@@ -217,7 +235,7 @@ private:
 
 	void reserveFile(const std::string &filename, page_t *page) {
 		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3);
-
+		std::cerr << "[BinaryPageIO] reserve " << filename << std::endl;
 		std::ofstream out(filename.c_str(), std::ios::trunc | std::ios::binary);
 		for (size_t i = 0; i < needed; i++) {
 			out.write((const char *) &defaultValue, sizeof(defaultValue));
@@ -265,16 +283,17 @@ public:
 	typedef typename map_t::iterator iterator_t;
 	map_t pages;
 	void loaded(page_t *page) {
-		size_t min = -1, max = 0;
-		for (iterator_t i = pages.begin(); i != pages.end(); i++) {
-			i->second /= 2;
-			if (i->second < min)
-				min = i->second;
-			else if (i->second > max)
-				max = i->second;
-		}
+				size_t min = -1, max = 0;
+				for (iterator_t i = pages.begin(); i != pages.end(); i++) {
+					i->second /= 2;
+					if (i->second < min)
+						min = i->second;
+					else if (i->second > max)
+						max = i->second;
+				}
 
-		pages[page] = (max - min) / 2;
+				pages[page] = (max - min) / 2;
+		//pages[page] = 1;
 	}
 	void cleared(page_t *page) {
 		pages[page] = 0;
@@ -294,13 +313,17 @@ public:
 	}
 };
 
+static size_t hash3(const size3_t &v) {
+	return MurmurHash2(&v, sizeof(size3_t), 875685);
+}
+
 template<typename ELEMENT>
 class PagedGrid {
 public:
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
-	typedef typename std::list<page_t *> list_t;
-	typedef typename list_t::iterator list_iterator_t;
+	typedef typename std::map<size_t, page_t *> container_t;
+	typedef typename container_t::iterator iterator_t;
 
 	class Visitor {
 	public:
@@ -310,22 +333,28 @@ public:
 
 	PagingStrategy<element_t> *strategy;
 	PageIO<element_t> *io;
-	std::list<page_t *> pages;
-	size3_t size;
+	container_t pages;
+	page_t *lastPage;
+	size_t size;
 	size_t pageCount;
 	size_t pageSize;
-	size3_t origin;
 
-	PagedGrid(size3_t grid_size, size_t page_size) :
-		size(grid_size), pageCount(1), pageSize(page_size) {
+	PagedGrid() :
+		lastPage(0), pageCount(1) {
+	}
 
+	PagedGrid(const size_t &grid_size, size_t page_size) :
+		lastPage(0), pageCount(1) {
+		create(grid_size, page_size);
 	}
 
 	~PagedGrid() {
-		while (pages.size()) {
-			delete pages.back();
-			pages.pop_back();
-		}
+		clear();
+	}
+
+	void create(const size_t &grid_size, size_t page_size) {
+		size = grid_size;
+		pageSize = page_size;
 	}
 
 	void setStrategy(PagingStrategy<element_t> *strategy) {
@@ -344,8 +373,8 @@ public:
 				if (page) {
 					io->savePage(page);
 					strategy->cleared(page);
+					pages.erase(hash3(page->origin));
 					delete page;
-					pages.remove(page);
 				}
 			}
 		}
@@ -366,19 +395,21 @@ public:
 	}
 
 	page_t *getPage(const size3_t &index) {
-		// check if page is loaded
-		list_iterator_t i = pages.begin();
-		list_iterator_t end = pages.end();
-		while (i != end) {
-			if ((*i)->contains(index))
-				return (*i);
-			i++;
-		}
-		page_t *page = 0;
+		size3_t orig = toOrigin(index);
+		size_t h = hash3(orig);
 
+		if (lastPage && (lastPage->origin == orig))
+			return lastPage;
+
+		iterator_t i = pages.find(h);
+		if (i != pages.end()) {
+			return i->second;
+		}
+
+		// check if page is loaded
+		page_t *page = 0;
 		if (pages.size() < pageCount) {
 			page = new page_t;
-			pages.push_back(page);
 		} else {
 			// ask the paging strategy which page we should replace
 			page = strategy->which();
@@ -386,13 +417,17 @@ public:
 			// save and clear old page
 			io->savePage(page);
 			strategy->cleared(page);
+			pages.erase(hash3(page->origin));
 		}
 
 		// load new page
-		page->origin = toOrigin(index);
+		page->origin = orig;
 		page->size = pageSize;
 		io->loadPage(page);
 		strategy->loaded(page);
+		lastPage = page;
+
+		pages[h] = page;
 
 		return page;
 	}
@@ -407,32 +442,32 @@ public:
 
 	size3_t clamp(const size3_t &i) {
 		size3_t index = i;
-		if (index.x > size.x)
-			index.x = size.x;
-		if (index.y > size.y)
-			index.y = size.y;
-		if (index.z > size.z)
-			index.z = size.z;
+		if (index.x > size)
+			index.x = size;
+		if (index.y > size)
+			index.y = size;
+		if (index.z > size)
+			index.z = size;
 
 		return index;
 	}
 
-	void flush() {
-		list_iterator_t i = pages.begin();
-		list_iterator_t end = pages.end();
+	void clear() {
+		iterator_t i = pages.begin();
+		iterator_t end = pages.end();
 		while (i != end) {
-			io->savePage(*i);
+			delete (i->second);
 			i++;
 		}
+		pages.clear();
 	}
 
-	void acceptXYZ(Visitor &v) {
-		for (size_t iX = 0; iX < size.x; iX++) {
-			for (size_t iY = 0; iY < size.y; iY++) {
-				for (size_t iZ = 0; iZ < size.z; iZ++) {
-					v.visit(*this, iX, iY, iZ, getReadWrite(iX, iY, iZ));
-				}
-			}
+	void flush() {
+		iterator_t i = pages.begin();
+		iterator_t end = pages.end();
+		while (i != end) {
+			io->savePage(i->second);
+			i++;
 		}
 	}
 
@@ -440,10 +475,20 @@ public:
 		return pages.size();
 	}
 
+	void acceptXYZ(Visitor &v) {
+		for (size_t iX = 0; iX < size; iX++) {
+			for (size_t iY = 0; iY < size; iY++) {
+				for (size_t iZ = 0; iZ < size; iZ++) {
+					v.visit(*this, iX, iY, iZ, getReadWrite(iX, iY, iZ));
+				}
+			}
+		}
+	}
+
 	void acceptZYX(Visitor &v) {
-		for (size_t iZ = 0; iZ < size.z; iZ++) {
-			for (size_t iY = 0; iY < size.y; iY++) {
-				for (size_t iX = 0; iX < size.x; iX++) {
+		for (size_t iZ = 0; iZ < size; iZ++) {
+			for (size_t iY = 0; iY < size; iY++) {
+				for (size_t iX = 0; iX < size; iX++) {
 					v.visit(*this, iX, iY, iZ, getReadWrite(iX, iY, iZ));
 				}
 			}
@@ -463,6 +508,52 @@ public:
 				}
 			}
 		}
+	}
+
+	void accept(Visitor &v, const size3_t &l, const size3_t &u) {
+		size3_t upper = clamp(u);
+
+		size3_t pmin = l / pageSize;
+		size3_t pmax = upper / pageSize;
+
+		//size_t visits = 0;
+		for (size_t pX = pmin.x; pX <= pmax.x; pX++) {
+			size_t lx = std::max(l.x, pX * pageSize);
+			size_t ux = std::min(upper.x, pX * pageSize + pageSize);
+			for (size_t pY = pmin.y; pY <= pmax.y; pY++) {
+				size_t ly = std::max(l.y, pY * pageSize);
+				size_t uy = std::min(upper.y, pY * pageSize + pageSize);
+				for (size_t pZ = pmin.z; pZ <= pmax.z; pZ++) {
+					size_t lz = std::max(l.z, pZ * pageSize);
+					size_t uz = std::min(upper.z, pZ * pageSize + pageSize);
+
+					page_t *page = getPage(size3_t(lx, ly, lz));
+					strategy->accessed(page);
+
+					//visits += ((uz - lz) * (uy - ly) * (ux - lx));
+					size3_t index;
+					for (size_t iZ = lz; iZ < uz; iZ++) {
+						index.z = iZ;
+						for (size_t iY = ly; iY < uy; iY++) {
+							index.y = iY;
+							for (size_t iX = lx; iX < ux; iX++) {
+								index.x = iX;
+								v.visit(*this, iX, iY, iZ, page->get(index));
+							}
+						}
+					}
+
+				}
+			}
+		}
+		//
+		//		if (visits > 0) {
+		//			std::cerr << pmin << std::endl;
+		//			std::cerr << pmax << std::endl;
+		//
+		//			std::cerr << visits << std::endl;
+		//			std::cerr << std::endl;
+		//		}
 	}
 
 };
