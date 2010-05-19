@@ -140,7 +140,7 @@ public:
 	void loadPage(page_t *page) {
 #if DEBUG
 		std::cerr << "[BinaryPageIO] load page " << page->origin << ", size: "
-				<< page->size << std::endl;
+		<< page->size << std::endl;
 #endif
 		page->elements.resize(page->size * page->size * page->size);
 		std::string filename = createFilename(page);
@@ -210,20 +210,20 @@ private:
 	bool checkFile(const std::string &filename, page_t *page) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (in.good() == false) {
-//			std::cerr << "[BinaryPageIO] could not open " << filename << std::endl;
+			//			std::cerr << "[BinaryPageIO] could not open " << filename << std::endl;
 			return false;
 		}
 
 		in.seekg(0, std::ios::end);
 		if (in.bad()) {
-//			std::cerr << "[BinaryPageIO] bad seek " << filename << std::endl;
+			//			std::cerr << "[BinaryPageIO] bad seek " << filename << std::endl;
 			return false;
 		}
 
 		std::fstream::pos_type needed = std::pow(page->size, 3) * std::pow(
 				fileSize, 3) * sizeof(element_t);
 		if (in.tellg() != needed) {
-//			std::cerr << "baad size " << filename << std::endl;
+			//			std::cerr << "baad size " << filename << std::endl;
 
 			return false;
 		}
@@ -281,25 +281,27 @@ public:
 	typedef std::map<page_t *, size_t> map_t;
 	typedef typename map_t::iterator iterator_t;
 	map_t pages;
-	void loaded(page_t *page) {
-				size_t min = -1, max = 0;
-				for (iterator_t i = pages.begin(); i != pages.end(); i++) {
-					i->second /= 2;
-					if (i->second < min)
-						min = i->second;
-					else if (i->second > max)
-						max = i->second;
-				}
+	size_t maxCount;
 
-				pages[page] = (max - min) / 2;
-		//pages[page] = 1;
+	LeastAccessPagingStrategy() :
+		maxCount(1) {
 	}
+
+	void loaded(page_t *page) {
+		pages[page] = maxCount;
+	}
+
 	void cleared(page_t *page) {
 		pages[page] = 0;
 	}
+
 	void accessed(page_t *page) {
-		pages[page] += 1;
+		size_t &v = pages[page];
+		v += 1;
+		if (v > maxCount)
+			maxCount = v;
 	}
+
 	page_t *which() {
 		size_t count = -1;
 		page_t *page = 0;
@@ -337,13 +339,14 @@ public:
 	size_t size;
 	size_t pageCount;
 	size_t pageSize;
+	size_t pageMisses;
 
 	PagedGrid() :
-		lastPage(0), pageCount(1) {
+		lastPage(0), pageCount(1), pageMisses(0) {
 	}
 
 	PagedGrid(const size_t &grid_size, size_t page_size) :
-		lastPage(0), pageCount(1) {
+		lastPage(0), pageCount(1), pageMisses(0) {
 		create(grid_size, page_size);
 	}
 
@@ -411,6 +414,7 @@ public:
 			page = new page_t;
 		} else {
 			// ask the paging strategy which page we should replace
+			pageMisses++;
 			page = strategy->which();
 
 			// save and clear old page
@@ -472,6 +476,10 @@ public:
 
 	size_t getActivePageCount() {
 		return pages.size();
+	}
+
+	size_t getPageMisses() {
+		return pageMisses;
 	}
 
 	void acceptXYZ(Visitor &v) {
