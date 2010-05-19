@@ -288,7 +288,7 @@ public:
 	}
 
 	void loaded(page_t *page) {
-		pages[page] = maxCount;
+		pages[page] = maxCount / 10;
 	}
 
 	void cleared(page_t *page) {
