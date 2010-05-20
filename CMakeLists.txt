@@ -21,3 +21,5 @@ target_link_libraries (gadget Gadget)
 
 INSTALL(TARGETS gadget RUNTIME DESTINATION bin)
 INSTALL(TARGETS Gadget LIBRARY DESTINATION lib)
+INSTALL(DIRECTORY include/ DESTINATION include
+          FILES_MATCHING PATTERN "*.hpp")

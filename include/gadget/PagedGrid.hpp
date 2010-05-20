@@ -9,8 +9,7 @@
 #define PAGED_GRID_HPP_
 
 #include "Vector3.hpp"
-
-#include <MurmurHash2.cpp>
+#include "MurmurHash2.hpp"
 
 #include <algorithm>
 #include <vector>
