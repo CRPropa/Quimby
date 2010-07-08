@@ -80,7 +80,7 @@ int paged_grid(Arguments &arguments) {
 	float pageSize = arguments.getInt("-pageSize", 100);
 	std::cout << "PageSize:       " << pageSize << " kpc " << std::endl;
 
-	float res = arguments.getFloat("-res", 50);
+	float res = arguments.getFloat("-res", 100);
 	std::cout << "Resolution:     " << res << " kpc" << std::endl;
 
 	int pageLength = pageSize / res;
@@ -88,6 +88,9 @@ int paged_grid(Arguments &arguments) {
 
 	float size = arguments.getFloat("-size", 40000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
+
+	float size = arguments.getFloat("-h", 0.7);
+	std::cout << "h:              " << h << std::endl;
 
 	BinaryPageIO<Vector3f> io;
 	io.prefix = arguments.getString("-prefix", "paged_grid");
@@ -197,13 +200,13 @@ int paged_grid(Arguments &arguments) {
 				avgSL = 0.0;
 			}
 
-			avgSL += hsml[iP];
+			avgSL += hsml[iP] / h;
 
 			PagedSPVisitor v;
-			v.particle.smoothingLength = hsml[iP];
-			v.particle.position.x = pos[iP * 3] - offset.x;
-			v.particle.position.y = pos[iP * 3 + 1] - offset.y;
-			v.particle.position.z = pos[iP * 3 + 2] - offset.z;
+			v.particle.smoothingLength = hsml[iP] / h;
+			v.particle.position.x = pos[iP * 3] / h - offset.x;
+			v.particle.position.y = pos[iP * 3 + 1] / h - offset.y;
+			v.particle.position.z = pos[iP * 3 + 2] / h - offset.z;
 
 			float norm = 1.0 / M_PI / pow(v.particle.smoothingLength, 3);
 			v.particle.bfield.x = bfld[iP * 3] * norm;
