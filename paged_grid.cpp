@@ -118,7 +118,7 @@ int paged_grid(Arguments &arguments) {
 
 	size_t fileSizeKpc = arguments.getFloat("-fileSize", 10000);
 	io.fileSize = fileSizeKpc / pageSize;
-	size_t pages_per_file = std::pow(io.fileSize, 3);
+	size_t pages_per_file = io.fileSize * io.fileSize * io.fileSize;
 	std::cout << "FileSize:       " << fileSizeKpc << " kpc "
 			<< (pages_per_file * page_byte_size / 1024 / 1024) << " MiB -> "
 			<< pages_per_file << " pages" << std::endl;

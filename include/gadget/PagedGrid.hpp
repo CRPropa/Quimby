@@ -164,7 +164,7 @@ public:
 		size_t ox = (page->origin.x / page->size) % fileSize;
 		size_t oy = (page->origin.y / page->size) % fileSize;
 		size_t oz = (page->origin.z / page->size) % fileSize;
-		size_t page_byte_size = std::pow(page->size, 3) * sizeof(element_t);
+		size_t page_byte_size = page->size * page->size * page->size * sizeof(element_t);
 		return page_byte_size * (ox * fileSize * fileSize + oy * fileSize + oz);
 	}
 
@@ -219,8 +219,7 @@ private:
 			return false;
 		}
 
-		std::fstream::pos_type needed = std::pow(page->size, 3) * std::pow(
-				fileSize, 3) * sizeof(element_t);
+		std::fstream::pos_type needed = page->size * page->size * page->size * fileSize * fileSize * fileSize * sizeof(element_t);
 		if (in.tellg() != needed) {
 			//			std::cerr << "baad size " << filename << std::endl;
 
@@ -232,7 +231,7 @@ private:
 	}
 
 	void reserveFile(const std::string &filename, page_t *page) {
-		size_t needed = std::pow(page->size, 3) * std::pow(fileSize, 3);
+		size_t needed =  page->size * page->size * page->size * fileSize * fileSize * fileSize;
 		std::cerr << "[BinaryPageIO] reserve " << filename << std::endl;
 		std::ofstream out(filename.c_str(), std::ios::trunc | std::ios::binary);
 		for (size_t i = 0; i < needed; i++) {
