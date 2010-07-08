@@ -42,7 +42,7 @@ public:
 		return def;
 	}
 
-	int getFloat(const std::string &flag, float def) {
+	float getFloat(const std::string &flag, float def) {
 		int i;
 		for (i = 0; i < argc; i++) {
 			if (flag == argv[i] && (i + 1 < argc))

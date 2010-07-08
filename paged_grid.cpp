@@ -89,7 +89,7 @@ int paged_grid(Arguments &arguments) {
 	float size = arguments.getFloat("-size", 40000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
 
-	float size = arguments.getFloat("-h", 0.7);
+	float h = arguments.getFloat("-h", 0.7);
 	std::cout << "h:              " << h << std::endl;
 
 	BinaryPageIO<Vector3f> io;
