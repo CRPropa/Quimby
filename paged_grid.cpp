@@ -86,6 +86,8 @@ int paged_grid(Arguments &arguments) {
 	int pageLength = pageSize / res;
 	std::cout << "PageLength:     " << pageLength << std::endl;
 
+	int skip = arguments.getInt("-skip", 0);
+
 	float size = arguments.getFloat("-size", 40000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
 
@@ -183,7 +185,7 @@ int paged_grid(Arguments &arguments) {
 		size3_t totalMin(size_t(-1)), totalMax(size_t(0));
 		float avgSL = 0.0;
 		size_t lastN = 0;
-		for (int iP = 0; iP < pn; iP++) {
+		for (int iP = skip; iP < pn; iP++) {
 			time_t now = std::time(0);
 			if ((now - last >= 1) && verbose && iP) {
 				time_t elapsed = now - last;

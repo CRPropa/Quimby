@@ -312,16 +312,16 @@ public:
 	}
 };
 
-static size_t hash3(const size3_t &v) {
-	return MurmurHash2(&v, sizeof(size3_t), 875685);
-}
+//static size_t hash3(const size3_t &v) {
+//	return MurmurHash2(&v, sizeof(size3_t), 875685);
+//}
 
 template<typename ELEMENT>
 class PagedGrid {
 public:
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
-	typedef typename std::map<size_t, page_t *> container_t;
+	typedef typename std::map<size3_t, page_t *> container_t;
 	typedef typename container_t::iterator iterator_t;
 
 	class Visitor {
@@ -396,12 +396,11 @@ public:
 
 	page_t *getPage(const size3_t &index) {
 		size3_t orig = toOrigin(index);
-		size_t h = hash3(orig);
 
 		if (lastPage && (lastPage->origin == orig))
 			return lastPage;
 
-		iterator_t i = pages.find(h);
+		iterator_t i = pages.find(orig);
 		if (i != pages.end()) {
 			return i->second;
 		}
@@ -418,7 +417,7 @@ public:
 			// save and clear old page
 			io->savePage(page);
 			strategy->cleared(page);
-			pages.erase(hash3(page->origin));
+			pages.erase(page->origin);
 		}
 
 		// load new page
@@ -428,7 +427,7 @@ public:
 		strategy->loaded(page);
 		lastPage = page;
 
-		pages[h] = page;
+		pages[orig] = page;
 
 		return page;
 	}
