@@ -190,7 +190,7 @@ int paged_grid(Arguments &arguments) {
 			if ((now - last >= 1) && verbose && iP) {
 				time_t elapsed = now - last;
 				size_t n = iP - lastN;
-				float pps = (float) n / elapsed;
+				float pps = (float) n / std::min((time_t)1, elapsed);
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, pages: " << grid.getActivePageCount() << " ("
 						<< io.loadedPages << " loaded), throughput: " << pps

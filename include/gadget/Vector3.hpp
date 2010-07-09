@@ -43,21 +43,16 @@ public:
 	bool operator <(const Vector3<T> &v) const {
 		if (x > v.x)
 			return false;
+		else if (x < v.x)
+			return true;
 		if (y > v.y)
 			return false;
-		if (z > v.z)
+		else if	(y < v.y)
+			return true;
+		if (z >= v.z)
 			return false;
-		return true;
-	}
-
-	bool operator >(const Vector3<T> &v) const {
-		if (x < v.x)
-			return false;
-		if (y < v.y)
-			return false;
-		if (z < v.z)
-			return false;
-		return true;
+		else
+			return true;
 	}
 
 	bool operator ==(const Vector3<T> &v) const {

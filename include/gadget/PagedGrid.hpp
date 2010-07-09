@@ -36,33 +36,14 @@ public:
 
 	}
 
-	//	bool contains(const size3_t index) {
-	//		if (index.x < origin.x)
-	//			return false;
-	//		if (index.y < origin.y)
-	//			return false;
-	//		if (index.z < origin.z)
-	//			return false;
-	//
-	//		if (index.x >= (origin.x + size))
-	//			return false;
-	//		if (index.y >= (origin.y + size))
-	//			return false;
-	//		if (index.z >= (origin.z + size))
-	//			return false;
-	//
-	//		return true;
-	//	}
-
 	element_t &get(const size3_t index) {
-#ifdef DEBUG
-		assert(index.x > orgin.x)
-		assert(index.x < orgin.x + size)
-		assert(index.y > orgin.y)
-		assert(index.Y < orgin.y + size)
-		assert(index.z > orgin.z)
-		assert(index.z < orgin.z + size)
-#endif
+		assert(index.x >= origin.x);
+		assert(index.x < origin.x + size);
+		assert(index.y >= origin.y);
+		assert(index.y < origin.y + size);
+		assert(index.z >= origin.z);
+		assert(index.z < origin.z + size);
+
 		return elements[(index.x - origin.x) * size * size + (index.y
 				- origin.y) * size + (index.z - origin.z)];
 	}
@@ -373,7 +354,7 @@ public:
 				if (page) {
 					io->savePage(page);
 					strategy->cleared(page);
-					pages.erase(hash3(page->origin));
+					pages.erase(page->origin);
 					delete page;
 				}
 			}
@@ -402,6 +383,8 @@ public:
 
 		iterator_t i = pages.find(orig);
 		if (i != pages.end()) {
+			assert(i->first == orig);
+			assert(i->second->origin == orig);
 			return i->second;
 		}
 
@@ -520,7 +503,6 @@ public:
 		size3_t pmin = l / pageSize;
 		size3_t pmax = upper / pageSize;
 
-		//size_t visits = 0;
 		for (size_t pX = pmin.x; pX <= pmax.x; pX++) {
 			size_t lx = std::max(l.x, pX * pageSize);
 			size_t ux = std::min(upper.x, pX * pageSize + pageSize);
@@ -532,9 +514,9 @@ public:
 					size_t uz = std::min(upper.z, pZ * pageSize + pageSize);
 
 					page_t *page = getPage(size3_t(lx, ly, lz));
+					assert(page != 0);
 					strategy->accessed(page);
 
-					//visits += ((uz - lz) * (uy - ly) * (ux - lx));
 					size3_t index;
 					for (size_t iZ = lz; iZ < uz; iZ++) {
 						index.z = iZ;
@@ -550,14 +532,6 @@ public:
 				}
 			}
 		}
-		//
-		//		if (visits > 0) {
-		//			std::cerr << pmin << std::endl;
-		//			std::cerr << pmax << std::endl;
-		//
-		//			std::cerr << visits << std::endl;
-		//			std::cerr << std::endl;
-		//		}
 	}
 
 };
