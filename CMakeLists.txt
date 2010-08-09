@@ -19,7 +19,9 @@ add_dependencies(gadget Gadget)
 
 target_link_libraries (gadget Gadget) 
 
+configure_file(${CMAKE_SOURCE_DIR}/gadget-config.in ${CMAKE_CURRENT_BINARY_DIR}/gadget-config @ONLY)
 INSTALL(TARGETS gadget RUNTIME DESTINATION bin)
 INSTALL(TARGETS Gadget LIBRARY DESTINATION lib)
 INSTALL(DIRECTORY include/ DESTINATION include
           FILES_MATCHING PATTERN "*.hpp")
+INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gadget-config DESTINATION bin PERMISSIONS)
