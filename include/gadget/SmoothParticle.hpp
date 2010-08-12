@@ -9,6 +9,7 @@
 #define SMOOTH_PARTICLE_HPP_
 
 #include <ostream>
+#include "gadget/Vector3.hpp"
 
 class SmoothParticle {
 public:

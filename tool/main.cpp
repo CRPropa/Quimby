@@ -23,6 +23,7 @@
 #include <omp.h>
 
 int paged_grid(Arguments &arguments);
+int bfieldtest(Arguments &arguments);
 
 int mass(Arguments &arguments) {
 	unsigned int bins = arguments.getInt("-bins", 10);
@@ -709,6 +710,7 @@ int pp(Arguments &arguments) {
 	return 0;
 }
 
+
 int main(int argc, const char **argv) {
 	try {
 		Arguments arguments(argc, argv);
@@ -729,6 +731,8 @@ int main(int argc, const char **argv) {
 			return mass(arguments);
 		else if (function == "bfield")
 			return bfield(arguments);
+		else if (function == "bfieldtest")
+			return bfieldtest(arguments);
 		else if (function == "av")
 			return av(argc, argv);
 		else if (function == "pp")

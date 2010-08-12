@@ -10,6 +10,7 @@
 #include "gadget/PagedGrid.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/GadgetFile.hpp"
+#include "gadget/Vector3.hpp"
 
 #include <ctime>
 #include <limits>
@@ -120,6 +121,7 @@ int paged_grid(Arguments &arguments) {
 			<< " pages" << std::endl;
 
 	io.defaultValue = Vector3f(0.0f);
+	io.overwrite = true;
 
 	size_t fileSizeKpc = arguments.getFloat("-fileSize", 10000);
 	io.fileSize = fileSizeKpc / pageSize;
@@ -129,7 +131,9 @@ int paged_grid(Arguments &arguments) {
 			<< pages_per_file << " pages" << std::endl;
 
 	LeastAccessPagingStrategy<Vector3f> strategy;
-	PagedGrid<Vector3f> grid(size / res, pageLength);
+	PagedGrid<Vector3f> grid;
+	grid.setSize(size / res);
+	grid.setPageSize(pageLength);
 	grid.setStrategy(&strategy);
 	grid.setIO(&io);
 	grid.setPageCount(pageCount);
@@ -182,7 +186,7 @@ int paged_grid(Arguments &arguments) {
 
 		time_t start = std::time(0);
 		time_t last = std::time(0);
-		size3_t totalMin(size_t(-1)), totalMax(size_t(0));
+		index3_t totalMin(size_t(-1)), totalMax(size_t(0));
 		float avgSL = 0.0;
 		size_t lastN = 0;
 		for (int iP = skip; iP < pn; iP++) {
@@ -190,7 +194,7 @@ int paged_grid(Arguments &arguments) {
 			if ((now - last >= 1) && verbose && iP) {
 				time_t elapsed = now - last;
 				size_t n = iP - lastN;
-				float pps = (float) n / std::min((time_t)1, elapsed);
+				float pps = (float) n / std::min((time_t) 1, elapsed);
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, pages: " << grid.getActivePageCount() << " ("
 						<< io.loadedPages << " loaded), throughput: " << pps
@@ -217,7 +221,7 @@ int paged_grid(Arguments &arguments) {
 
 			v.cellLength = res;
 
-			size3_t lower, upper;
+			index3_t lower, upper;
 			lower.x = std::max(lowerLimit.x, std::floor((v.particle.position.x
 					- v.particle.smoothingLength * 2) / res));
 			lower.y = std::max(lowerLimit.y, std::floor((v.particle.position.y
