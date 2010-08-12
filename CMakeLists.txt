@@ -12,9 +12,10 @@ add_library( gadget-lib SHARED
 SET_TARGET_PROPERTIES(gadget-lib PROPERTIES OUTPUT_NAME "Gadget")
 
 add_executable( gadget-tool
-	main
-	arguments
-	paged_grid
+	tool/main
+	tool/arguments
+	tool/bfieldtest
+	tool/paged_grid
 )
 SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 
