@@ -21,7 +21,12 @@ SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 
 target_link_libraries (gadget-tool gadget-lib) 
 
+
 INSTALL(TARGETS gadget-tool RUNTIME DESTINATION bin)
 INSTALL(TARGETS gadget-lib DESTINATION lib)
 INSTALL(DIRECTORY include/ DESTINATION include
           FILES_MATCHING PATTERN "*.hpp")
+if(UNIX)          
+    configure_file(${CMAKE_SOURCE_DIR}/gadget-config.in ${CMAKE_CURRENT_BINARY_DIR}/gadget-config @ONLY)
+    INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gadget-config DESTINATION bin PERMISSIONS)
+endif(UNIX)
