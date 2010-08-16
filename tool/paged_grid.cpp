@@ -78,6 +78,7 @@ size_t dround(double d) {
 }
 
 int paged_grid(Arguments &arguments) {
+
 	float pageSize = arguments.getInt("-pageSize", 100);
 	std::cout << "PageSize:       " << pageSize << " kpc " << std::endl;
 
@@ -96,9 +97,10 @@ int paged_grid(Arguments &arguments) {
 	std::cout << "h:              " << h << std::endl;
 
 	BinaryPageIO<Vector3f> io;
-	io.prefix = arguments.getString("-prefix", "paged_grid");
-	io.forceDump = true;
-	std::cout << "Output Prefix:  " << io.prefix << std::endl;
+	std::string prefix = arguments.getString("-prefix", "paged_grid");
+	io.setPrefix(prefix);
+	io.setForceDump(true);
+	std::cout << "Output Prefix:  " << prefix << std::endl;
 
 	Vector3f lowerLimit, upperLimit;
 	lowerLimit.x = floor(arguments.getFloat("-lx", 0.0) / res);
@@ -120,12 +122,13 @@ int paged_grid(Arguments &arguments) {
 	std::cout << "Memory:         " << memory << " MiB -> " << pageCount
 			<< " pages" << std::endl;
 
-	io.defaultValue = Vector3f(0.0f);
-	io.overwrite = true;
+	io.setDefaultValue(Vector3f(0.0f));
+	io.setOverwrite(true);
 
 	size_t fileSizeKpc = arguments.getFloat("-fileSize", 10000);
-	io.fileSize = fileSizeKpc / pageSize;
-	size_t pages_per_file = io.fileSize * io.fileSize * io.fileSize;
+	size_t fileSize = fileSizeKpc / res;
+	io.setElemetsPerFile(fileSize);
+	size_t pages_per_file = fileSize * fileSize * fileSize;
 	std::cout << "FileSize:       " << fileSizeKpc << " kpc "
 			<< (pages_per_file * page_byte_size / 1024 / 1024) << " MiB -> "
 			<< pages_per_file << " pages" << std::endl;
@@ -197,8 +200,8 @@ int paged_grid(Arguments &arguments) {
 				float pps = (float) n / std::min((time_t) 1, elapsed);
 				std::cout << "\r  " << iP << ": " << (iP * 100) / pn
 						<< "%, pages: " << grid.getActivePageCount() << " ("
-						<< io.loadedPages << " loaded), throughput: " << pps
-						<< "               \r";
+						<< io.getLoadedPages() << " loaded), throughput: "
+						<< pps << "               \r";
 				std::cout.flush();
 
 				last = now;
@@ -260,7 +263,7 @@ int paged_grid(Arguments &arguments) {
 		std::cout << "  min: " << totalMin << " kpc" << std::endl;
 		std::cout << "  max: " << totalMax << " kpc" << std::endl;
 		std::cout << "  pages: " << grid.getActivePageCount() << " ("
-				<< io.loadedPages << " loaded)" << std::endl;
+				<< io.getLoadedPages() << " loaded)" << std::endl;
 
 	}
 

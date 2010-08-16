@@ -30,9 +30,12 @@ struct index3_t {
 
 	}
 
+	index3_t(const index3_t &v) :
+		x(v.x), y(v.y), z(v.z) {
+	}
+
 	explicit index3_t(uint32_t i) :
 		x(i), y(i), z(i) {
-
 	}
 
 	explicit index3_t(const uint32_t &X, const uint32_t &Y, const uint32_t &Z) :
@@ -129,7 +132,33 @@ struct index3_t {
 		z = v.z;
 		return *this;
 	}
+
+	//	void incXYZ(const index3_t &lower, const index3_t &upper) {
+	//		if (this->operator ==(upper))
+	//			return;
+	//
+	//		z++;
+	//		if (z == upper.z)
+	//		{
+	//			z = lower.z;
+	//			y++;
+	//			if (y == upper.y)
+	//			{
+	//				y = lower.y;
+	//				x++;
+	//			}
+	//		}
+	//	}
+
 };
+
+inline index3_t minByElement(const index3_t &a, const index3_t &b) {
+	return index3_t(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
+}
+
+inline index3_t maxByElement(const index3_t &a, const index3_t &b) {
+	return index3_t(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
+}
 
 inline std::ostream &operator <<(std::ostream &out, const index3_t &v) {
 	out << v.x << " " << v.y << " " << v.z;
@@ -243,113 +272,49 @@ class BinaryPageIO: public PageIO<ELEMENT> {
 public:
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
+private:
 	std::string prefix;
 	element_t defaultValue;
 	bool readOnly;
 	size_t loadedPages;
 	size_t savedPages;
 
-	/// pages per file (per axis)
-	size_t fileSize;
+	/// elements per file per axis
+	size_t elemetsPerFile;
 
 	bool overwrite;
 
 	bool forceDump;
+public:
+	BinaryPageIO();
 
-	BinaryPageIO() :
-		readOnly(false), loadedPages(0), savedPages(0), fileSize(1), overwrite(
-				false), forceDump(false) {
+	void loadPage(page_t *page);
 
-	}
+	void savePage(page_t *page);
 
-	void loadPage(page_t *page) {
-#if DEBUG
-		std::cerr << "[BinaryPageIO] load page " << page->origin << ", size: "
-				<< this->pageSize << std::endl;
-#endif
-		page->elements.resize(this->pageSize * this->pageSize * this->pageSize);
-		std::string filename = createFilename(page);
-		page->dirty = false;
-		if (checkFile(filename) && overwrite == false) {
-			std::ifstream in(filename.c_str(), std::ios::binary);
-			index3_t index;
-			for (index.z = 0; index.z < this->pageSize; index.z++) {
-				for (index.y = 0; index.y < this->pageSize; index.y++) {
-					for (index.x = 0; index.x < this->pageSize; index.x++) {
-						in.seekg(offset(page, index), std::ios::beg);
-						in.read((char *) &page->get(index + page->origin,
-								this->pageSize), sizeof(element_t));
-					}
-				}
-			}
-		} else {
-			for (size_t i = 0; i < page->elements.size(); i++) {
-				page->elements[i] = defaultValue;
-			}
-			if (forceDump)
-				page->dirty = true;
-		}
+	void setPrefix(const std::string &prefix);
 
-		loadedPages += 1;
-	}
+	/// set number of elements per file per axis
+	void setElemetsPerFile(size_t elemetsPerFile);
 
-	size_t offset(page_t *page) {
-		index3_t o = (page->origin / page->size) % fileSize;
-		size_t page_byte_size = page->size * page->size * page->size
-				* sizeof(element_t);
-		return page_byte_size * (o.x * fileSize * fileSize + o.y * fileSize
-				+ o.z);
-	}
+	void setOverwrite(bool overwrite);
+	void setForceDump(bool forceDump);
+	void setDefaultValue(const element_t &defaultValue);
 
-	size_t offset(page_t *page, const index3_t idx) {
-		size_t fileSizeElements = fileSize * this->pageSize;
-		index3_t offset = idx + (page->origin % fileSizeElements);
-		return sizeof(element_t) * (offset.x + offset.y * fileSizeElements
-				+ offset.z * fileSizeElements * fileSizeElements);
-	}
-
-	void savePage(page_t *page) {
-		savedPages += 1;
-		if (readOnly)
-			return;
-
-		if (page->dirty == false)
-			return;
-
-#ifdef DEBUG
-		std::cout << "[BinaryPageIO] save page " << page->origin << std::endl;
-#endif
-		std::string filename = createFilename(page);
-
-		// make sure the file is big enough
-		if (checkFile(filename) == false)
-			reserveFile(filename);
-
-		std::fstream out(filename.c_str(), std::ios::in | std::ios::out
-				| std::ios::binary);
-
-		index3_t index;
-		for (index.z = 0; index.z < this->pageSize; index.z++) {
-			for (index.y = 0; index.y < this->pageSize; index.y++) {
-				for (index.x = 0; index.x < this->pageSize; index.x++) {
-					out.seekp(offset(page, index), std::ios::beg);
-					out.write((const char *) &page->get(index + page->origin,
-							this->pageSize), sizeof(element_t));
-				}
-			}
-		}
-
-		page->dirty = false;
-	}
+	size_t getLoadedPages();
+	size_t getSavedPages();
 
 private:
+	size_t offset(page_t *page, const index3_t idx) {
+		index3_t offset = idx + (page->origin % elemetsPerFile);
+		return sizeof(element_t) * (offset.x + offset.y * elemetsPerFile
+				+ offset.z * elemetsPerFile * elemetsPerFile);
+	}
 
 	std::string createFilename(page_t *page) {
-		size_t ox = (page->origin.x / this->pageSize) / fileSize;
-		size_t oy = (page->origin.y / this->pageSize) / fileSize;
-		size_t oz = (page->origin.z / this->pageSize) / fileSize;
+		index3_t o = page->origin / elemetsPerFile;
 		std::stringstream sstr;
-		sstr << prefix << "-" << ox << "-" << oy << "-" << oz << ".raw";
+		sstr << prefix << "-" << o.x << "-" << o.y << "-" << o.z << ".raw";
 		return sstr.str();
 	}
 
@@ -366,9 +331,8 @@ private:
 			return false;
 		}
 
-		std::fstream::pos_type needed = this->pageSize * this->pageSize
-				* this->pageSize * fileSize * fileSize * fileSize
-				* sizeof(element_t);
+		std::fstream::pos_type needed = elemetsPerFile * elemetsPerFile
+				* elemetsPerFile * sizeof(element_t);
 		if (in.tellg() != needed) {
 			//			std::cerr << "baad size " << filename << std::endl;
 
@@ -380,8 +344,7 @@ private:
 	}
 
 	void reserveFile(const std::string &filename) {
-		size_t needed = this->pageSize * this->pageSize * this->pageSize
-				* fileSize * fileSize * fileSize;
+		size_t needed = elemetsPerFile * elemetsPerFile * elemetsPerFile;
 #ifdef DEBUG
 		std::cerr << "[BinaryPageIO] reserve " << filename << std::endl;
 #endif
@@ -392,7 +355,124 @@ private:
 		out.close();
 
 	}
+
 };
+
+template<typename ELEMENT>
+BinaryPageIO<ELEMENT>::BinaryPageIO() :
+	readOnly(false), loadedPages(0), savedPages(0), elemetsPerFile(1),
+			overwrite(false), forceDump(false) {
+
+}
+
+template<typename ELEMENT>
+void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
+#if DEBUG
+	std::cerr << "[BinaryPageIO] load page " << page->origin << ", size: "
+	<< this->pageSize << std::endl;
+#endif
+	page->elements.resize(this->pageSize * this->pageSize * this->pageSize);
+	std::string filename = createFilename(page);
+	page->dirty = false;
+	if (checkFile(filename) && overwrite == false) {
+		std::ifstream in(filename.c_str(), std::ios::binary);
+		index3_t index;
+		for (index.z = 0; index.z < this->pageSize; index.z++) {
+			for (index.y = 0; index.y < this->pageSize; index.y++) {
+				for (index.x = 0; index.x < this->pageSize; index.x++) {
+					in.seekg(offset(page, index), std::ios::beg);
+					in.read((char *) &page->get(index + page->origin,
+							this->pageSize), sizeof(element_t));
+				}
+			}
+		}
+	} else {
+		for (size_t i = 0; i < page->elements.size(); i++) {
+			page->elements[i] = defaultValue;
+		}
+		if (forceDump)
+			page->dirty = true;
+	}
+
+	loadedPages += 1;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::savePage(page_t *page) {
+	savedPages += 1;
+	if (readOnly)
+		return;
+
+	if (page->dirty == false)
+		return;
+
+#ifdef DEBUG
+	std::cout << "[BinaryPageIO] save page " << page->origin << std::endl;
+#endif
+
+	// page can span multiple files:
+	index3_t fileStart = page->origin / elemetsPerFile;
+	index3_t fileEnd = (page->origin + index3_t(this->pageSize - 1))
+			/ elemetsPerFile;
+
+	std::string filename = createFilename(page);
+
+	// make sure the file is big enough
+	if (checkFile(filename) == false)
+		reserveFile(filename);
+
+	std::fstream out(filename.c_str(), std::ios::in | std::ios::out
+			| std::ios::binary);
+
+	index3_t index;
+	for (index.z = 0; index.z < this->pageSize; index.z++) {
+		for (index.y = 0; index.y < this->pageSize; index.y++) {
+			for (index.x = 0; index.x < this->pageSize; index.x++) {
+				out.seekp(offset(page, index), std::ios::beg);
+				out.write((const char *) &page->get(index + page->origin,
+						this->pageSize), sizeof(element_t));
+			}
+		}
+	}
+
+	page->dirty = false;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setPrefix(const std::string &prefix) {
+	this->prefix = prefix;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setElemetsPerFile(size_t elemetsPerFile) {
+	this->elemetsPerFile = elemetsPerFile;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setForceDump(bool forceDump) {
+	this->forceDump = forceDump;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setOverwrite(bool overwrite) {
+	this->overwrite = overwrite;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setDefaultValue(
+		const element_t &defaultValue) {
+	this->defaultValue = defaultValue;
+}
+
+template<typename ELEMENT>
+inline size_t BinaryPageIO<ELEMENT>::getLoadedPages() {
+	return loadedPages;
+}
+
+template<typename ELEMENT>
+inline size_t BinaryPageIO<ELEMENT>::getSavedPages() {
+	return savedPages;
+}
 
 template<typename ELEMENT>
 class PagingStrategy {
@@ -475,7 +555,11 @@ public:
 	typedef Page<element_t> page_t;
 	typedef typename std::map<index3_t, page_t *> container_t;
 	typedef typename container_t::iterator iterator_t;
-
+	class Visitor {
+	public:
+		virtual void visit(PagedGrid<element_t> &grid, size_t x, size_t y,
+				size_t z, element_t &value) = 0;
+	};
 protected:
 	page_t *lastPage;
 	size_t pageSize;
@@ -488,12 +572,9 @@ protected:
 	container_t pages;
 	size_t pageMisses;
 
+	void pageAccept(Page<element_t> *page, Visitor &v, const index3_t &l,
+			const index3_t &u);
 public:
-	class Visitor {
-	public:
-		virtual void visit(PagedGrid<element_t> &grid, size_t x, size_t y,
-				size_t z, element_t &value) = 0;
-	};
 
 	PagedGrid();
 	PagedGrid(const size_t &grid_size, size_t page_size);
@@ -534,29 +615,29 @@ public:
 };
 
 template<typename ELEMENT>
-PagedGrid<ELEMENT>::PagedGrid() :
+inline PagedGrid<ELEMENT>::PagedGrid() :
 	lastPage(0), pageSize(0), io(0), pageCount(1), size(0), strategy(0),
 			pageMisses(0) {
 }
 
 template<typename ELEMENT>
-PagedGrid<ELEMENT>::~PagedGrid() {
+inline PagedGrid<ELEMENT>::~PagedGrid() {
 	clear();
 }
 
 /// set the number of elemets per axis
 template<typename ELEMENT>
-void PagedGrid<ELEMENT>::setSize(size_t size) {
+inline void PagedGrid<ELEMENT>::setSize(size_t size) {
 	this->size = size;
 }
 
 template<typename ELEMENT>
-void PagedGrid<ELEMENT>::setStrategy(PagingStrategy<element_t> *strategy) {
+inline void PagedGrid<ELEMENT>::setStrategy(PagingStrategy<element_t> *strategy) {
 	this->strategy = strategy;
 }
 
 template<typename ELEMENT>
-void PagedGrid<ELEMENT>::setIO(PageIO<element_t> *io) {
+inline void PagedGrid<ELEMENT>::setIO(PageIO<element_t> *io) {
 	this->io = io;
 	if (io) {
 		io->setPageSize(pageSize);
@@ -565,7 +646,7 @@ void PagedGrid<ELEMENT>::setIO(PageIO<element_t> *io) {
 
 /// set the number of elemets per axis per page
 template<typename ELEMENT>
-void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
+inline void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
 	assert(this->pageSize == 0);
 	this->pageSize = pageSize;
 	if (io) {
@@ -575,7 +656,7 @@ void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
 
 /// set the number of pages held in memory
 template<typename ELEMENT>
-void PagedGrid<ELEMENT>::setPageCount(size_t count) {
+inline void PagedGrid<ELEMENT>::setPageCount(size_t count) {
 	if (count < pageCount) {
 		size_t clearing = this->pageCount - count;
 		for (size_t i = 0; i < clearing; i++) {
@@ -597,7 +678,7 @@ inline typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getReadWrite(
 	page_t *page = getPage(index);
 	strategy->accessed(page);
 	page->dirty = true;
-	return page->get(index);
+	return page->get(index, pageSize);
 }
 
 template<typename ELEMENT>
@@ -742,44 +823,46 @@ inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v, const index3_t &l,
 }
 
 template<typename ELEMENT>
-inline void PagedGrid<ELEMENT>::accept(Visitor &v, const index3_t &l,
+inline void PagedGrid<ELEMENT>::accept(Visitor &v, const index3_t &lower,
 		const index3_t &u) {
-	index3_t upper = clamp(u);
+	index3_t upper = minByElement(u, index3_t(size));
 
-	index3_t pmin = l / pageSize;
-	index3_t pmax = upper / pageSize;
+	index3_t lowerPage = lower / pageSize;
+	index3_t upperPage = (upper - index3_t(1)) / pageSize;
 
-	for (size_t pX = pmin.x; pX <= pmax.x; pX++) {
-		size_t lx = std::max(l.x, pX * pageSize);
-		size_t ux = std::min(upper.x, pX * pageSize + pageSize);
-		for (size_t pY = pmin.y; pY <= pmax.y; pY++) {
-			size_t ly = std::max(l.y, pY * pageSize);
-			size_t uy = std::min(upper.y, pY * pageSize + pageSize);
-			for (size_t pZ = pmin.z; pZ <= pmax.z; pZ++) {
-				size_t lz = std::max(l.z, pZ * pageSize);
-				size_t uz = std::min(upper.z, pZ * pageSize + pageSize);
-
-				page_t *page = getPage(index3_t(lx, ly, lz));
+	index3_t pageIndex;
+	for (pageIndex.x = lowerPage.x; pageIndex.x <= upperPage.x; pageIndex.x++) {
+		for (pageIndex.y = lowerPage.y; pageIndex.y <= upperPage.y; pageIndex.y++) {
+			for (pageIndex.z = lowerPage.z; pageIndex.z <= upperPage.z; pageIndex.z++) {
+				page_t *page = getPage(pageIndex * pageSize);
 				assert(page != 0);
 				strategy->accessed(page);
 				page->dirty = true;
-
-				index3_t index;
-				for (size_t iZ = lz; iZ < uz; iZ++) {
-					index.z = iZ;
-					for (size_t iY = ly; iY < uy; iY++) {
-						index.y = iY;
-						for (size_t iX = lx; iX < ux; iX++) {
-							index.x = iX;
-							v.visit(*this, iX, iY, iZ, page->get(index,
-									pageSize));
-						}
-					}
-				}
-
+				pageAccept(page, v, lower, upper);
 			}
 		}
 	}
 }
 
+template<typename ELEMENT>
+inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
+		const index3_t &l, const index3_t &u) {
+	index3_t lower = maxByElement(l, page->origin);
+	index3_t upper = minByElement(u, page->origin + index3_t(pageSize));
+	uint32_t pageSize2 = pageSize * pageSize;
+	index3_t offset = lower - page->origin;
+
+	for (uint32_t x = lower.x; x < upper.x; x++) {
+		offset.x = (x - page->origin.x) * pageSize2;
+		for (uint32_t y = lower.y; y < upper.y; y++) {
+			offset.y = (y - page->origin.y) * pageSize;
+			for (uint32_t z = lower.x; z < upper.z; z++) {
+				offset.z = z - page->origin.z;
+				v.visit(*this, x, y, z, page->elements[offset.x + offset.y
+						+ offset.z]);
+			}
+		}
+	}
+
+}
 #endif /* PAGED_GRID_HPP_ */

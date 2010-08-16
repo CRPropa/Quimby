@@ -238,13 +238,13 @@ Vector3<T> interpolate(const Vector3<T> &a, const Vector3<T> &b, const Vector3<
 }
 #endif
 template<typename T>
-std::ostream &operator <<(std::ostream &out, const Vector3<T> &v) {
+inline std::ostream &operator <<(std::ostream &out, const Vector3<T> &v) {
 	out << v.x << " " << v.y << " " << v.z;
 	return out;
 }
 
 template<typename T>
-std::istream &operator >>(std::istream &in, Vector3<T> &v) {
+inline std::istream &operator >>(std::istream &in, Vector3<T> &v) {
 	in >> v.x >> v.y >> v.z;
 	return in;
 }
