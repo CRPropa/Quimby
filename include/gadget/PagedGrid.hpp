@@ -75,10 +75,6 @@ struct index3_t {
 		return index3_t(x + v.x, y + v.y, z + v.z);
 	}
 
-	index3_t operator *(const index3_t &v) const {
-		return index3_t(x * v.x, y * v.y, z * v.z);
-	}
-
 	index3_t operator *(const uint32_t &v) const {
 		return index3_t(x * v, y * v, z * v);
 	}
@@ -598,7 +594,6 @@ public:
 	page_t *getPage(const index3_t &index);
 
 	index3_t toOrigin(const index3_t &index);
-	index3_t clamp(const index3_t &i);
 
 	void clear();
 	void flush();
@@ -740,19 +735,6 @@ inline index3_t PagedGrid<ELEMENT>::toOrigin(const index3_t &index) {
 }
 
 template<typename ELEMENT>
-inline index3_t PagedGrid<ELEMENT>::clamp(const index3_t &i) {
-	index3_t index = i;
-	if (index.x > size)
-		index.x = size;
-	if (index.y > size)
-		index.y = size;
-	if (index.z > size)
-		index.z = size;
-
-	return index;
-}
-
-template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::clear() {
 	iterator_t i = pages.begin();
 	iterator_t end = pages.end();
@@ -809,7 +791,7 @@ template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v, const index3_t &l,
 		const index3_t &u) {
 	index3_t index;
-	index3_t upper = clamp(u);
+	index3_t upper = maxByElement(u, index3_t(size));
 	for (size_t iZ = l.z; iZ < upper.z; iZ++) {
 		index.z = iZ;
 		for (size_t iY = l.y; iY < upper.y; iY++) {
@@ -856,7 +838,7 @@ inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
 		offset.x = (x - page->origin.x) * pageSize2;
 		for (uint32_t y = lower.y; y < upper.y; y++) {
 			offset.y = (y - page->origin.y) * pageSize;
-			for (uint32_t z = lower.x; z < upper.z; z++) {
+			for (uint32_t z = lower.z; z < upper.z; z++) {
 				offset.z = z - page->origin.z;
 				v.visit(*this, x, y, z, page->elements[offset.x + offset.y
 						+ offset.z]);
