@@ -133,7 +133,7 @@ int paged_grid(Arguments &arguments) {
 			<< (pages_per_file * page_byte_size / 1024 / 1024) << " MiB -> "
 			<< pages_per_file << " pages" << std::endl;
 
-	LeastAccessPagingStrategy<Vector3f> strategy;
+	LastAccessPagingStrategy<Vector3f> strategy;
 	PagedGrid<Vector3f> grid;
 	grid.setSize(size / res);
 	grid.setPageSize(pageLength);

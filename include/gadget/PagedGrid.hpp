@@ -16,6 +16,7 @@
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <stdexcept>
 #ifdef DEBUG
 #include <iostream>
 #endif
@@ -168,11 +169,14 @@ public:
 	typedef ELEMENT element_t;
 
 	index3_t origin;
-	std::vector<element_t> elements;
+	element_t *elements;
 	bool dirty;
-	time_t accessTime;
-	uint32_t accessCount;
-	uint32_t locks;
+//	time_t accessTime;
+//	uint32_t accessCount;
+//	uint32_t locks;
+
+	Page *strategyNext;
+	Page *strategyPrev;
 
 	Page();
 	void reset();
@@ -187,9 +191,12 @@ inline Page<ELEMENT>::Page() {
 template<typename ELEMENT>
 inline void Page<ELEMENT>::reset() {
 	dirty = false;
-	accessTime = 0;
-	accessCount = 0;
-	locks = 0;
+//	accessTime = 0;
+//	accessCount = 0;
+//	locks = 0;
+	elements = 0;
+	strategyNext = 0;
+	strategyPrev = 0;
 }
 
 template<typename ELEMENT>
@@ -367,7 +374,7 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 	std::cerr << "[BinaryPageIO] load page " << page->origin << ", size: "
 	<< this->pageSize << std::endl;
 #endif
-	page->elements.resize(this->pageSize * this->pageSize * this->pageSize);
+	size_t count = this->pageSize * this->pageSize * this->pageSize;
 	std::string filename = createFilename(page);
 	page->dirty = false;
 	if (checkFile(filename) && overwrite == false) {
@@ -383,7 +390,7 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 			}
 		}
 	} else {
-		for (size_t i = 0; i < page->elements.size(); i++) {
+		for (size_t i = 0; i < count; i++) {
 			page->elements[i] = defaultValue;
 		}
 		if (forceDump)
@@ -477,69 +484,107 @@ public:
 	virtual void loaded(page_t *page) = 0;
 	virtual void cleared(page_t *page) = 0;
 	virtual void accessed(page_t *page) = 0;
-	virtual page_t *which() = 0;
+	virtual page_t *which(std::vector<page_t> &pages) = 0;
 };
 
 template<typename ELEMENT>
 class LastAccessPagingStrategy: public PagingStrategy<ELEMENT> {
 public:
 	typedef Page<ELEMENT> page_t;
-	std::list<page_t *> pages;
-	void loaded(page_t *page) {
-		pages.push_back(page);
-	}
-	void cleared(page_t *page) {
-		pages.remove(page);
-	}
-	void accessed(page_t *page) {
-		pages.remove(page);
-		pages.push_front(page);
-	}
-	page_t *which() {
-		return pages.back();
-	}
-};
-
-template<typename ELEMENT>
-class LeastAccessPagingStrategy: public PagingStrategy<ELEMENT> {
+private:
+	page_t *first, *last;
 public:
-	typedef Page<ELEMENT> page_t;
-	typedef std::map<page_t *, size_t> map_t;
-	typedef typename map_t::iterator iterator_t;
-	map_t pages;
-	size_t maxCount;
-
-	LeastAccessPagingStrategy() :
-		maxCount(1) {
+	LastAccessPagingStrategy() :
+		first(0), last(0) {
 	}
 
 	void loaded(page_t *page) {
-		pages[page] = maxCount / 10;
+		// insert at end
+		page->strategyPrev = last;
+		page->strategyPrev->strategyNext = page;
+		page->strategyNext = 0;
+		last = page;
 	}
 
 	void cleared(page_t *page) {
-		pages[page] = 0;
+		if (page == first)
+			first = page->strategyNext;
+
+		if (page == last)
+			last = page->strategyPrev;
+
+		// remove element
+		if (page->strategyPrev) {
+			page->strategyPrev->strategyNext = page->strategyNext;
+		}
+		if (page->strategyNext) {
+			page->strategyNext->strategyPrev = page->strategyPrev;
+		}
 	}
 
 	void accessed(page_t *page) {
-		size_t & v = pages[page];
-		v += 1;
-		if (v > maxCount)
-			maxCount = v;
+		//move accessed to last
+		if (page == last)
+			return;
+
+		if (page == first)
+			first = page->strategyNext;
+
+		// remove element
+		if (page->strategyPrev) {
+			page->strategyPrev->strategyNext = page->strategyNext;
+		}
+		if (page->strategyNext) {
+			page->strategyNext->strategyPrev = page->strategyPrev;
+		}
+
+		// insert at end
+		page->strategyPrev = last;
+		page->strategyPrev->strategyNext = page;
+		page->strategyNext = 0;
+		last = page;
 	}
 
-	page_t *which() {
-		size_t count = -1;
-		page_t *page = 0;
-		for (iterator_t i = pages.begin(); i != pages.end(); i++)
-			if (i->second < count) {
-				page = i->first;
-				count = i->second;
-			}
-		return page;
+	page_t *which(std::vector<page_t> &pages) {
+		// TODO: find first not locked
+		return first;
 	}
 };
+/*
+ template<typename ELEMENT>
+ class LeastAccessPagingStrategy: public PagingStrategy<ELEMENT> {
+ page_t *least;
+ public:
+ typedef Page<ELEMENT> page_t;
 
+ LeastAccessPagingStrategy() :
+ least(0) {
+ }
+
+ void loaded(page_t *page) {
+ }
+
+ void cleared(page_t *page) {
+ }
+
+ void accessed(page_t *page) {
+ }
+
+ page_t *which(std::vector<page_t> &pages) {
+ size_t count = -1;
+ page_t *page = 0;
+ typename std::vector<page_t>::iterator i;
+ for (i = pages.begin(); i != pages.end(); i++) {
+ page_t &p = *i;
+ if (p.elements != 0 && p.accessCount < count) {
+ page = &p;
+ count = p.accessCount;
+ }
+ }
+ return page;
+ }
+ };
+ */
 //static size_t hash3(const index3_t &v) {
 //	return MurmurHash2(&v, sizeof(index3_t), 875685);
 //}
@@ -549,8 +594,12 @@ class PagedGrid {
 public:
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
-	typedef typename std::map<index3_t, page_t *> container_t;
-	typedef typename container_t::iterator iterator_t;
+	typedef typename std::vector<page_t> page_container_t;
+	typedef typename std::vector<element_t> element_container_t;
+	typedef typename std::map<index3_t, page_t *> page_index_t;
+	typedef typename std::map<index3_t, page_t *>::iterator
+			page_index_iterator_t;
+
 	class Visitor {
 	public:
 		virtual void visit(PagedGrid<element_t> &grid, size_t x, size_t y,
@@ -560,16 +609,20 @@ protected:
 	page_t *lastPage;
 	size_t pageSize;
 	PageIO<element_t> *io;
-	size_t pageCount;
 	/// size of the grid
 	size_t size;
 
 	PagingStrategy<element_t> *strategy;
-	container_t pages;
+	page_container_t pages;
+	element_container_t elements;
+	page_index_t pageIndex;
 	size_t pageMisses;
 
 	void pageAccept(Page<element_t> *page, Visitor &v, const index3_t &l,
 			const index3_t &u);
+
+	page_t *getPage(const index3_t &index);
+	page_t *getEmptyPage();
 public:
 
 	PagedGrid();
@@ -591,8 +644,6 @@ public:
 
 	const element_t &getReadOnly(const index3_t &index);
 
-	page_t *getPage(const index3_t &index);
-
 	index3_t toOrigin(const index3_t &index);
 
 	void clear();
@@ -611,8 +662,7 @@ public:
 
 template<typename ELEMENT>
 inline PagedGrid<ELEMENT>::PagedGrid() :
-	lastPage(0), pageSize(0), io(0), pageCount(1), size(0), strategy(0),
-			pageMisses(0) {
+	lastPage(0), pageSize(0), io(0), size(0), strategy(0), pageMisses(0) {
 }
 
 template<typename ELEMENT>
@@ -642,7 +692,7 @@ inline void PagedGrid<ELEMENT>::setIO(PageIO<element_t> *io) {
 /// set the number of elemets per axis per page
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
-	assert(this->pageSize == 0);
+	assert(this->pageSize == 0 && "page size already set!");
 	this->pageSize = pageSize;
 	if (io) {
 		io->setPageSize(pageSize);
@@ -652,19 +702,14 @@ inline void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
 /// set the number of pages held in memory
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::setPageCount(size_t count) {
-	if (count < pageCount) {
-		size_t clearing = this->pageCount - count;
-		for (size_t i = 0; i < clearing; i++) {
-			page_t *page = strategy->which();
-			if (page) {
-				io->savePage(page);
-				strategy->cleared(page);
-				pages.erase(page->origin);
-				delete page;
-			}
-		}
-	}
-	this->pageCount = count;
+	if (pageSize == 0)
+		std::runtime_error("[PagedGrid::setPageCount] page size not set!");
+	if (pages.size() != 0)
+		std::runtime_error("[PagedGrid::setPageCount] page count already set!");
+	if (count == 0)
+		std::runtime_error("[PagedGrid::setPageCount] use count > 0 !");
+	pages.resize(count);
+	elements.resize(count * pageSize * pageSize * pageSize);
 }
 
 template<typename ELEMENT>
@@ -692,26 +737,24 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getPage(
 	if (lastPage && (lastPage->origin == orig))
 		return lastPage;
 
-	iterator_t i = pages.find(orig);
-	if (i != pages.end()) {
+	page_index_iterator_t i = pageIndex.find(orig);
+	if (i != pageIndex.end()) {
 		assert(i->first == orig);
 		assert(i->second->origin == orig);
 		return i->second;
 	}
 
 	// check if page is loaded
-	page_t *page = 0;
-	if (pages.size() < pageCount) {
-		page = new page_t;
-	} else {
+	page_t *page = getEmptyPage();
+	if (page == 0) {
 		// ask the paging strategy which page we should replace
 		pageMisses++;
-		page = strategy->which();
+		page = strategy->which(pages);
 
 		// save and clear old page
 		io->savePage(page);
 		strategy->cleared(page);
-		pages.erase(page->origin);
+		pageIndex.erase(page->origin);
 	}
 
 	// load new page
@@ -720,7 +763,7 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getPage(
 	strategy->loaded(page);
 	lastPage = page;
 
-	pages[orig] = page;
+	pageIndex[orig] = page;
 
 	return page;
 }
@@ -736,22 +779,36 @@ inline index3_t PagedGrid<ELEMENT>::toOrigin(const index3_t &index) {
 
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::clear() {
-	iterator_t i = pages.begin();
-	iterator_t end = pages.end();
-	while (i != end) {
-		delete (i->second);
-		i++;
-	}
+	elements.clear();
 	pages.clear();
 }
 
 template<typename ELEMENT>
+inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getEmptyPage() {
+	if (pageIndex.size() >= pages.size())
+		return 0;
+
+	// try second part first
+	for (size_t i = pageIndex.size(); i < pages.size(); i++) {
+		if (pages[i].elements == 0) {
+			return &pages[i];
+		}
+	}
+
+	// now try first part
+	for (size_t i = 0; i < pageIndex.size(); i++) {
+		if (pages[i].elements == 0) {
+			return &pages[i];
+		}
+	}
+}
+
+template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::flush() {
-	iterator_t i = pages.begin();
-	iterator_t end = pages.end();
-	while (i != end) {
-		io->savePage(i->second);
-		i++;
+	for (size_t i = 0; i < pages.size(); i++) {
+		if (pages[i].elements) {
+			io->savePage(&pages[i]);
+		}
 	}
 }
 
