@@ -25,8 +25,8 @@ int bfieldtest(Arguments &arguments) {
 	grid.setIO(&io);
 	grid.setStrategy(&strategy);
 	grid.setSize(100);
-	grid.setPageCount(1000);
 	grid.setPageSize(10);
+	grid.setPageCount(1000);
 
 	TestVisitor v;
 	v.center = index3_t(50);

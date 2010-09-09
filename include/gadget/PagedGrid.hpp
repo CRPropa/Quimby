@@ -171,9 +171,9 @@ public:
 	index3_t origin;
 	element_t *elements;
 	bool dirty;
-//	time_t accessTime;
-//	uint32_t accessCount;
-//	uint32_t locks;
+	//	time_t accessTime;
+	//	uint32_t accessCount;
+	//	uint32_t locks;
 
 	Page *strategyNext;
 	Page *strategyPrev;
@@ -191,9 +191,9 @@ inline Page<ELEMENT>::Page() {
 template<typename ELEMENT>
 inline void Page<ELEMENT>::reset() {
 	dirty = false;
-//	accessTime = 0;
-//	accessCount = 0;
-//	locks = 0;
+	//	accessTime = 0;
+	//	accessCount = 0;
+	//	locks = 0;
 	elements = 0;
 	strategyNext = 0;
 	strategyPrev = 0;
@@ -499,11 +499,18 @@ public:
 	}
 
 	void loaded(page_t *page) {
-		// insert at end
-		page->strategyPrev = last;
-		page->strategyPrev->strategyNext = page;
-		page->strategyNext = 0;
-		last = page;
+		if (first == 0 || last == 0) {
+			page->strategyPrev = 0;
+			page->strategyNext = 0;
+			last = page;
+			first = page;
+		} else {
+			// insert at end
+			page->strategyPrev = last;
+			page->strategyPrev->strategyNext = page;
+			page->strategyNext = 0;
+			last = page;
+		}
 	}
 
 	void cleared(page_t *page) {
@@ -703,11 +710,12 @@ inline void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::setPageCount(size_t count) {
 	if (pageSize == 0)
-		std::runtime_error("[PagedGrid::setPageCount] page size not set!");
+		throw std::runtime_error("[PagedGrid::setPageCount] page size not set!");
 	if (pages.size() != 0)
-		std::runtime_error("[PagedGrid::setPageCount] page count already set!");
+		throw std::runtime_error(
+				"[PagedGrid::setPageCount] page count already set!");
 	if (count == 0)
-		std::runtime_error("[PagedGrid::setPageCount] use count > 0 !");
+		throw std::runtime_error("[PagedGrid::setPageCount] use count > 0 !");
 	pages.resize(count);
 	elements.resize(count * pageSize * pageSize * pageSize);
 }
@@ -791,6 +799,7 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getEmptyPage() {
 	// try second part first
 	for (size_t i = pageIndex.size(); i < pages.size(); i++) {
 		if (pages[i].elements == 0) {
+			pages[i].elements = &elements[i * pageSize * pageSize * pageSize];
 			return &pages[i];
 		}
 	}
@@ -798,6 +807,7 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getEmptyPage() {
 	// now try first part
 	for (size_t i = 0; i < pageIndex.size(); i++) {
 		if (pages[i].elements == 0) {
+			pages[i].elements = &elements[i * pageSize * pageSize * pageSize];
 			return &pages[i];
 		}
 	}
