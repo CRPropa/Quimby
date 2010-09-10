@@ -63,7 +63,7 @@ inline size_t limit(const float &x, const size_t &lower, const size_t &upper) {
 	if (x < 0)
 		r = 0;
 	else
-		r = x;
+		r = (size_t)x;
 
 	if (r < lower)
 		r = lower;
@@ -79,10 +79,10 @@ size_t dround(double d) {
 
 int paged_grid(Arguments &arguments) {
 
-	float pageSize = arguments.getInt("-pageSize", 100);
+	int pageSize = arguments.getInt("-pageSize", 100);
 	std::cout << "PageSize:       " << pageSize << " kpc " << std::endl;
 
-	float res = arguments.getFloat("-res", 100);
+	int res = arguments.getInt("-res", 100);
 	std::cout << "Resolution:     " << res << " kpc" << std::endl;
 
 	int pageLength = pageSize / res;
@@ -90,7 +90,7 @@ int paged_grid(Arguments &arguments) {
 
 	int skip = arguments.getInt("-skip", 0);
 
-	float size = arguments.getFloat("-size", 40000);
+	int size = arguments.getInt("-size", 40000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
 
 	float h = arguments.getFloat("-h", 0.7);
@@ -103,13 +103,13 @@ int paged_grid(Arguments &arguments) {
 	std::cout << "Output Prefix:  " << prefix << std::endl;
 
 	Vector3f lowerLimit, upperLimit;
-	lowerLimit.x = floor(arguments.getFloat("-lx", 0.0) / res);
-	lowerLimit.y = floor(arguments.getFloat("-ly", 0.0) / res);
-	lowerLimit.z = floor(arguments.getFloat("-lz", 0.0) / res);
+	lowerLimit.x = arguments.getInt("-lx", 0.0) / res;
+	lowerLimit.y = arguments.getInt("-ly", 0.0) / res;
+	lowerLimit.z = arguments.getInt("-lz", 0.0) / res;
 
-	upperLimit.x = ceil(arguments.getFloat("-ux", size) / res);
-	upperLimit.y = ceil(arguments.getFloat("-uy", size) / res);
-	upperLimit.z = ceil(arguments.getFloat("-uz", size) / res);
+	upperLimit.x = arguments.getInt("-ux", size) / res;
+	upperLimit.y = arguments.getInt("-uy", size) / res;
+	upperLimit.z = arguments.getInt("-uz", size) / res;
 
 	std::cout << "Lower limit:    " << lowerLimit * res << " kpc" << std::endl;
 	std::cout << "Upper limit:    " << upperLimit * res << " kpc" << std::endl;
@@ -125,7 +125,7 @@ int paged_grid(Arguments &arguments) {
 	io.setDefaultValue(Vector3f(0.0f));
 	io.setOverwrite(true);
 
-	size_t fileSizeKpc = arguments.getFloat("-fileSize", 10000);
+	size_t fileSizeKpc = arguments.getInt("-fileSize", 10000);
 	size_t fileSize = fileSizeKpc / res;
 	io.setElemetsPerFile(fileSize);
 	size_t pages_per_file = fileSize * fileSize * fileSize;
