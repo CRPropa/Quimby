@@ -304,6 +304,7 @@ public:
 
 	void setOverwrite(bool overwrite);
 	void setForceDump(bool forceDump);
+	void setReadOnly(bool readOnly);
 	void setDefaultValue(const element_t &defaultValue);
 
 	size_t getLoadedPages();
@@ -455,6 +456,11 @@ inline void BinaryPageIO<ELEMENT>::setElemetsPerFile(size_t elemetsPerFile) {
 template<typename ELEMENT>
 inline void BinaryPageIO<ELEMENT>::setForceDump(bool forceDump) {
 	this->forceDump = forceDump;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setReadOnly(bool readOnly) {
+	this->readOnly = readOnly;
 }
 
 template<typename ELEMENT>
