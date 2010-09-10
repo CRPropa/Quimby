@@ -35,6 +35,9 @@ int mass(Arguments &arguments) {
 	std::string output = arguments.getString("-o", "mass.raw");
 	std::cout << "Output: " << output << std::endl;
 
+	float h = arguments.getFloat("-h", 0.7);
+	std::cout << "h:              " << h << std::endl;
+
 	std::cout << "Create Grid" << std::endl;
 	Grid<float> grid;
 	grid.create(bins, size);
@@ -84,11 +87,12 @@ int mass(Arguments &arguments) {
 #endif
 				std::cerr << iP << " / " << pn << std::endl;
 			}
-			float vol = M_PI / hsml[iP] / hsml[iP] / hsml[iP];
-			float pX = pos[iP * 3];
-			float pY = pos[iP * 3 + 1];
-			float pZ = pos[iP * 3 + 2];
-			int steps = ceil(hsml[iP] * 2 / grid.getCellLength());
+			float hsml2 = hsml[iP] / h;
+			float vol = 1.0 / M_PI / hsml2 / hsml2 / hsml2;
+			float pX = pos[iP * 3] / h;
+			float pY = pos[iP * 3 + 1] / h;
+			float pZ = pos[iP * 3 + 2] / h;
+			int steps = ceil(hsml2 * 2 / grid.getCellLength());
 			for (int iStepX = -steps; iStepX <= steps; iStepX++) {
 				float x = iStepX * grid.getCellLength();
 				for (int iStepY = -steps; iStepY <= steps; iStepY++) {
@@ -96,7 +100,7 @@ int mass(Arguments &arguments) {
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
 						float z = iStepZ * grid.getCellLength();
 						float r = sqrt(x * x + y * y + z * z);
-						float w = kernel(r / hsml[iP]) * rho[iP] * vol;
+						float w = kernel(r / hsml2) * rho[iP] * vol;
 						float &f = grid.get(pX + x, pY + y, pZ + z);
 #pragma omp atomic
 						f += w;
