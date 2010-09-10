@@ -102,10 +102,10 @@ int paged_grid(Arguments &arguments) {
 	io.setForceDump(true);
 	std::cout << "Output Prefix:  " << prefix << std::endl;
 
-	Vector3f lowerLimit, upperLimit;
-	lowerLimit.x = arguments.getInt("-lx", 0.0) / res;
-	lowerLimit.y = arguments.getInt("-ly", 0.0) / res;
-	lowerLimit.z = arguments.getInt("-lz", 0.0) / res;
+	index3_t lowerLimit, upperLimit;
+	lowerLimit.x = arguments.getInt("-lx", 0) / res;
+	lowerLimit.y = arguments.getInt("-ly", 0) / res;
+	lowerLimit.z = arguments.getInt("-lz", 0) / res;
 
 	upperLimit.x = arguments.getInt("-ux", size) / res;
 	upperLimit.y = arguments.getInt("-uy", size) / res;
@@ -189,7 +189,7 @@ int paged_grid(Arguments &arguments) {
 
 		time_t start = std::time(0);
 		time_t last = std::time(0);
-		index3_t totalMin(size_t(-1)), totalMax(size_t(0));
+		index3_t totalMin(std::numeric_limits<uint32_t>::max()), totalMax(size_t(0));
 		float avgSL = 0.0;
 		size_t lastN = 0;
 		for (int iP = skip; iP < pn; iP++) {
@@ -225,20 +225,20 @@ int paged_grid(Arguments &arguments) {
 			v.cellLength = res;
 
 			index3_t lower, upper;
-			lower.x = std::max(lowerLimit.x, std::floor((v.particle.position.x
+			lower.x = std::max(lowerLimit.x, (uint32_t)std::floor((v.particle.position.x
 					- v.particle.smoothingLength * 2) / res));
-			lower.y = std::max(lowerLimit.y, std::floor((v.particle.position.y
+			lower.y = std::max(lowerLimit.y, (uint32_t)std::floor((v.particle.position.y
 					- v.particle.smoothingLength * 2) / res));
-			lower.z = std::max(lowerLimit.z, std::floor((v.particle.position.z
+			lower.z = std::max(lowerLimit.z, (uint32_t)std::floor((v.particle.position.z
 					- v.particle.smoothingLength * 2) / res));
 
-			upper.x = std::min(upperLimit.x - 1, std::ceil(
+			upper.x = std::min(upperLimit.x - 1, (uint32_t)std::ceil(
 					(v.particle.position.x + v.particle.smoothingLength * 2)
 							/ res));
-			upper.y = std::min(upperLimit.y - 1, std::ceil(
+			upper.y = std::min(upperLimit.y - 1, (uint32_t)std::ceil(
 					(v.particle.position.y + v.particle.smoothingLength * 2)
 							/ res));
-			upper.z = std::min(upperLimit.z - 1, std::ceil(
+			upper.z = std::min(upperLimit.z - 1, (uint32_t)std::ceil(
 					(v.particle.position.z + v.particle.smoothingLength * 2)
 							/ res));
 
