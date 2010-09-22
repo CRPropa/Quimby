@@ -17,9 +17,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
-#ifdef DEBUG
 #include <iostream>
-#endif
 #include <assert.h>
 #include <inttypes.h>
 #include <stdexcept>
@@ -223,7 +221,7 @@ protected:
 public:
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
-	void setElementsPerPage(uint32_t pageSize) {
+	virtual void setElementsPerPage(uint32_t pageSize) {
 		this->elementsPerPage = pageSize;
 		this->elementsPerPage3 = pageSize * pageSize * pageSize;
 	}
@@ -309,7 +307,7 @@ public:
 	void setPrefix(const std::string &prefix);
 
 	/// set number of elements per file per axis
-	void setElemetsPerFile(size_t elemetsPerFile);
+	void setElementsPerFile(size_t elemetsPerFile);
 
 	void setOverwrite(bool overwrite);
 	void setForceDump(bool forceDump);
@@ -318,6 +316,7 @@ public:
 
 	size_t getLoadedPages();
 	size_t getSavedPages();
+	void setElementsPerPage(uint32_t pageSize);
 
 private:
 	size_t offset(page_t *page, const index3_t idx) {
@@ -327,7 +326,7 @@ private:
 	}
 
 	size_t page_offset(page_t *page) {
-		index3_t o = (page->origin / this->elementsPerPage) % elementsPerFile;
+		index3_t o = (page->origin % elementsPerFile) / this->elementsPerPage;
 		size_t page_byte_size = this->elementsPerPage3 * sizeof(element_t);
 		return page_byte_size * (o.x * pagesPerFile * pagesPerFile + o.y
 				* pagesPerFile + o.z);
@@ -347,20 +346,18 @@ private:
 	bool checkFile(const std::string &filename) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (in.good() == false) {
-			//			std::cerr << "[BinaryPageIO] could not open " << filename << std::endl;
-			return false;
-		}
-
-		in.seekg(0, std::ios::end);
-		if (in.bad()) {
-			//			std::cerr << "[BinaryPageIO] bad seek " << filename << std::endl;
 			return false;
 		}
 
 		std::fstream::pos_type needed = elementsPerFile3 * sizeof(element_t);
-		if (in.tellg() != needed) {
-			//			std::cerr << "baad size " << filename << std::endl;
 
+		in.seekg(0, std::ios::end);
+		if (in.bad()) {
+			return false;
+		}
+
+		std::fstream::pos_type pos = in.tellg();
+		if (pos != needed) {
 			return false;
 		}
 
@@ -369,15 +366,11 @@ private:
 	}
 
 	void reserveFile(const std::string &filename) {
-#ifdef DEBUG
-		std::cerr << "[BinaryPageIO] reserve " << filename << std::endl;
-#endif
 		std::ofstream out(filename.c_str(), std::ios::trunc | std::ios::binary);
 		for (size_t i = 0; i < elementsPerFile3; i++) {
-			out.write((const char *) &defaultValue, sizeof(defaultValue));
+			out.write((const char *) &defaultValue, sizeof(element_t));
 		}
 		out.close();
-
 	}
 
 };
@@ -402,7 +395,7 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (perPage) {
 			in.seekg(page_offset(page), std::ios::beg);
-			in.read((char *) &page->elements, sizeof(element_t)
+			in.read((char *) page->elements, sizeof(element_t)
 					* this->elementsPerPage3);
 		} else {
 			index3_t index;
@@ -451,7 +444,7 @@ inline void BinaryPageIO<ELEMENT>::savePage(page_t *page) {
 
 	if (perPage) {
 		out.seekp(page_offset(page), std::ios::beg);
-		out.write((const char *) &page->elements, sizeof(element_t)
+		out.write((const char *) page->elements, sizeof(element_t)
 				* this->elementsPerPage3);
 	} else {
 		index3_t index;
@@ -475,13 +468,18 @@ inline void BinaryPageIO<ELEMENT>::setPrefix(const std::string &prefix) {
 }
 
 template<typename ELEMENT>
-inline void BinaryPageIO<ELEMENT>::setElemetsPerFile(size_t elementsPerFile) {
+inline void BinaryPageIO<ELEMENT>::setElementsPerFile(size_t elementsPerFile) {
 	this->elementsPerFile = elementsPerFile;
-	this->elementsPerFile3 = elementsPerFile * elementsPerFile
-			* elementsPerFile;
-	this->pagesPerFile = elementsPerFile / this->elementsPerPage;
-	this->pagesPerFile3 = this->pagesPerFile * this->pagesPerFile
-			* this->pagesPerFile;
+	elementsPerFile3 = elementsPerFile * elementsPerFile * elementsPerFile;
+	pagesPerFile = elementsPerFile / this->elementsPerPage;
+	pagesPerFile3 = pagesPerFile * pagesPerFile * pagesPerFile;
+}
+
+template<typename ELEMENT>
+inline void BinaryPageIO<ELEMENT>::setElementsPerPage(uint32_t elementsPerPage) {
+	PageIO<ELEMENT>::setElementsPerPage(elementsPerPage);
+	pagesPerFile = elementsPerFile / elementsPerPage;
+	pagesPerFile3 = pagesPerFile * pagesPerFile * pagesPerFile;
 }
 
 template<typename ELEMENT>
@@ -772,7 +770,7 @@ inline const typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getRead
 		const index3_t &index) {
 	page_t *page = getPage(index);
 	strategy->accessed(page);
-	return page->get(index);
+	return page->get(index, pageSize);
 }
 
 template<typename ELEMENT>
@@ -837,7 +835,7 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getEmptyPage() {
 	// try second part first
 	for (size_t i = pageIndex.size(); i < pages.size(); i++) {
 		if (pages[i].elements == 0) {
-			pages[i].elements = &elements[i * pageSize * pageSize * pageSize];
+			pages[i].elements = &elements.at(i * pageSize * pageSize * pageSize);
 			return &pages[i];
 		}
 	}

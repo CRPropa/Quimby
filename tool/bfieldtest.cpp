@@ -28,7 +28,7 @@ void step1(Arguments &arguments) {
 	BinaryPageIO<Vector3f> io;
 	io.setPrefix(arguments.getString("-f", "bfieldtest"));
 	io.setOverwrite(true);
-	io.setElemetsPerFile(50);
+	io.setElementsPerFile(50);
 
 	LastAccessPagingStrategy<Vector3f> strategy;
 
@@ -52,7 +52,7 @@ void step2(Arguments &arguments) {
 	BinaryPageIO<Vector3f> io;
 	io.setPrefix(arguments.getString("-f", "bfieldtest"));
 	//io.setOverwrite(true);
-	io.setElemetsPerFile(50);
+	io.setElementsPerFile(50);
 
 	LastAccessPagingStrategy<Vector3f> strategy;
 

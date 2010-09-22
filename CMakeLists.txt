@@ -30,3 +30,8 @@ if(UNIX)
     configure_file(${CMAKE_SOURCE_DIR}/gadget-config.in ${CMAKE_CURRENT_BINARY_DIR}/gadget-config @ONLY)
     INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/gadget-config DESTINATION bin PERMISSIONS)
 endif(UNIX)
+
+ENABLE_TESTING()
+
+add_executable(pg_test test/pg_test.cpp)
+ADD_TEST(pg pg_test)
