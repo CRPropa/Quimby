@@ -131,6 +131,12 @@ public:
 		return *this;
 	}
 
+	void clamp(T lower, T upper) {
+		x = std::max(lower, std::min(x, upper));
+		y = std::max(lower, std::min(y, upper));
+		z = std::max(lower, std::min(z, upper));
+	}
+
 	T length() {
 		return std::sqrt(x * x + y * y + z * z);
 	}

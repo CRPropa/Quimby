@@ -913,6 +913,9 @@ template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::accept(Visitor &v, const index3_t &lower,
 		const index3_t &u) {
 	index3_t upper = minByElement(u, index3_t(size));
+	if (upper.x == 0 || upper.y == 0 || upper.z == 0) {
+		return;
+	}
 
 	index3_t lowerPage = lower / pageSize;
 	index3_t upperPage = (upper - index3_t(1)) / pageSize;

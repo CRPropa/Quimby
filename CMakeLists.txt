@@ -16,6 +16,7 @@ add_executable( gadget-tool
 	tool/arguments
 	tool/bfieldtest
 	tool/paged_grid
+	tool/mass
 )
 SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 

@@ -63,7 +63,7 @@ inline size_t limit(const float &x, const size_t &lower, const size_t &upper) {
 	if (x < 0)
 		r = 0;
 	else
-		r = (size_t)x;
+		r = (size_t) x;
 
 	if (r < lower)
 		r = lower;
@@ -90,7 +90,7 @@ int paged_grid(Arguments &arguments) {
 
 	int skip = arguments.getInt("-skip", 0);
 
-	int size = arguments.getInt("-size", 40000);
+	int size = arguments.getInt("-size", 240000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
 
 	float h = arguments.getFloat("-h", 0.7);
@@ -128,7 +128,8 @@ int paged_grid(Arguments &arguments) {
 	size_t fileSizeKpc = arguments.getInt("-fileSize", 10000);
 	size_t fileSize = fileSizeKpc / res;
 	io.setElementsPerFile(fileSize);
-	size_t pages_per_file = (fileSize / pageLength) * (fileSize / pageLength) * (fileSize / pageLength);
+	size_t pages_per_file = (fileSize / pageLength) * (fileSize / pageLength)
+			* (fileSize / pageLength);
 	std::cout << "FileSize:       " << fileSizeKpc << " kpc "
 			<< (pages_per_file * page_byte_size / 1024 / 1024) << " MiB -> "
 			<< pages_per_file << " pages" << std::endl;
@@ -147,7 +148,7 @@ int paged_grid(Arguments &arguments) {
 
 	bool verbose = arguments.hasFlag("-v");
 
-	std::vector<std::string> files;
+	std::vector < std::string > files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
@@ -189,7 +190,8 @@ int paged_grid(Arguments &arguments) {
 
 		time_t start = std::time(0);
 		time_t last = std::time(0);
-		index3_t totalMin(std::numeric_limits<uint32_t>::max()), totalMax(size_t(0));
+		index3_t totalMin(std::numeric_limits<uint32_t>::max()), totalMax(
+				size_t(0));
 		float avgSL = 0.0;
 		size_t lastN = 0;
 		for (int iP = skip; iP < pn; iP++) {
@@ -213,9 +215,12 @@ int paged_grid(Arguments &arguments) {
 
 			PagedSPVisitor v;
 			v.particle.smoothingLength = hsml[iP] / h;
-			v.particle.position.x = pos[iP * 3] / h - offset.x;
-			v.particle.position.y = pos[iP * 3 + 1] / h - offset.y;
-			v.particle.position.z = pos[iP * 3 + 2] / h - offset.z;
+			v.particle.position.x = (pos[iP * 3] - size / 2) / h + size / 2
+					- offset.x;
+			v.particle.position.y = (pos[iP * 3 + 1] - size / 2) / h + size / 2
+					- offset.y;
+			v.particle.position.z = (pos[iP * 3 + 2] - size / 2) / h + size / 2
+					- offset.z;
 
 			float norm = 1.0 / M_PI / pow(v.particle.smoothingLength, 3);
 			v.particle.bfield.x = bfld[iP * 3] * norm;
@@ -224,23 +229,22 @@ int paged_grid(Arguments &arguments) {
 
 			v.cellLength = res;
 
-			index3_t lower, upper;
-			lower.x = std::max(lowerLimit.x, (uint32_t)std::floor((v.particle.position.x
-					- v.particle.smoothingLength * 2) / res));
-			lower.y = std::max(lowerLimit.y, (uint32_t)std::floor((v.particle.position.y
-					- v.particle.smoothingLength * 2) / res));
-			lower.z = std::max(lowerLimit.z, (uint32_t)std::floor((v.particle.position.z
-					- v.particle.smoothingLength * 2) / res));
+			Vector3f l = v.particle.position - Vector3f(
+					v.particle.smoothingLength * 2);
+			l.clamp(0.0, size);
 
-			upper.x = std::min(upperLimit.x - 1, (uint32_t)std::ceil(
-					(v.particle.position.x + v.particle.smoothingLength * 2)
-							/ res));
-			upper.y = std::min(upperLimit.y - 1, (uint32_t)std::ceil(
-					(v.particle.position.y + v.particle.smoothingLength * 2)
-							/ res));
-			upper.z = std::min(upperLimit.z - 1, (uint32_t)std::ceil(
-					(v.particle.position.z + v.particle.smoothingLength * 2)
-							/ res));
+			Vector3f u = v.particle.position + Vector3f(
+					v.particle.smoothingLength * 2);
+			u.clamp(0.0, size);
+
+			index3_t lower, upper;
+			lower.x = std::max(lowerLimit.x, (uint32_t) std::floor(l.x / res));
+			lower.y = std::max(lowerLimit.y, (uint32_t) std::floor(l.y / res));
+			lower.z = std::max(lowerLimit.z, (uint32_t) std::floor(l.z / res));
+
+			upper.x = std::min(upperLimit.x, (uint32_t) std::ceil(u.x / res));
+			upper.y = std::min(upperLimit.y, (uint32_t) std::ceil(u.y / res));
+			upper.z = std::min(upperLimit.z, (uint32_t) std::ceil(u.z / res));
 
 			grid.accept(v, lower, upper);
 
