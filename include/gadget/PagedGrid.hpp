@@ -862,7 +862,7 @@ inline void PagedGrid<ELEMENT>::flush() {
 
 template<typename ELEMENT>
 inline size_t PagedGrid<ELEMENT>::getActivePageCount() {
-	return pages.size();
+	return pageIndex.size();
 }
 
 template<typename ELEMENT>
