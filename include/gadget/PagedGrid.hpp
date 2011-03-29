@@ -9,6 +9,7 @@
 #define PAGED_GRID_HPP_
 
 #include "MurmurHash2.hpp"
+#include "Index3.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -19,147 +20,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <assert.h>
-#include <inttypes.h>
 #include <stdexcept>
-
-struct index3_t {
-	uint32_t x, y, z;
-
-	index3_t() :
-		x(0), y(0), z(0) {
-
-	}
-
-	index3_t(const index3_t &v) :
-		x(v.x), y(v.y), z(v.z) {
-	}
-
-	explicit index3_t(uint32_t i) :
-		x(i), y(i), z(i) {
-	}
-
-	explicit index3_t(const uint32_t &X, const uint32_t &Y, const uint32_t &Z) :
-		x(X), y(Y), z(Z) {
-	}
-
-	bool operator <(const index3_t &v) const {
-		if (x > v.x)
-			return false;
-		else if (x < v.x)
-			return true;
-		if (y > v.y)
-			return false;
-		else if (y < v.y)
-			return true;
-		if (z >= v.z)
-			return false;
-		else
-			return true;
-	}
-
-	bool operator ==(const index3_t &v) const {
-		if (x != v.x)
-			return false;
-		if (y != v.y)
-			return false;
-		if (z != v.z)
-			return false;
-		return true;
-	}
-
-	index3_t operator -(const index3_t &v) const {
-		return index3_t(x - v.x, y - v.y, z - v.z);
-	}
-
-	index3_t operator +(const index3_t &v) const {
-		return index3_t(x + v.x, y + v.y, z + v.z);
-	}
-
-	index3_t operator *(const uint32_t &v) const {
-		return index3_t(x * v, y * v, z * v);
-	}
-
-	index3_t operator /(const uint32_t &f) const {
-		return index3_t(x / f, y / f, z / f);
-	}
-
-	index3_t &operator /=(const uint32_t &f) {
-		x /= f;
-		y /= f;
-		z /= f;
-		return *this;
-	}
-
-	index3_t operator %(const uint32_t &f) const {
-		return index3_t(x % f, y % f, z % f);
-	}
-
-	index3_t &operator %=(const uint32_t &f) {
-		x %= f;
-		y %= f;
-		z %= f;
-		return *this;
-	}
-
-	index3_t &operator *=(const uint32_t &f) {
-		x *= f;
-		y *= f;
-		z *= f;
-		return *this;
-	}
-
-	index3_t &operator +=(const index3_t &v) {
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		return *this;
-	}
-
-	index3_t &operator -=(const index3_t &v) {
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		return *this;
-	}
-
-	index3_t &operator =(const index3_t &v) {
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	//	void incXYZ(const index3_t &lower, const index3_t &upper) {
-	//		if (this->operator ==(upper))
-	//			return;
-	//
-	//		z++;
-	//		if (z == upper.z)
-	//		{
-	//			z = lower.z;
-	//			y++;
-	//			if (y == upper.y)
-	//			{
-	//				y = lower.y;
-	//				x++;
-	//			}
-	//		}
-	//	}
-
-};
-
-inline index3_t minByElement(const index3_t &a, const index3_t &b) {
-	return index3_t(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
-}
-
-inline index3_t maxByElement(const index3_t &a, const index3_t &b) {
-	return index3_t(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
-}
-
-inline std::ostream &operator <<(std::ostream &out, const index3_t &v) {
-	out << v.x << " " << v.y << " " << v.z;
-	return out;
-}
 
 /// Single Page containing the elements.
 template<typename ELEMENT>
@@ -167,7 +28,7 @@ class Page {
 public:
 	typedef ELEMENT element_t;
 
-	index3_t origin;
+	Index3 origin;
 	element_t *elements;
 	bool dirty;
 	//	time_t accessTime;
@@ -179,7 +40,7 @@ public:
 
 	Page();
 	void reset();
-	element_t &get(const index3_t &index, uint32_t size);
+	element_t &get(const Index3 &index, uint32_t size);
 };
 
 template<typename ELEMENT>
@@ -200,7 +61,7 @@ inline void Page<ELEMENT>::reset() {
 
 template<typename ELEMENT>
 inline typename Page<ELEMENT>::element_t &Page<ELEMENT>::get(
-		const index3_t &index, uint32_t size) {
+		const Index3 &index, uint32_t size) {
 	assert(index.x >= origin.x);
 	assert(index.x < origin.x + size);
 	assert(index.y >= origin.y);
@@ -319,21 +180,21 @@ public:
 	void setElementsPerPage(uint32_t pageSize);
 
 private:
-	size_t offset(page_t *page, const index3_t idx) {
-		index3_t offset = idx + (page->origin % elementsPerFile);
+	size_t offset(page_t *page, const Index3 idx) {
+		Index3 offset = idx + (page->origin % elementsPerFile);
 		return sizeof(element_t) * (offset.x + offset.y * elementsPerFile
 				+ offset.z * elementsPerFile * elementsPerFile);
 	}
 
 	size_t page_offset(page_t *page) {
-		index3_t o = (page->origin % elementsPerFile) / this->elementsPerPage;
+		Index3 o = (page->origin % elementsPerFile) / this->elementsPerPage;
 		size_t page_byte_size = this->elementsPerPage3 * sizeof(element_t);
 		return page_byte_size * (o.x * pagesPerFile * pagesPerFile + o.y
 				* pagesPerFile + o.z);
 	}
 
 	std::string createFilename(page_t *page) {
-		index3_t o = page->origin / elementsPerFile;
+		Index3 o = page->origin / elementsPerFile;
 		std::stringstream sstr;
 		sstr << prefix;
 		if (perPage) {
@@ -346,6 +207,8 @@ private:
 	bool checkFile(const std::string &filename) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (in.good() == false) {
+			if (readOnly)
+				throw std::runtime_error("[BinaryPageIO] file not found:" + filename);
 			return false;
 		}
 
@@ -353,11 +216,15 @@ private:
 
 		in.seekg(0, std::ios::end);
 		if (in.bad()) {
+            if (readOnly)
+                throw std::runtime_error("[BinaryPageIO] error sseking in file.");
 			return false;
 		}
 
 		std::fstream::pos_type pos = in.tellg();
 		if (pos != needed) {
+            if (readOnly)
+                throw std::runtime_error("[BinaryPageIO] file has wrong size.");
 			return false;
 		}
 
@@ -391,14 +258,15 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 #endif
 	std::string filename = createFilename(page);
 	page->dirty = false;
-	if (checkFile(filename) && overwrite == false) {
+	bool fileCheck = checkFile(filename);
+	if (fileCheck && overwrite == false) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (perPage) {
 			in.seekg(page_offset(page), std::ios::beg);
 			in.read((char *) page->elements, sizeof(element_t)
 					* this->elementsPerPage3);
 		} else {
-			index3_t index;
+			Index3 index;
 			for (index.z = 0; index.z < this->elementsPerPage; index.z++) {
 				for (index.y = 0; index.y < this->elementsPerPage; index.y++) {
 					index.x = 0;
@@ -409,12 +277,14 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 				}
 			}
 		}
-	} else {
+	} else if (readOnly == false) {
 		for (size_t i = 0; i < this->elementsPerPage3; i++) {
 			page->elements[i] = defaultValue;
 		}
 		if (forceDump)
 			page->dirty = true;
+	} else {
+		throw std::runtime_error("[BinaryPageIO] file not found.");
 	}
 
 	loadedPages += 1;
@@ -447,7 +317,7 @@ inline void BinaryPageIO<ELEMENT>::savePage(page_t *page) {
 		out.write((const char *) page->elements, sizeof(element_t)
 				* this->elementsPerPage3);
 	} else {
-		index3_t index;
+		Index3 index;
 		for (index.z = 0; index.z < this->elementsPerPage; index.z++) {
 			for (index.y = 0; index.y < this->elementsPerPage; index.y++) {
 				index.x = 0;
@@ -628,8 +498,8 @@ public:
  }
  };
  */
-//static size_t hash3(const index3_t &v) {
-//	return MurmurHash2(&v, sizeof(index3_t), 875685);
+//static size_t hash3(const Index3 &v) {
+//	return MurmurHash2(&v, sizeof(Index3), 875685);
 //}
 
 template<typename ELEMENT>
@@ -639,8 +509,8 @@ public:
 	typedef Page<element_t> page_t;
 	typedef typename std::vector<page_t> page_container_t;
 	typedef typename std::vector<element_t> element_container_t;
-	typedef typename std::map<index3_t, page_t *> page_index_t;
-	typedef typename std::map<index3_t, page_t *>::iterator
+	typedef typename std::map<Index3, page_t *> page_index_t;
+	typedef typename std::map<Index3, page_t *>::iterator
 			page_index_iterator_t;
 
 	class Visitor {
@@ -661,10 +531,10 @@ protected:
 	page_index_t pageIndex;
 	size_t pageMisses;
 
-	void pageAccept(Page<element_t> *page, Visitor &v, const index3_t &l,
-			const index3_t &u);
+	void pageAccept(Page<element_t> *page, Visitor &v, const Index3 &l,
+			const Index3 &u);
 
-	page_t *getPage(const index3_t &index);
+	page_t *getPage(const Index3 &index);
 	page_t *getEmptyPage();
 public:
 
@@ -683,11 +553,11 @@ public:
 	/// set the number of pages held in memory
 	void setPageCount(size_t count);
 
-	element_t &getReadWrite(const index3_t &index);
+	element_t &getReadWrite(const Index3 &index);
 
-	const element_t &getReadOnly(const index3_t &index);
+	const element_t &getReadOnly(const Index3 &index);
 
-	index3_t toOrigin(const index3_t &index);
+	Index3 toOrigin(const Index3 &index);
 
 	void clear();
 	void flush();
@@ -698,8 +568,8 @@ public:
 
 	void acceptZYX(Visitor &v);
 
-	void acceptZYX(Visitor &v, const index3_t &l, const index3_t &u);
-	void accept(Visitor &v, const index3_t &l, const index3_t &u);
+	void acceptZYX(Visitor &v, const Index3 &l, const Index3 &u);
+	void accept(Visitor &v, const Index3 &l, const Index3 &u);
 
 };
 
@@ -758,7 +628,7 @@ inline void PagedGrid<ELEMENT>::setPageCount(size_t count) {
 
 template<typename ELEMENT>
 inline typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getReadWrite(
-		const index3_t &index) {
+		const Index3 &index) {
 	page_t *page = getPage(index);
 	strategy->accessed(page);
 	page->dirty = true;
@@ -767,7 +637,7 @@ inline typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getReadWrite(
 
 template<typename ELEMENT>
 inline const typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getReadOnly(
-		const index3_t &index) {
+		const Index3 &index) {
 	page_t *page = getPage(index);
 	strategy->accessed(page);
 	return page->get(index, pageSize);
@@ -775,8 +645,8 @@ inline const typename PagedGrid<ELEMENT>::element_t &PagedGrid<ELEMENT>::getRead
 
 template<typename ELEMENT>
 inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getPage(
-		const index3_t &index) {
-	index3_t orig = toOrigin(index);
+		const Index3 &index) {
+	Index3 orig = toOrigin(index);
 
 	if (lastPage && (lastPage->origin == orig))
 		return lastPage;
@@ -813,8 +683,8 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getPage(
 }
 
 template<typename ELEMENT>
-inline index3_t PagedGrid<ELEMENT>::toOrigin(const index3_t &index) {
-	index3_t origin;
+inline Index3 PagedGrid<ELEMENT>::toOrigin(const Index3 &index) {
+	Index3 origin;
 	origin.x = size_t(index.x / pageSize) * pageSize;
 	origin.y = size_t(index.y / pageSize) * pageSize;
 	origin.z = size_t(index.z / pageSize) * pageSize;
@@ -893,10 +763,10 @@ inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v) {
 }
 
 template<typename ELEMENT>
-inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v, const index3_t &l,
-		const index3_t &u) {
-	index3_t index;
-	index3_t upper = maxByElement(u, index3_t(size));
+inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v, const Index3 &l,
+		const Index3 &u) {
+	Index3 index;
+	Index3 upper = u.maxByElement(Index3(size));
 	for (size_t iZ = l.z; iZ < upper.z; iZ++) {
 		index.z = iZ;
 		for (size_t iY = l.y; iY < upper.y; iY++) {
@@ -910,17 +780,17 @@ inline void PagedGrid<ELEMENT>::acceptZYX(Visitor &v, const index3_t &l,
 }
 
 template<typename ELEMENT>
-inline void PagedGrid<ELEMENT>::accept(Visitor &v, const index3_t &lower,
-		const index3_t &u) {
-	index3_t upper = minByElement(u, index3_t(size));
+inline void PagedGrid<ELEMENT>::accept(Visitor &v, const Index3 &lower,
+		const Index3 &u) {
+	Index3 upper = u.minByElement(Index3(size));
 	if (upper.x == 0 || upper.y == 0 || upper.z == 0) {
 		return;
 	}
 
-	index3_t lowerPage = lower / pageSize;
-	index3_t upperPage = (upper - index3_t(1)) / pageSize;
+	Index3 lowerPage = lower / pageSize;
+	Index3 upperPage = (upper - Index3(1)) / pageSize;
 
-	index3_t pageIndex;
+	Index3 pageIndex;
 	for (pageIndex.x = lowerPage.x; pageIndex.x <= upperPage.x; pageIndex.x++) {
 		for (pageIndex.y = lowerPage.y; pageIndex.y <= upperPage.y; pageIndex.y++) {
 			for (pageIndex.z = lowerPage.z; pageIndex.z <= upperPage.z; pageIndex.z++) {
@@ -936,11 +806,11 @@ inline void PagedGrid<ELEMENT>::accept(Visitor &v, const index3_t &lower,
 
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
-		const index3_t &l, const index3_t &u) {
-	index3_t lower = maxByElement(l, page->origin);
-	index3_t upper = minByElement(u, page->origin + index3_t(pageSize));
+		const Index3 &l, const Index3 &u) {
+	Index3 lower = l.maxByElement(page->origin);
+	Index3 upper = u.minByElement(page->origin + Index3(pageSize));
 	uint32_t pageSize2 = pageSize * pageSize;
-	index3_t offset = lower - page->origin;
+	Index3 offset = lower - page->origin;
 
 	for (uint32_t z = lower.z; z < upper.z; z++) {
 		offset.z = (z - page->origin.z) * pageSize2;

@@ -140,6 +140,15 @@ public:
 	T length() {
 		return std::sqrt(x * x + y * y + z * z);
 	}
+
+	Vector3<T> floor() {
+		return Vector3<T>(std::floor(x), std::floor(y), std::floor(z));
+	}
+
+	Vector3<T> ceil() {
+		return Vector3<T>(std::ceil(x), std::ceil(y), std::ceil(z));
+	}
+
 	//
 	//	bool operator <(const Vector3<T> &p) const {
 	//		if (x < p.x)

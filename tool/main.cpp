@@ -22,6 +22,7 @@
 
 #include <omp.h>
 
+int sph(Arguments &arguments);
 int paged_grid(Arguments &arguments);
 int bfieldtest(Arguments &arguments);
 int mass(Arguments &arguments);
@@ -643,6 +644,8 @@ int main(int argc, const char **argv) {
 			return pp(arguments);
 		else if (function == "pg")
 			return paged_grid(arguments);
+		else if (function == "sph")
+			return sph(arguments);
 		else if (function == "block")
 			return block(arguments);
 		else if (function == "writetest") {

@@ -4,7 +4,7 @@
 
 class TestVisitor1: public PagedGrid<Vector3f>::Visitor {
 public:
-	index3_t center;
+	Index3 center;
 	void visit(PagedGrid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		value.x = (float) center.x - x;
@@ -15,7 +15,7 @@ public:
 
 class TestVisitor2: public PagedGrid<Vector3f>::Visitor {
 public:
-	index3_t center;
+	Index3 center;
 	void visit(PagedGrid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		value.x -= (float) center.x - x;
@@ -40,9 +40,9 @@ void step1(Arguments &arguments) {
 	grid.setPageCount(1000);
 
 	TestVisitor1 v;
-	v.center = index3_t(50, 40, 30);
+	v.center = Index3(50, 40, 30);
 	std::cout << "accept..." << std::endl;
-	grid.accept(v, index3_t(0), index3_t(100));
+	grid.accept(v, Index3(0), Index3(100));
 	std::cout << "flush..." << std::endl;
 	grid.flush();
 	std::cout << "done..." << std::endl;
@@ -64,9 +64,9 @@ void step2(Arguments &arguments) {
 	grid.setPageCount(1000);
 
 	TestVisitor2 v;
-	v.center = index3_t(50, 40, 30);
+	v.center = Index3(50, 40, 30);
 	std::cout << "accept..." << std::endl;
-	grid.accept(v, index3_t(0), index3_t(100));
+	grid.accept(v, Index3(0), Index3(100));
 	std::cout << "flush..." << std::endl;
 	grid.flush();
 	std::cout << "done..." << std::endl;

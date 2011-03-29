@@ -102,7 +102,7 @@ int paged_grid(Arguments &arguments) {
 	io.setForceDump(true);
 	std::cout << "Output Prefix:  " << prefix << std::endl;
 
-	index3_t lowerLimit, upperLimit;
+	Index3 lowerLimit, upperLimit;
 	lowerLimit.x = arguments.getInt("-lx", 0) / res;
 	lowerLimit.y = arguments.getInt("-ly", 0) / res;
 	lowerLimit.z = arguments.getInt("-lz", 0) / res;
@@ -190,7 +190,7 @@ int paged_grid(Arguments &arguments) {
 
 		time_t start = std::time(0);
 		time_t last = std::time(0);
-		index3_t totalMin(std::numeric_limits<uint32_t>::max()), totalMax(
+		Index3 totalMin(std::numeric_limits<uint32_t>::max()), totalMax(
 				size_t(0));
 		float avgSL = 0.0;
 		size_t lastN = 0;
@@ -237,7 +237,7 @@ int paged_grid(Arguments &arguments) {
 					v.particle.smoothingLength * 2);
 			u.clamp(0.0, size);
 
-			index3_t lower, upper;
+			Index3 lower, upper;
 			lower.x = std::max(lowerLimit.x, (uint32_t) std::floor(l.x / res));
 			lower.y = std::max(lowerLimit.y, (uint32_t) std::floor(l.y / res));
 			lower.z = std::max(lowerLimit.z, (uint32_t) std::floor(l.z / res));

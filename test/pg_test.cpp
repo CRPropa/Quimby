@@ -34,7 +34,7 @@ void write() {
 	grid.setIO(&io);
 
 	for (size_t i = 0; i < 1000; i++) {
-		grid.getReadWrite(index3_t(i, i, i)) = i + 1;
+		grid.getReadWrite(Index3(i, i, i)) = i + 1;
 	}
 
 	grid.flush();
@@ -58,7 +58,7 @@ void read() {
 	grid.setIO(&io);
 
 	for (int i = 0; i < 1000; i++) {
-		const int &v = grid.getReadOnly(index3_t(i, i, i));
+		const int &v = grid.getReadOnly(Index3(i, i, i));
 		if (v != (i + 1))
 			exit(1);
 	}
