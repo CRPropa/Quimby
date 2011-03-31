@@ -23,6 +23,7 @@
 #include <omp.h>
 
 int sph(Arguments &arguments);
+int sph_dump(Arguments &arguments);
 int paged_grid(Arguments &arguments);
 int bfieldtest(Arguments &arguments);
 int mass(Arguments &arguments);
@@ -82,8 +83,8 @@ public:
 
 	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
-		float mag = std::sqrt(value.x * value.x + value.y * value.y + value.z
-				* value.z);
+		float mag = std::sqrt(
+				value.x * value.x + value.y * value.y + value.z * value.z);
 		if (logarithm) {
 			mag = std::log(mag + 1e-32);
 		}
@@ -195,8 +196,8 @@ int bfield(Arguments &arguments) {
 						float z = iStepZ * grid.getCellLength() / sl;
 						float vz = kernel(fabs(z)) * bZ;
 
-						Vector3f &v = grid.get(iX + iStepX, iY + iStepY, iZ
-								+ iStepZ);
+						Vector3f &v = grid.get(iX + iStepX, iY + iStepY,
+								iZ + iStepZ);
 #pragma omp critical
 						{
 							v.x += vx;
@@ -381,8 +382,8 @@ int block(Arguments &arguments) {
 
 	std::cout << "Cell Size: " << grid.getCellLength() << std::endl;
 
-	Vector3f offset(arguments.getFloat("-offX", 0), arguments.getFloat("-offY",
-			0), arguments.getFloat("-offZ", 0));
+	Vector3f offset(arguments.getFloat("-offX", 0),
+			arguments.getFloat("-offY", 0), arguments.getFloat("-offZ", 0));
 	std::cout << "Offset: " << offset << std::endl;
 
 	bool verbose = arguments.hasFlag("-v");
@@ -453,16 +454,16 @@ int block(Arguments &arguments) {
 			v.particle.bfield.y = bfld[iP * 3 + 1] * norm;
 			v.particle.bfield.z = bfld[iP * 3 + 2] * norm;
 
-			AABC<float> aabc(v.particle.position, v.particle.smoothingLength
-					* 2);
+			AABC<float> aabc(v.particle.position,
+					v.particle.smoothingLength * 2);
 			grid.acceptZYX(v, aabc);
 		}
 
 		std::cout << "  Done                 " << std::endl;
 	}
 
-	std::cout << grid.get((size_t) bins / 2, (size_t) bins / 2, (size_t) bins
-			/ 2) << std::endl;
+	std::cout << grid.get((size_t) bins / 2, (size_t) bins / 2,
+			(size_t) bins / 2) << std::endl;
 
 	std::cout << "Write output" << std::endl;
 
@@ -525,14 +526,14 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 	indices.resize(fs.size());
 
 	// find intersecting particles
-	Vector3<float> center(x * cellSize + cellSize / 2, y * cellSize + cellSize
-			/ 2, z * cellSize + cellSize / 2);
+	Vector3<float> center(x * cellSize + cellSize / 2,
+			y * cellSize + cellSize / 2, z * cellSize + cellSize / 2);
 	AABC<float> aabc(center, cellSize / 2);
 	std::cout << " bounding box: " << aabc << std::endl;
 	for (size_t iFile = 0; iFile < fs.size(); iFile++) {
 		for (size_t iSPH = 0; iSPH < fs[iFile].pos.size() / 3; iSPH++) {
-			Vector3<float> v(fs[iFile].pos[iSPH * 3], fs[iFile].pos[iSPH * 3
-					+ 1], fs[iFile].pos[iSPH * 3 + 2]);
+			Vector3<float> v(fs[iFile].pos[iSPH * 3],
+					fs[iFile].pos[iSPH * 3 + 1], fs[iFile].pos[iSPH * 3 + 2]);
 			float l = fs[iFile].hsml[iSPH];
 			AABC<float> bb(v, l);
 			if (aabc.intersects(bb)) {
@@ -615,7 +616,6 @@ int pp(Arguments &arguments) {
 	return 0;
 }
 
-
 int main(int argc, const char **argv) {
 	try {
 		Arguments arguments(argc, argv);
@@ -646,6 +646,8 @@ int main(int argc, const char **argv) {
 			return paged_grid(arguments);
 		else if (function == "sph")
 			return sph(arguments);
+		else if (function == "sph-dump")
+			return sph_dump(arguments);
 		else if (function == "block")
 			return block(arguments);
 		else if (function == "writetest") {

@@ -18,6 +18,7 @@ add_executable( gadget-tool
 	tool/paged_grid
 	tool/mass
 	tool/sph
+	tool/sph-dump
 )
 SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 
