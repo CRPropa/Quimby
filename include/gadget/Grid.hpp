@@ -32,11 +32,11 @@ public:
 
 	std::vector<element_t> elements;
 	float size, cellLength;
-	size_t bins;
+	size_t bins, bins2;
 
 public:
 	Grid() :
-		size(0.0), cellLength(0.0), bins(0) {
+			size(0.0), cellLength(0.0), bins(0), bins2(0) {
 	}
 
 	Grid(size_t bins, float size) {
@@ -59,24 +59,25 @@ public:
 	void create(size_t bins, float size) {
 		this->bins = bins;
 		this->size = size;
+		this->bins2 = bins * bins;
 		cellLength = size / (float) bins;
 		elements.resize(bins * bins * bins);
 	}
 
 	element_t &get(size_t x, size_t y, size_t z) {
-		return elements[x * bins * bins + y * bins + z];
+		return elements[x * bins2 + y * bins + z];
 	}
 
 	const element_t &get(size_t x, size_t y, size_t z) const {
-		return elements[x * bins * bins + y * bins + z];
+		return elements[x * bins2 + y * bins + z];
 	}
 
 	element_t &get(int x, int y, int z) {
-		return elements[x * bins * bins + y * bins + z];
+		return elements[x * bins2 + y * bins + z];
 	}
 
 	const element_t &get(int x, int y, int z) const {
-		return elements[x * bins * bins + y * bins + z];
+		return elements[x * bins2 + y * bins + z];
 	}
 
 	element_t &get(float fx, float fy, float fz) {
@@ -101,7 +102,7 @@ public:
 
 		size_t i = (size_t) (x / cellLength);
 		if (i >= bins)
-			return bins -1 ;
+			return bins - 1;
 
 		return i;
 	}
@@ -120,10 +121,25 @@ public:
 		return cellLength;
 	}
 
-	void dump(const std::string &filename) {
+	bool dump(const std::string &filename) {
 		std::ofstream outfile(filename.c_str(), std::ios::binary);
-		outfile.write((char *) &elements[0], sizeof(element_t)
-				* elements.size());
+		if (!outfile)
+			return false;
+		outfile.write((char *) &elements[0],
+				sizeof(element_t) * elements.size());
+		if (!outfile)
+			return false;
+		return true;
+	}
+
+	bool restore(const std::string &filename) {
+		std::ifstream infile(filename.c_str(), std::ios::binary);
+		if (!infile)
+			return false;
+		infile.read((char *) &elements[0], sizeof(element_t) * elements.size());
+		if (!infile)
+			return false;
+		return true;
 	}
 
 	void save(const std::string &filename) {
@@ -131,12 +147,12 @@ public:
 		std::string type = typeid(element_t).name();
 		std::string::size_type type_size = type.size();
 		outfile.write((char *) &type_size, sizeof(std::string::size_type));
-		outfile.write((char *) &type.at(0), type.size()
-				* sizeof(std::string::value_type));
+		outfile.write((char *) &type.at(0),
+				type.size() * sizeof(std::string::value_type));
 		outfile.write((char *) &size, sizeof(float));
 		outfile.write((char *) &bins, sizeof(size_t));
-		outfile.write((char *) &elements[0], sizeof(element_t)
-				* elements.size());
+		outfile.write((char *) &elements[0],
+				sizeof(element_t) * elements.size());
 	}
 
 	bool load(const std::string &filename) {
@@ -148,12 +164,13 @@ public:
 		std::string::size_type type_size;
 		infile.read((char *) &type_size, sizeof(std::string::size_type));
 		type.resize(type_size);
-		infile.read((char *) &type.at(0), type_size
-				* sizeof(std::string::value_type));
+		infile.read((char *) &type.at(0),
+				type_size * sizeof(std::string::value_type));
 
 		if (type != typeid(element_t).name()) {
-			throw std::runtime_error("Grid type mismatch. file: " + type
-					+ " this: " + typeid(element_t).name());
+			throw std::runtime_error(
+					"Grid type mismatch. file: " + type + " this: "
+							+ typeid(element_t).name());
 		}
 
 		float s;
@@ -172,8 +189,9 @@ public:
 		for (size_t iZ = 0; iZ < bins; iZ++) {
 			for (size_t iY = 0; iY < bins; iY++) {
 				for (size_t iX = 0; iX < bins; iX++) {
-					outfile.write((char *) &elements[iX * bins * bins + iY
-							* bins + iZ], sizeof(element_t));
+					outfile.write(
+							(char *) &elements[iX * bins * bins + iY * bins + iZ],
+							sizeof(element_t));
 				}
 			}
 		}
@@ -183,8 +201,8 @@ public:
 		for (size_t iX = 0; iX < bins; iX++) {
 			for (size_t iY = 0; iY < bins; iY++) {
 				for (size_t iZ = 0; iZ < bins; iZ++) {
-					v.visit(*this, iX, iY, iZ, elements[iX * bins * bins + iY
-							* bins + iZ]);
+					v.visit(*this, iX, iY, iZ,
+							elements[iX * bins * bins + iY * bins + iZ]);
 				}
 			}
 		}
@@ -194,8 +212,8 @@ public:
 		for (size_t iZ = 0; iZ < bins; iZ++) {
 			for (size_t iY = 0; iY < bins; iY++) {
 				for (size_t iX = 0; iX < bins; iX++) {
-					v.visit(*this, iX, iY, iZ, elements[iX * bins * bins + iY
-							* bins + iZ]);
+					v.visit(*this, iX, iY, iZ,
+							elements[iX * bins * bins + iY * bins + iZ]);
 				}
 			}
 		}
@@ -211,8 +229,8 @@ public:
 				size_t xStart = toIndex(aabc.lowerX());
 				size_t xEnd = toIndex(aabc.upperX());
 				for (size_t iX = xStart; iX <= xEnd; iX++) {
-					v.visit(*this, iX, iY, iZ, elements[iX * bins * bins + iY
-							* bins + iZ]);
+					v.visit(*this, iX, iY, iZ,
+							elements[iX * bins * bins + iY * bins + iZ]);
 				}
 			}
 		}
