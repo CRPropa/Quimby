@@ -141,6 +141,10 @@ public:
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
+	T length2() {
+		return (x * x + y * y + z * z);
+	}
+
 	Vector3<T> floor() {
 		return Vector3<T>(std::floor(x), std::floor(y), std::floor(z));
 	}
