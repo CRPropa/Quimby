@@ -31,6 +31,9 @@ int sph(Arguments &arguments) {
 	size_t fileSizeKpc = arguments.getInt("-fileSize", 20000);
 	std::cout << "FileSize:       " << fileSizeKpc << " kpc ";
 
+	size_t marginKpc = arguments.getInt("-margin", 500);
+	std::cout << "Margin:       " << marginKpc << " kpc ";
+
 	std::string prefix = arguments.getString("-prefix", "sph");
 	
 	bool verbose = arguments.hasFlag("-v");
@@ -89,11 +92,11 @@ int sph(Arguments &arguments) {
 			particle.bfield.z = bfld[iP * 3 + 2] * norm;
 
 			Vector3f l = particle.position - Vector3f(
-					particle.smoothingLength * 2);
+					particle.smoothingLength * 2 + marginKpc);
 			l.clamp(0.0, size);
 
 			Vector3f u = particle.position + Vector3f(
-					particle.smoothingLength * 2);
+					particle.smoothingLength * 2 + marginKpc);
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
