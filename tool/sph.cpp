@@ -86,10 +86,9 @@ int sph(Arguments &arguments) {
 			particle.position.y = (pos[iP * 3 + 1] - size / 2) / h + size / 2;
 			particle.position.z = (pos[iP * 3 + 2] - size / 2) / h + size / 2;
 
-			float norm = 1.0 / M_PI / pow(particle.smoothingLength, 3);
-			particle.bfield.x = bfld[iP * 3] * norm;
-			particle.bfield.y = bfld[iP * 3 + 1] * norm;
-			particle.bfield.z = bfld[iP * 3 + 2] * norm;
+			particle.bfield.x = bfld[iP * 3];
+			particle.bfield.y = bfld[iP * 3 + 1];
+			particle.bfield.z = bfld[iP * 3 + 2];
 
 			Vector3f l = particle.position - Vector3f(
 					particle.smoothingLength * 2 + marginKpc);
