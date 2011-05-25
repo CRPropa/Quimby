@@ -32,6 +32,14 @@ public:
 		return value * kernel(std::fabs((center - position) / hsml));
 	}
 
+	static float kernel(float value, const Vector3f &center, const Vector3f &position, float hsml) {
+		return value * kernel(std::fabs((center - position).length() / hsml));
+	}
+
+	float kernel(const Vector3f &center) {
+		return value * kernel(std::fabs((center - position).length() / smoothingLength));
+	}
+
 };
 
 
