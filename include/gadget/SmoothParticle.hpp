@@ -18,11 +18,11 @@ public:
 	float smoothingLength;
 
 	static float kernel(float r) {
-		if (r < 1.0) {
-			return 1.0 - 1.5 * r * r + 0.75 * r * r * r;
-		} else if (r < 2.0) {
-			float x = (2.0 - r);
-			return 0.25 * x * x * x;
+		if (r < 0.5) {
+			return 1.0 + 6 * r * r * (r - 1);
+		} else if (r < 1.0) {
+			float x = (1 - r);
+			return 2 * x * x * x;
 		} else {
 			return 0.0;
 		}
