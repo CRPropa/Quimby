@@ -46,6 +46,8 @@ size_t GadgetFile::findBlock(const std::string &label) {
 	file.seekg(0, std::ios::beg);
 	while (!file.eof() && blocksize == 0) {
 		readBlockSize();
+		if (!good())
+			break;
 		if (blksize != 8) {
 #ifdef DEBUG_GADGET_FILE
 			std::cerr << "[GadgetFile] Enable ENDIAN swapping" << std::endl;
@@ -77,6 +79,42 @@ size_t GadgetFile::findBlock(const std::string &label) {
 	}
 
 	return 0;
+}
+
+void GadgetFile::printBlocks() {
+	int blocksize = 0;
+	std::string blocklabel;
+
+	file.seekg(0, std::ios::beg);
+	while (file.good() && blocksize == 0) {
+		readBlockSize();
+		if (!good())
+			break;
+
+		if (blksize != 8) {
+#ifdef DEBUG_GADGET_FILE
+			std::cerr << "[GadgetFile] Enable ENDIAN swapping" << std::endl;
+#endif
+			swap = !swap;
+			swapBytes((char*) &blksize, 1, 4);
+		}
+
+		if (blksize != 8) {
+			break;
+		}
+
+		blocklabel.resize(4);
+
+		file.read(&blocklabel.at(0), 4 * sizeof(char));
+		read(&blocksize);
+
+		std::cout << "[GadgetFile] Found Block <" << blocklabel
+		<< "> with " << blocksize << " bytes" << std::endl;
+	
+		readBlockSize();
+		file.seekg(blocksize, std::ios::cur);
+		blocksize = 0;
+	}
 }
 
 bool GadgetFile::readHeader() {

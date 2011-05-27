@@ -581,6 +581,17 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 
 }
 
+int info(Arguments &arguments) {
+	for (size_t i = 2; i < arguments.getCount(); i++) {
+		std::cout << "Print info for file: " << arguments.get(i) << std::endl;
+		GadgetFile file;
+        file.open(arguments.get(i));
+		file.printBlocks();
+	}
+
+	return 0;
+}
+
 int pp(Arguments &arguments) {
 	std::string filename = arguments.getString("-o", "prepared.sph");
 	std::cout << "Output: " << filename << std::endl;
@@ -650,6 +661,8 @@ int main(int argc, const char **argv) {
 			return sph_dump(arguments);
 		else if (function == "block")
 			return block(arguments);
+        else if (function == "info")
+            return info(arguments);
 		else if (function == "writetest") {
 			if (arguments.hasFlag("-float")) {
 				Grid<float> fg;

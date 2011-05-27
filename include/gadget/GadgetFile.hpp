@@ -50,6 +50,7 @@ public:
 	size_t findBlock(const std::string &label);
 	bool readHeader();
 	bool readFloatBlock(const std::string &label, std::vector<float> &data);
+	void printBlocks();
 };
 
 #endif /* GADGETFILE_HPP_ */
