@@ -20,6 +20,10 @@ public:
 			arguments.push_back(v[i]);
 	}
 
+	const std::string &get(size_t i) {
+		return arguments[i];
+	}
+
 	void add(const std::string &argument) {
 		arguments.push_back(argument);
 	}
