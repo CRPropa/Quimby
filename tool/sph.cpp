@@ -20,6 +20,14 @@
 #include <sstream>
 #include <fstream>
 
+void updateRho(std::vector<SmoothParticle> &sph) {
+	const size_t s = sph.size();
+	#pragma omp parallel for
+	for (size_t i = 0; i < s; i++) {
+		sph[i].updateRho(sph);
+	}
+}
+
 int sph(Arguments &arguments) {
 
 	int size = arguments.getInt("-size", 240000);
@@ -29,12 +37,13 @@ int sph(Arguments &arguments) {
 	std::cout << "h:              " << h << std::endl;
 
 	size_t fileSizeKpc = arguments.getInt("-fileSize", 20000);
-	std::cout << "FileSize:       " << fileSizeKpc << " kpc ";
+	std::cout << "FileSize:       " << fileSizeKpc << " kpc " << std::endl;
 
-	size_t marginKpc = arguments.getInt("-margin", 500);
-	std::cout << "Margin:       " << marginKpc << " kpc ";
+	size_t marginKpc = arguments.getInt("-margin", 1000);
+	std::cout << "Margin:         " << marginKpc << " kpc " << std::endl;
 
 	std::string prefix = arguments.getString("-prefix", "sph");
+	std::cout << "Prefix:         " << prefix << std::endl;
 
 	bool verbose = arguments.hasFlag("-v");
 
@@ -81,7 +90,7 @@ int sph(Arguments &arguments) {
 
 		std::cout << "  Read RHO block" << std::endl;
 		std::vector<float> rho;
-		if (file.readFloatBlock("RHO", rho) == false) {
+		if (file.readFloatBlock("RHO ", rho) == false) {
 			std::cerr << "Failed to read RHO block" << std::endl;
 			return 1;
 		}
@@ -100,11 +109,11 @@ int sph(Arguments &arguments) {
 			particle.mass = rho[iP];
 
 			Vector3f l = particle.position
-					- Vector3f(particle.smoothingLength * 2 + marginKpc);
+					- Vector3f(particle.smoothingLength + marginKpc);
 			l.clamp(0.0, size);
 
 			Vector3f u = particle.position
-					+ Vector3f(particle.smoothingLength * 2 + marginKpc);
+					+ Vector3f(particle.smoothingLength + marginKpc);
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
@@ -147,6 +156,7 @@ int sph(Arguments &arguments) {
 				std::stringstream sstr;
 				sstr << prefix << "-" << x << "-" << y << "-" << z << ".raw";
 				std::ofstream out(sstr.str().c_str(), std::ofstream::binary);
+				updateRho(grid.get(x, y, z));
 				uint32_t s = grid.get(x, y, z).size();
 				if (verbose)
 					std::cout << s << std::endl;

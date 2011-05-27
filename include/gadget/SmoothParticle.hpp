@@ -18,6 +18,7 @@ public:
 	Vector3f bfield;
 	float smoothingLength;
 	float mass;
+	float rho;
 
 	static float kernel(float r) {
 		if (r < 0.5) {
@@ -44,15 +45,14 @@ public:
 	}
 
 	float weight() const {
-		8 / (M_PI * smoothingLength * smoothingLength * smoothingLength);
+		return 8 / (M_PI * smoothingLength * smoothingLength * smoothingLength);
 	}
 
-	float calculateRho(const std::vector<SmoothParticle> &particles) {
-		float rho = 0;
+	void updateRho(const std::vector<SmoothParticle> &particles) {
+		rho = 0;
 		for (size_t i = 0; i < particles.size(); i++) {
 			rho += particles[i].mass * particles[i].weight() * particles[i].kernel(position);
 		}
-		return rho;
 	}
 };
 

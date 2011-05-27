@@ -6,7 +6,7 @@ SET(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
 
 include_directories (include)
 
-add_library( gadget-lib SHARED
+add_library( gadget-lib STATIC
     src/GadgetFile.cpp
 )
 SET_TARGET_PROPERTIES(gadget-lib PROPERTIES OUTPUT_NAME "Gadget")
