@@ -35,13 +35,13 @@ int sph(Arguments &arguments) {
 	std::cout << "Margin:       " << marginKpc << " kpc ";
 
 	std::string prefix = arguments.getString("-prefix", "sph");
-	
+
 	bool verbose = arguments.hasFlag("-v");
 
 	size_t bins = size / fileSizeKpc;
-	Grid< std::vector<SmoothParticle> > grid(bins, size);
+	Grid<std::vector<SmoothParticle> > grid(bins, size);
 
-	std::vector < std::string > files;
+	std::vector<std::string> files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
@@ -79,6 +79,13 @@ int sph(Arguments &arguments) {
 			return 1;
 		}
 
+		std::cout << "  Read RHO block" << std::endl;
+		std::vector<float> rho;
+		if (file.readFloatBlock("RHO", rho) == false) {
+			std::cerr << "Failed to read RHO block" << std::endl;
+			return 1;
+		}
+
 		for (int iP = 0; iP < pn; iP++) {
 			SmoothParticle particle;
 			particle.smoothingLength = hsml[iP] / h;
@@ -90,12 +97,14 @@ int sph(Arguments &arguments) {
 			particle.bfield.y = bfld[iP * 3 + 1];
 			particle.bfield.z = bfld[iP * 3 + 2];
 
-			Vector3f l = particle.position - Vector3f(
-					particle.smoothingLength * 2 + marginKpc);
+			particle.mass = rho[iP];
+
+			Vector3f l = particle.position
+					- Vector3f(particle.smoothingLength * 2 + marginKpc);
 			l.clamp(0.0, size);
 
-			Vector3f u = particle.position + Vector3f(
-					particle.smoothingLength * 2 + marginKpc);
+			Vector3f u = particle.position
+					+ Vector3f(particle.smoothingLength * 2 + marginKpc);
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
@@ -107,11 +116,16 @@ int sph(Arguments &arguments) {
 			upper.y = (uint32_t) std::ceil(u.y / fileSizeKpc);
 			upper.z = (uint32_t) std::ceil(u.z / fileSizeKpc);
 
-			if (verbose && (iP % 100000 ==0)) {
-				std::cout << "Pos:" << particle.position << std::endl;
-				std::cout << "SL:" << particle.smoothingLength << std::endl;
-				std::cout << "Lower:" << lower << std::endl;
-				std::cout << "Upper:" << upper << std::endl;
+			if (verbose && (iP % 100000 == 0)) {
+				std::cout << "position:         " << particle.position
+						<< std::endl;
+				std::cout << "magnetic field:   " << particle.bfield
+						<< std::endl;
+				std::cout << "mass:             " << particle.mass << std::endl;
+				std::cout << "smoothing length: " << particle.smoothingLength
+						<< std::endl;
+				std::cout << "lower:            " << lower << std::endl;
+				std::cout << "upper:            " << upper << std::endl;
 			}
 
 			for (size_t x = lower.x; x < upper.x; x++)
@@ -132,15 +146,17 @@ int sph(Arguments &arguments) {
 			for (size_t z = 0; z < bins; z++) {
 				std::stringstream sstr;
 				sstr << prefix << "-" << x << "-" << y << "-" << z << ".raw";
-				std::ofstream out(sstr.str().c_str(),std::ofstream::binary);
+				std::ofstream out(sstr.str().c_str(), std::ofstream::binary);
 				uint32_t s = grid.get(x, y, z).size();
 				if (verbose)
 					std::cout << s << std::endl;
-				out.write((const char *)&s, sizeof(uint32_t));
-				out.write((const char *)&grid.get(x, y, z)[0], sizeof(SmoothParticle) * s);
+				out.write((const char *) &s, sizeof(uint32_t));
+				out.write((const char *) &grid.get(x, y, z)[0],
+						sizeof(SmoothParticle) * s);
 			}
 
 	}
 
 	return 0;
 }
+
