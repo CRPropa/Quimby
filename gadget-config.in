@@ -62,7 +62,7 @@ while test $# -gt 0; do
        	;;
 
     --libs)
-       	echo -l@CMAKE_INSTALL_PREFIX@/lib/libGadget.a
+       	echo @CMAKE_INSTALL_PREFIX@/lib/libGadget.a
        	;;
 
     *)
