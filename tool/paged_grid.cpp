@@ -25,26 +25,29 @@ public:
 	float cellLength;
 
 	PagedSPVisitor() :
-		lastX(-1), lastY(-1), lastZ(-1) {
+			lastX(-1), lastY(-1), lastZ(-1) {
 	}
 
 	void visit(PagedGrid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		if (x != lastX) {
-			b.x = SmoothParticle::kernel(particle.bfield.x, toCellCenter(x),
-					particle.position.x, particle.smoothingLength);
+			b.x = SmoothParticle::kernel(particle.bfield.x,
+					toCellCenter(x), particle.position.x,
+					particle.smoothingLength);
 		}
 		lastX = x;
 
 		if (y != lastY) {
-			b.y = SmoothParticle::kernel(particle.bfield.y, toCellCenter(y),
-					particle.position.y, particle.smoothingLength);
+			b.y = SmoothParticle::kernel(particle.bfield.y,
+					toCellCenter(y), particle.position.y,
+					particle.smoothingLength);
 		}
 		lastY = y;
 
 		if (z != lastZ) {
-			b.z = SmoothParticle::kernel(particle.bfield.z, toCellCenter(z),
-					particle.position.z, particle.smoothingLength);
+			b.z = SmoothParticle::kernel(particle.bfield.z,
+					toCellCenter(z), particle.position.z,
+					particle.smoothingLength);
 		}
 		lastZ = z;
 
@@ -117,8 +120,8 @@ int paged_grid(Arguments &arguments) {
 	int memory = arguments.getInt("-memory", 512);
 	size_t page_byte_size = pageLength * pageLength * pageLength
 			* sizeof(Vector3f);
-	int pageCount = std::max((size_t) 1, (memory * 1024 * 1024)
-			/ page_byte_size);
+	int pageCount = std::max((size_t) 1,
+			(memory * 1024 * 1024) / page_byte_size);
 	std::cout << "Memory:         " << memory << " MiB -> " << pageCount
 			<< " pages" << std::endl;
 
@@ -142,13 +145,13 @@ int paged_grid(Arguments &arguments) {
 	grid.setIO(&io);
 	grid.setPageCount(pageCount);
 
-	Vector3f offset(arguments.getFloat("-offX", 0), arguments.getFloat("-offY",
-			0), arguments.getFloat("-offZ", 0));
+	Vector3f offset(arguments.getFloat("-offX", 0),
+			arguments.getFloat("-offY", 0), arguments.getFloat("-offZ", 0));
 	std::cout << "Offset:         " << offset << std::endl;
 
 	bool verbose = arguments.hasFlag("-v");
 
-	std::vector < std::string > files;
+	std::vector<std::string> files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
@@ -229,12 +232,12 @@ int paged_grid(Arguments &arguments) {
 
 			v.cellLength = res;
 
-			Vector3f l = v.particle.position - Vector3f(
-					v.particle.smoothingLength * 2);
+			Vector3f l = v.particle.position
+					- Vector3f(v.particle.smoothingLength * 2);
 			l.clamp(0.0, size);
 
-			Vector3f u = v.particle.position + Vector3f(
-					v.particle.smoothingLength * 2);
+			Vector3f u = v.particle.position
+					+ Vector3f(v.particle.smoothingLength * 2);
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
@@ -258,8 +261,8 @@ int paged_grid(Arguments &arguments) {
 		}
 
 		size_t duration = time(0) - start;
-		std::cout << "\r  Done: " << duration / 3600 << "h " << (duration
-				% 3600) / 60 << "m " << duration % 60
+		std::cout << "\r  Done: " << duration / 3600 << "h "
+				<< (duration % 3600) / 60 << "m " << duration % 60
 				<< "s                                                  "
 				<< std::endl;
 		totalMin *= res;

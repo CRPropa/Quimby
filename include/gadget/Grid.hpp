@@ -31,7 +31,7 @@ public:
 	};
 
 	std::vector<element_t> elements;
-	float size, cellLength;
+	double size, cellLength;
 	size_t bins, bins2;
 
 public:
@@ -80,7 +80,7 @@ public:
 		return elements[x * bins2 + y * bins + z];
 	}
 
-	element_t &get(float fx, float fy, float fz) {
+	element_t &get(double fx, double fy, double fz) {
 		int x = ((int) (fx / cellLength)) % bins;
 		int y = ((int) (fy / cellLength)) % bins;
 		int z = ((int) (fz / cellLength)) % bins;
@@ -88,7 +88,7 @@ public:
 		return elements[i];
 	}
 
-	const element_t &get(float fx, float fy, float fz) const {
+	const element_t &get(double fx, double fy, double fz) const {
 		int x = ((int) (fx / cellLength)) % bins;
 		int y = ((int) (fy / cellLength)) % bins;
 		int z = ((int) (fz / cellLength)) % bins;

@@ -8,6 +8,7 @@ include_directories (include)
 
 add_library( gadget-lib STATIC
     src/GadgetFile.cpp
+    src/MagneticField.cpp
 )
 SET_TARGET_PROPERTIES(gadget-lib PROPERTIES OUTPUT_NAME "Gadget")
 
@@ -37,4 +38,7 @@ endif(UNIX)
 ENABLE_TESTING()
 
 add_executable(pg_test test/pg_test.cpp)
+add_executable(mf_test test/mf_test.cpp)
+target_link_libraries(mf_test gadget-lib)
 ADD_TEST(pg pg_test)
+ADD_TEST(mf mf_test)

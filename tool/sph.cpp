@@ -20,7 +20,7 @@
 #include <sstream>
 #include <fstream>
 
-void updateRho(std::vector<SmoothParticle> &sph) {
+void updateRho(std::vector<SmoothParticle > &sph) {
 	const size_t s = sph.size();
 	#pragma omp parallel for
 	for (size_t i = 0; i < s; i++) {
@@ -48,7 +48,7 @@ int sph(Arguments &arguments) {
 	bool verbose = arguments.hasFlag("-v");
 
 	size_t bins = size / fileSizeKpc;
-	Grid<std::vector<SmoothParticle> > grid(bins, size);
+	Grid<std::vector<SmoothParticle > > grid(bins, size);
 
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
