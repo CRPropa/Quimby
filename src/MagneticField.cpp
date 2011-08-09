@@ -26,6 +26,22 @@ const Vector3f &MagneticField::getOrigin() const {
 	return _originKpc;
 }
 
+void MagneticField::checkPosition(const Vector3f &positionKpc) const {
+	if (positionKpc.x < _originKpc.x)
+		throw invalid_position(positionKpc);
+	if (positionKpc.y < _originKpc.y)
+		throw invalid_position(positionKpc);
+	if (positionKpc.z < _originKpc.z)
+		throw invalid_position(positionKpc);
+
+	if (positionKpc.x > _originKpc.x + _sizeKpc)
+		throw invalid_position(positionKpc);
+	if (positionKpc.y > _originKpc.y + _sizeKpc)
+		throw invalid_position(positionKpc);
+	if (positionKpc.z > _originKpc.z + _sizeKpc)
+		throw invalid_position(positionKpc);
+}
+
 //MagneticField::MagneticField(const char* aFileName) :
 //		TXmlParam(aFileName) {
 //	SetType(MAGFIELD_LSS);
@@ -268,7 +284,9 @@ void SampledMagneticField::load(const std::vector<SmoothParticle> &particles) {
 }
 
 Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
-// check: http://paulbourke.net/miscellaneous/interpolation/
+	checkPosition(positionKpc);
+
+	// check: http://paulbourke.net/miscellaneous/interpolation/
 	Vector3f r = (positionKpc - _originKpc) / _stepsizeKpc;
 
 	if (r.x >= _samples || r.y >= _samples || r.z >= _samples || r.x <= 0
@@ -376,7 +394,9 @@ void DirectMagneticField::load(const std::vector<SmoothParticle> &particles) {
 }
 
 Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
-// get index list
+	checkPosition(positionKpc);
+
+	// get index list
 	Vector3f relativePosition = positionKpc - _originKpc;
 	const std::vector<size_t> &idx = _grid.get(relativePosition.x,
 			relativePosition.y, relativePosition.z);

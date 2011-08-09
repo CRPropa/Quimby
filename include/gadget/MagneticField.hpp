@@ -5,13 +5,33 @@
 #include "gadget/Vector3.hpp"
 #include "gadget/SmoothParticle.hpp"
 
-#include <math.h>
 #include <vector>
+#include <string>
+#include <exception>
+#include <sstream>
+
+class invalid_position: public std::exception {
+	std::string _msg;
+public:
+	invalid_position(const Vector3f &v) {
+		std::stringstream ss(_msg);
+		ss << "Invalid position: " << v;
+	}
+
+	virtual ~invalid_position() throw () {
+	}
+
+	virtual const char* what() const throw () {
+		return _msg.c_str();
+	}
+
+};
 
 class MagneticField {
 protected:
 	float _sizeKpc;
 	Vector3f _originKpc;
+	void checkPosition(const Vector3f &positionKpc) const;
 public:
 	MagneticField(const Vector3f &originKpc, double sizeKpc);
 	const float &getSize() const;
@@ -53,6 +73,13 @@ public:
 			actualSum = 0;
 			actualCount = 0;
 		}
+
+		double getAverageTotal() const {
+			return (double) totalSum / (double) totalCount;
+		}
+		double getAverageActual() const {
+			return (double) actualSum / (double) actualCount;
+		}
 	};
 private:
 	mutable Statistics _statistics;
@@ -68,7 +95,9 @@ public:
 	void load(const std::string &filename);
 	void load(const std::vector<SmoothParticle> &particles);
 
-	const Statistics &getStatistics() const;
+	const Statistics &getStatistics() const {
+		return _statistics;
+	}
 };
 
 #endif
