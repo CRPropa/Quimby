@@ -52,6 +52,9 @@ int sph(Arguments &arguments) {
 	std::cout << "Prefix:         " << prefix << std::endl;
 
 	bool verbose = arguments.hasFlag("-v");
+	bool veryverbose = arguments.hasFlag("-vv");
+	if (veryverbose)
+		verbose = true;
 
 	size_t bins = size / fileSizeKpc;
 	Grid<std::vector<SmoothParticle> > grid(bins, size);
@@ -114,12 +117,12 @@ int sph(Arguments &arguments) {
 
 			particle.mass = rho[iP];
 
-			Vector3f l = particle.position
-					- Vector3f(particle.smoothingLength + marginKpc) - offset;
+			Vector3f relativePosition = particle.position - offset;
+			Vector3f radius = Vector3f(particle.smoothingLength + marginKpc);
+			Vector3f l = relativePosition - radius;
 			l.clamp(0.0, size);
 
-			Vector3f u = particle.position
-					+ Vector3f(particle.smoothingLength + marginKpc) - offset;
+			Vector3f u = relativePosition + radius;
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
@@ -131,7 +134,7 @@ int sph(Arguments &arguments) {
 			upper.y = (uint32_t) std::ceil(u.y / fileSizeKpc);
 			upper.z = (uint32_t) std::ceil(u.z / fileSizeKpc);
 
-			if (verbose && (iP % 100000 == 0)) {
+			if ((verbose && (iP % 100000 == 0)) || veryverbose) {
 				std::cout << "position:         " << particle.position
 						<< std::endl;
 				std::cout << "magnetic field:   " << particle.bfield
