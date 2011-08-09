@@ -20,9 +20,9 @@
 #include <sstream>
 #include <fstream>
 
-void updateRho(std::vector<SmoothParticle > &sph) {
+void updateRho(std::vector<SmoothParticle> &sph) {
 	const size_t s = sph.size();
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (size_t i = 0; i < s; i++) {
 		sph[i].updateRho(sph);
 	}
@@ -32,6 +32,12 @@ int sph(Arguments &arguments) {
 
 	int size = arguments.getInt("-size", 240000);
 	std::cout << "Size:           " << size << " kpc" << std::endl;
+
+	Vector3f offset;
+	offset.x = arguments.getFloat("-ox", 0);
+	offset.y = arguments.getFloat("-oy", 0);
+	offset.z = arguments.getFloat("-oz", 0);
+	std::cout << "Offset:         " << offset << " kpc" << std::endl;
 
 	float h = arguments.getFloat("-h", 0.7);
 	std::cout << "h:              " << h << std::endl;
@@ -48,7 +54,7 @@ int sph(Arguments &arguments) {
 	bool verbose = arguments.hasFlag("-v");
 
 	size_t bins = size / fileSizeKpc;
-	Grid<std::vector<SmoothParticle > > grid(bins, size);
+	Grid<std::vector<SmoothParticle> > grid(bins, size);
 
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
@@ -109,11 +115,11 @@ int sph(Arguments &arguments) {
 			particle.mass = rho[iP];
 
 			Vector3f l = particle.position
-					- Vector3f(particle.smoothingLength + marginKpc);
+					- Vector3f(particle.smoothingLength + marginKpc) - offset;
 			l.clamp(0.0, size);
 
 			Vector3f u = particle.position
-					+ Vector3f(particle.smoothingLength + marginKpc);
+					+ Vector3f(particle.smoothingLength + marginKpc) - offset;
 			u.clamp(0.0, size);
 
 			Index3 lower, upper;
