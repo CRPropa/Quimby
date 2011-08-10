@@ -179,7 +179,7 @@ class HaloTest: public AbstractTest {
 public:
 
 	void setup() {
-		SmoothParticleHelper::read("test/mhd_z-5-11-6.raw", particles);
+		SmoothParticleHelper::read("test/coma-0.7.raw", particles);
 
 		Vector3f origin(99000, 219000, 119000);
 		float size(22000);

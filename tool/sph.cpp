@@ -7,7 +7,7 @@
 
 #include "arguments.hpp"
 
-#include "gadget/Grid.hpp"
+#include "gadget/SPHGrid.hpp"
 #include "gadget/Index3.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/GadgetFile.hpp"
@@ -43,6 +43,8 @@ int sph(Arguments &arguments) {
 	std::cout << "h:              " << h << std::endl;
 
 	size_t fileSizeKpc = arguments.getInt("-fileSize", 20000);
+	if (fileSizeKpc > size)
+		fileSizeKpc = size;
 	std::cout << "FileSize:       " << fileSizeKpc << " kpc " << std::endl;
 
 	size_t marginKpc = arguments.getInt("-margin", 1000);
@@ -51,14 +53,15 @@ int sph(Arguments &arguments) {
 	std::string prefix = arguments.getString("-prefix", "sph");
 	std::cout << "Prefix:         " << prefix << std::endl;
 
+	bool skipRho = arguments.hasFlag("-skipRho");
 	bool verbose = arguments.hasFlag("-v");
 	bool veryverbose = arguments.hasFlag("-vv");
 	if (veryverbose)
 		verbose = true;
 
 	size_t bins = size / fileSizeKpc;
-	Grid<std::vector<SmoothParticle> > grid(bins, size);
-
+	SPHGrid grid(bins, size);
+	grid.setOffset(offset);
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
@@ -117,39 +120,7 @@ int sph(Arguments &arguments) {
 
 			particle.mass = rho[iP];
 
-			Vector3f relativePosition = particle.position - offset;
-			Vector3f radius = Vector3f(particle.smoothingLength + marginKpc);
-			Vector3f l = relativePosition - radius;
-			l.clamp(0.0, size);
-
-			Vector3f u = relativePosition + radius;
-			u.clamp(0.0, size);
-
-			Index3 lower, upper;
-			lower.x = (uint32_t) std::floor(l.x / fileSizeKpc);
-			lower.y = (uint32_t) std::floor(l.y / fileSizeKpc);
-			lower.z = (uint32_t) std::floor(l.z / fileSizeKpc);
-
-			upper.x = (uint32_t) std::ceil(u.x / fileSizeKpc);
-			upper.y = (uint32_t) std::ceil(u.y / fileSizeKpc);
-			upper.z = (uint32_t) std::ceil(u.z / fileSizeKpc);
-
-			if ((verbose && (iP % 100000 == 0)) || veryverbose) {
-				std::cout << "position:         " << particle.position
-						<< std::endl;
-				std::cout << "magnetic field:   " << particle.bfield
-						<< std::endl;
-				std::cout << "mass:             " << particle.mass << std::endl;
-				std::cout << "smoothing length: " << particle.smoothingLength
-						<< std::endl;
-				std::cout << "lower:            " << lower << std::endl;
-				std::cout << "upper:            " << upper << std::endl;
-			}
-
-			for (size_t x = lower.x; x < upper.x; x++)
-				for (size_t y = lower.y; y < upper.y; y++)
-					for (size_t z = lower.z; z < upper.z; z++)
-						grid.get(x, y, z).push_back(particle);
+			grid.add(particle, marginKpc);
 		}
 	}
 
@@ -165,7 +136,8 @@ int sph(Arguments &arguments) {
 				std::stringstream sstr;
 				sstr << prefix << "-" << x << "-" << y << "-" << z << ".raw";
 				std::ofstream out(sstr.str().c_str(), std::ofstream::binary);
-				updateRho(grid.get(x, y, z));
+				if (!skipRho)
+					updateRho(grid.get(x, y, z));
 				uint32_t s = grid.get(x, y, z).size();
 				if (verbose)
 					std::cout << s << std::endl;

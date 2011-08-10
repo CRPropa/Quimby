@@ -39,14 +39,14 @@ public:
 			size(0.0), cellLength(0.0), bins(0), bins2(0) {
 	}
 
-	Grid(size_t bins, float size) {
+	Grid(size_t bins, double size) {
 		create(bins, size);
 	}
 	size_t getBins() const {
 		return bins;
 	}
 
-	float getSize() const {
+	double getSize() const {
 		return size;
 	}
 
@@ -56,11 +56,11 @@ public:
 			*i = value;
 	}
 
-	void create(size_t bins, float size) {
+	void create(size_t bins, double size) {
 		this->bins = bins;
 		this->size = size;
 		this->bins2 = bins * bins;
-		cellLength = size / (float) bins;
+		cellLength = size / (double) bins;
 		elements.resize(bins * bins * bins);
 	}
 
@@ -96,7 +96,7 @@ public:
 		return elements[i];
 	}
 
-	size_t toIndex(float x) {
+	size_t toIndex(double x) {
 		if (x < 0)
 			return 0;
 
@@ -107,17 +107,17 @@ public:
 		return i;
 	}
 
-	float toCellCenter(float x) {
-		float a = std::floor(x / cellLength) + 0.5;
+	double toCellCenter(double x) {
+		double a = std::floor(x / cellLength) + 0.5;
 		return cellLength * a;
 	}
 
-	float toCellCenter(size_t x) {
-		float a = (float) x + 0.5f;
+	double toCellCenter(size_t x) {
+		double a = (double) x + 0.5f;
 		return cellLength * a;
 	}
 
-	float getCellLength() {
+	double getCellLength() {
 		return cellLength;
 	}
 
@@ -149,7 +149,7 @@ public:
 		outfile.write((char *) &type_size, sizeof(std::string::size_type));
 		outfile.write((char *) &type.at(0),
 				type.size() * sizeof(std::string::value_type));
-		outfile.write((char *) &size, sizeof(float));
+		outfile.write((char *) &size, sizeof(double));
 		outfile.write((char *) &bins, sizeof(size_t));
 		outfile.write((char *) &elements[0],
 				sizeof(element_t) * elements.size());
@@ -173,8 +173,8 @@ public:
 							+ typeid(element_t).name());
 		}
 
-		float s;
-		infile.read((char *) &s, sizeof(float));
+		double s;
+		infile.read((char *) &s, sizeof(double));
 		size_t b;
 		infile.read((char *) &b, sizeof(size_t));
 		create(b, s);
@@ -219,7 +219,8 @@ public:
 		}
 	}
 
-	void acceptZYX(Visitor &v, const AABC<float> &aabc) {
+	template <class F>
+	void acceptZYX(Visitor &v, const AABC<F> &aabc) {
 		size_t zStart = toIndex(aabc.lowerZ());
 		size_t zEnd = toIndex(aabc.upperZ());
 		for (size_t iZ = zStart; iZ <= zEnd; iZ++) {
