@@ -145,15 +145,15 @@ public:
 		return (x * x + y * y + z * z);
 	}
 
-	Vector3<T> floor() {
+	Vector3<T> floor() const {
 		return Vector3<T>(std::floor(x), std::floor(y), std::floor(z));
 	}
 
-	Vector3<T> ceil() {
+	Vector3<T> ceil() const {
 		return Vector3<T>(std::ceil(x), std::ceil(y), std::ceil(z));
 	}
 
-	Vector3<T> scale(float f, const Vector3<T> &origin = Vector3<T>(0, 0, 0)) {
+	Vector3<T> scale(float f, const Vector3<T> &origin = Vector3<T>(0, 0, 0)) const {
 		return ((*this - origin) * f + origin);
 	}
 

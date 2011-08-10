@@ -114,14 +114,14 @@ int sph(Arguments &arguments) {
 			SmoothParticle particle;
 			particle.smoothingLength = hsml[iP] / h;
 			Vector3f p(pos[iP * 3], pos[iP * 3 + 1], pos[iP * 3 + 2]);
-			particle.position = p.scale(1 / h,
+			particle.position = p.scale(1. / h,
 					Vector3f(120000, 120000, 120000));
 
 			particle.bfield.x = bfld[iP * 3];
 			particle.bfield.y = bfld[iP * 3 + 1];
 			particle.bfield.z = bfld[iP * 3 + 2];
 
-			particle.mass = rho[iP];
+			particle.mass = rho[iP] / h;
 
 			grid.add(particle);
 		}
@@ -130,20 +130,17 @@ int sph(Arguments &arguments) {
 	std::cout << "Write output" << std::endl;
 
 	for (size_t x = 0; x < bins; x++) {
-		if (verbose) {
-			std::cout << "x = " << x << std::endl;
-		}
-
 		for (size_t y = 0; y < bins; y++)
 			for (size_t z = 0; z < bins; z++) {
 				std::stringstream sstr;
 				sstr << prefix << "-" << x << "-" << y << "-" << z << ".raw";
 				std::ofstream out(sstr.str().c_str(), std::ofstream::binary);
-				if (!skipRho)
-					updateRho(grid.get(x, y, z));
 				uint32_t s = grid.get(x, y, z).size();
 				if (verbose)
-					std::cout << s << std::endl;
+					std::cout << "  " << x << " " << y << " " << z << ": " << s
+							<< std::endl;
+				if (!skipRho)
+					updateRho(grid.get(x, y, z));
 				out.write((const char *) &s, sizeof(uint32_t));
 				out.write((const char *) &grid.get(x, y, z)[0],
 						sizeof(SmoothParticle) * s);

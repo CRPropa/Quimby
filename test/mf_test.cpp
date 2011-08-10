@@ -11,6 +11,7 @@
 #include <memory>
 #include <limits>
 #include <stdexcept>
+#include <stdlib.h>
 
 class AbstractTest {
 public:
@@ -98,26 +99,42 @@ public:
 		avgDirect = 0;
 		avgSampled = 0;
 		size_t count = 0;
+#if 0
 		float phi = 0;
 		while (phi < 360) {
-			float theta = -90;
-			while (theta <= 90) {
-				theta += 10;
+			float costheta = -1 + 0.05;
+			while (costheta < 1) {
 				Vector3f position = center;
-				try {
-					position.x += radius * sin(phi) * cos(theta);
-					position.y += radius * cos(phi) * cos(theta);
-					position.z += radius * sin(theta);
-					avgDirect += dmf->getField(position).length();
-					avgSampled += smf->getField(position).length();
-					count++;
-				} catch (...) {
-
-				}
+//				try {
+				position.x += radius * sin(phi)
+				* ::sqrt(1. - costheta * costheta);
+				position.y += radius * cos(phi)
+				* ::sqrt(1. - costheta * costheta);
+				position.z += radius * costheta;
+				avgDirect += dmf->getField(position).length();
+				avgSampled += smf->getField(position).length();
+				count++;
+//				} catch (...) {
+//					std::cerr << "invalud"
+//				}
+				costheta += 0.05;
 			}
-			phi += 10;
+			phi += 5;
 		}
+#endif
 
+		for (size_t i = 0; i < 100000; i++) {
+			Vector3f r;
+			r.x = drand48() - 0.5;
+			r.y = drand48() - 0.5;
+			r.z = drand48() - 0.5;
+			r *= 1./r.length();
+			r *= radius;
+			r += center;
+			avgDirect += dmf->getField(r).length();
+			avgSampled += smf->getField(r).length();
+			count++;
+		}
 		avgDirect /= count;
 		avgSampled /= count;
 	}
@@ -130,7 +147,7 @@ public:
 			float r = (radius / 50) * i;
 			float avgDirect, avgSampled;
 			getAverageFieldOnSphere(center, r, avgDirect, avgSampled);
-			std::cout << r/radius << " " << avgDirect << " " << avgSampled
+			std::cout << r / radius << " " << avgDirect << " " << avgSampled
 					<< std::endl;
 		}
 	}
@@ -174,6 +191,7 @@ public:
 // Coma
 // 11   411121   214459 7.570E+14 6.634E+14 1885.23     119.8023  190.8159  129.1431  -361.72   566.41  -315.91  949.39
 Vector3f ComaPosition(119717, 221164, 133061);
+Vector3f ComaPosition2(119802, 190816, 129143);
 
 class HaloTest: public AbstractTest {
 public:
@@ -181,8 +199,32 @@ public:
 	void setup() {
 		SmoothParticleHelper::read("test/coma-0.7.raw", particles);
 
-		Vector3f origin(99000, 219000, 119000);
-		float size(22000);
+		float size(6000);
+		Vector3f origin = ComaPosition - Vector3f(size / 2);
+
+		dmf.reset(new DirectMagneticField(origin, size));
+		dmf->init(50);
+		dmf->load(particles);
+
+		smf.reset(new SampledMagneticField(origin, size));
+		smf->init(100);
+		smf->load(particles);
+
+		testPoints.push_back(
+				TestPoint(ComaPosition,
+						Vector3f(-1.60984e-09, -3.48952e-10, 1.00858e-09), 1));
+	}
+
+};
+
+class HaloTest2: public AbstractTest {
+public:
+
+	void setup() {
+		SmoothParticleHelper::read("test/coma-1.0.raw", particles);
+
+		float size(4000);
+		Vector3f origin = ComaPosition2 - Vector3f(size / 2);
 
 		dmf.reset(new DirectMagneticField(origin, size));
 		dmf->init(50);
@@ -205,11 +247,23 @@ int main() {
 	stest.runTestPoints();
 	stest.runSweep(Vector3f(120000, 120000, 120000),
 			Vector3f(120000, 110000, 120000), 10, 0.01);
+	float a, b;
+	stest.getAverageFieldOnSphere(Vector3f(120000, 120000, 120000), 5000, a, b);
+	std::cout << "Average on Sphere: " << a << ", " << b << std::endl;
+	if (fabs(a - 0.25) > 0.01 || fabs(b - 0.25) > 0.01)
+		throw std::runtime_error("unexpected deviation!");
 
 	HaloTest htest;
 	htest.setup();
-	htest.runTestPoints();
-	htest.runSweep(ComaPosition, ComaPosition + Vector3f(-1000, 1000, 500), 10,
-			0.01);
-	htest.runHaloTest(ComaPosition, 2700);
+//	htest.runTestPoints();
+//	htest.runSweep(ComaPosition, ComaPosition + Vector3f(-1000, 1000, 500), 10,
+//			0.01);
+	htest.runHaloTest(ComaPosition, 2693.1857);
+
+	HaloTest2 htest2;
+	htest2.setup();
+//	htest.runTestPoints();
+//	htest.runSweep(ComaPosition, ComaPosition2 + Vector3f(-1000, 1000, 500), 10,
+//			0.01);
+	htest2.runHaloTest(ComaPosition2, 1885.23);
 }
