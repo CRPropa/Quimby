@@ -21,23 +21,23 @@ public:
 	}
 
 	Vector3(const Vector3<T> &v) :
-		x(v.x), y(v.y), z(v.z) {
+			x(v.x), y(v.y), z(v.z) {
 	}
 
 	explicit Vector3(const double *v) :
-		x(v[0]), y(v[1]), z(v[2]) {
+			x(v[0]), y(v[1]), z(v[2]) {
 	}
 
 	explicit Vector3(const float *v) :
-		x(v[0]), y(v[1]), z(v[2]) {
+			x(v[0]), y(v[1]), z(v[2]) {
 	}
 
 	explicit Vector3(const double &X, const double &Y, const double &Z) :
-		x(X), y(Y), z(Z) {
+			x(X), y(Y), z(Z) {
 	}
 
 	explicit Vector3(T t) :
-		x(t), y(t), z(t) {
+			x(t), y(t), z(t) {
 	}
 
 	bool operator <(const Vector3<T> &v) const {
@@ -153,6 +153,10 @@ public:
 		return Vector3<T>(std::ceil(x), std::ceil(y), std::ceil(z));
 	}
 
+	Vector3<T> scale(float f, const Vector3<T> &origin = Vector3<T>(0, 0, 0)) {
+		return ((*this - origin) * f + origin);
+	}
+
 	//
 	//	bool operator <(const Vector3<T> &p) const {
 	//		if (x < p.x)
@@ -173,7 +177,7 @@ public:
 
 template<>
 inline Vector3<float> Vector3<float>::operator %(const float &f) const {
-	return Vector3<float> (fmod(x, f), fmod(y, f), fmod(z, f));
+	return Vector3<float>(fmod(x, f), fmod(y, f), fmod(z, f));
 }
 
 template<>
@@ -186,7 +190,7 @@ inline Vector3<float> &Vector3<float>::operator %=(const float &f) {
 
 template<>
 inline Vector3<double> Vector3<double>::operator %(const double &f) const {
-	return Vector3<double> (fmod(x, f), fmod(y, f), fmod(z, f));
+	return Vector3<double>(fmod(x, f), fmod(y, f), fmod(z, f));
 }
 
 template<>

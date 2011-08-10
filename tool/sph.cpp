@@ -60,8 +60,11 @@ int sph(Arguments &arguments) {
 		verbose = true;
 
 	size_t bins = size / fileSizeKpc;
+	std::cout << "Bins:           " << bins << std::endl;
+
 	SPHGrid grid(bins, size);
 	grid.setOffset(offset);
+	grid.setMargin(marginKpc);
 	std::vector<std::string> files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
@@ -110,9 +113,9 @@ int sph(Arguments &arguments) {
 		for (int iP = 0; iP < pn; iP++) {
 			SmoothParticle particle;
 			particle.smoothingLength = hsml[iP] / h;
-			particle.position.x = (pos[iP * 3] - size / 2) / h + size / 2;
-			particle.position.y = (pos[iP * 3 + 1] - size / 2) / h + size / 2;
-			particle.position.z = (pos[iP * 3 + 2] - size / 2) / h + size / 2;
+			Vector3f p(pos[iP * 3], pos[iP * 3 + 1], pos[iP * 3 + 2]);
+			particle.position = p.scale(1 / h,
+					Vector3f(120000, 120000, 120000));
 
 			particle.bfield.x = bfld[iP * 3];
 			particle.bfield.y = bfld[iP * 3 + 1];
@@ -120,7 +123,7 @@ int sph(Arguments &arguments) {
 
 			particle.mass = rho[iP];
 
-			grid.add(particle, marginKpc);
+			grid.add(particle);
 		}
 	}
 

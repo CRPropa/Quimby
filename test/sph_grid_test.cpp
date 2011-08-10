@@ -9,50 +9,46 @@
 
 #include <iostream>
 
-class SPHGridTest {
-	SPHGrid grid;
-	size_t expectedCount;
-	float margin;
+class SPHGridTest: public SPHGrid {
 public:
-	SPHGridTest() :
-			grid(1, 10000), expectedCount(0), margin(100) {
-		grid.setOffset(Vector3f(20000, 20000, 20000));
-	}
+	SPHGridTest(size_t bins, float size) :
+			SPHGrid(bins, size) {
 
-	void add(const Vector3f &p, float sl, bool expect) {
+	}
+	void test(const Vector3f &p, float sl, size_t expect) {
 		std::cout << p << " - " << sl << std::endl;
 		SmoothParticle particle;
 		particle.position = p;
 		particle.smoothingLength = sl;
 
-		if (expect)
-			expectedCount++;
-		grid.add(particle, margin);
-		if (grid.get(0, 0, 0).size() != expectedCount)
+		size_t count = add(particle);
+		if (count != expect)
 			throw std::runtime_error("wrong number");
 	}
 };
 
 int main() {
-	SPHGridTest test;
+	SPHGridTest test(1, 10000);
+	test.setOffset(Vector3f(20000, 20000, 20000));
+	test.setMargin(100);
 	Vector3f pos;
 
-	test.add(Vector3f(1000, 1000, 1000), 100, false);
-	test.add(Vector3f(19000, 1000, 1000), 2000, false);
-	test.add(Vector3f(19000, 19000, 1000), 2000, false);
-	test.add(Vector3f(19000, 19000, 19000), 2000, true);
-	test.add(Vector3f(19000, 33000, 19000), 2000, false);
-	test.add(Vector3f(19000, 31000, 19000), 2000, true);
-	test.add(Vector3f(25000, 25000, 25000), 2000, true);
+	test.test(Vector3f(1000, 1000, 1000), 100, 0);
+	test.test(Vector3f(19000, 1000, 1000), 2000, 0);
+	test.test(Vector3f(19000, 19000, 1000), 2000, 0);
+	test.test(Vector3f(19000, 19000, 19000), 2000, 1);
+	test.test(Vector3f(19000, 33000, 19000), 2000, 0);
+	test.test(Vector3f(19000, 31000, 19000), 2000, 1);
+	test.test(Vector3f(25000, 25000, 25000), 2000, 1);
 
-	test.add(Vector3f(17850, 25000, 25000), 2000, false);
-	test.add(Vector3f(17950, 25000, 25000), 2000, true);
+	test.test(Vector3f(17850, 25000, 25000), 2000, 0);
+	test.test(Vector3f(17950, 25000, 25000), 2000, 1);
 
-	test.add(Vector3f(25000, 17850, 25000), 2000, false);
-	test.add(Vector3f(25000, 17950, 25000), 2000, true);
+	test.test(Vector3f(25000, 17850, 25000), 2000, 0);
+	test.test(Vector3f(25000, 17950, 25000), 2000, 1);
 
-	test.add(Vector3f(25000, 25000, 17850), 2000, false);
-	test.add(Vector3f(25000, 25000, 17950), 2000, true);
+	test.test(Vector3f(25000, 25000, 17850), 2000, 0);
+	test.test(Vector3f(25000, 25000, 17950), 2000, 1);
 
 	std::cout << "done" << std::endl;
 

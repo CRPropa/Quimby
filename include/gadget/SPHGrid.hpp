@@ -16,7 +16,7 @@
 
 class SPHGrid: public Grid<std::vector<SmoothParticle> > {
 	Vector3f offset;
-	size_t c;
+	float margin;
 public:
 
 	typedef Grid<std::vector<SmoothParticle> > base;
@@ -26,7 +26,7 @@ public:
 	}
 
 	SPHGrid(size_t bins, float size) :
-			base(bins, size), offset(0.f) {
+			base(bins, size), offset(0.f), margin(0.f) {
 
 	}
 
@@ -36,6 +36,14 @@ public:
 
 	const Vector3f &getOffset() const {
 		return offset;
+	}
+
+	void setMargin(const float &margin) {
+		this->margin = margin;
+	}
+
+	const float &getMargin() const {
+		return margin;
 	}
 
 	size_t clamp(const double &v) {
@@ -51,19 +59,26 @@ public:
 		return Index3(clamp(v.x), clamp(v.y), clamp(v.z));
 	}
 
-	void add(const SmoothParticle &particle, float marginKpc = 0) {
+	size_t add(const SmoothParticle &particle) {
 		Vector3f relativePosition = particle.position - offset;
-		Vector3f radius = Vector3f(particle.smoothingLength + marginKpc);
+		Vector3f radius = Vector3f(particle.smoothingLength + margin);
 		Vector3f l = (relativePosition - radius) / cellLength;
 		Vector3f u = (relativePosition + radius) / cellLength;
 
 		Index3 lower = clamp(l.floor());
 		Index3 upper = clamp(u.ceil());
 
-		for (size_t x = lower.x; x < upper.x; x++)
-			for (size_t y = lower.y; y < upper.y; y++)
-				for (size_t z = lower.z; z < upper.z; z++)
+		size_t count = 0;
+		for (size_t x = lower.x; x < upper.x; x++) {
+			for (size_t y = lower.y; y < upper.y; y++) {
+				for (size_t z = lower.z; z < upper.z; z++) {
+					count++;
 					get(x, y, z).push_back(particle);
+				}
+			}
+		}
+
+		return count;
 	}
 };
 
