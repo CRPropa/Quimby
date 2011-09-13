@@ -11,6 +11,7 @@
 #include <ostream>
 #include <vector>
 #include "gadget/Vector3.hpp"
+#include <stdint.h>
 
 class SmoothParticle {
 public:
