@@ -125,10 +125,14 @@ public:
 
 		for (size_t i = 0; i < 100000; i++) {
 			Vector3f r;
-			r.x = drand48() - 0.5;
-			r.y = drand48() - 0.5;
-			r.z = drand48() - 0.5;
-			r *= 1./r.length();
+
+			// trig method for random unit vectors on a sphere
+			double z = drand48()*2-1;
+			double t = (drand48()*2-1)*M_PI;
+			r.x = sqrt(1-z*z) * cos(t);
+			r.y = sqrt(1-z*z) * sin(t);
+			r.z = z;
+
 			r *= radius;
 			r += center;
 			avgDirect += dmf->getField(r).length();
