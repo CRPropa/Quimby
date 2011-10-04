@@ -98,6 +98,8 @@ public:
 	const Statistics &getStatistics() const {
 		return _statistics;
 	}
+	float getRho(const Vector3f &positionKpc) const;
+
 };
 
 #endif

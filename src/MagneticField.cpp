@@ -366,7 +366,7 @@ void DirectMagneticField::index(size_t i) {
 	if (particle.rho == 0)
 		std::cerr << "Warning: particle has rho = 0" << std::endl;
 	else
-		particle.rho = particle.weight() * particle.mass / particle.rho;
+		particle.bfield *= particle.weight() * particle.mass / particle.rho;
 
 	for (size_t x = lower.x; x < upper.x; x++)
 		for (size_t y = lower.y; y < upper.y; y++)
@@ -408,7 +408,7 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 		const SmoothParticle &sp = _particles[idx[i]];
 		double k = sp.kernel(positionKpc);
 		if (k != 0) {
-			b += sp.bfield * sp.rho * k;
+			b += sp.bfield * k;
 			_statistics.actualSum++;
 		}
 		_statistics.totalSum++;
@@ -418,4 +418,26 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 	_statistics.actualCount++;
 
 	return b;
+}
+
+float DirectMagneticField::getRho(const Vector3f &positionKpc) const {
+	checkPosition(positionKpc);
+
+	// get index list
+	Vector3f relativePosition = positionKpc - _originKpc;
+	const std::vector<size_t> &idx = _grid.get(relativePosition.x,
+			relativePosition.y, relativePosition.z);
+
+// calculate field from overlapping particles
+// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
+	float rho = 0;
+	for (size_t i = 0; i < idx.size(); i++) {
+		const SmoothParticle &sp = _particles[idx[i]];
+		double k = sp.kernel(positionKpc);
+		if (k != 0) {
+			rho += sp.rho * k;
+		}
+	}
+
+	return rho;
 }
