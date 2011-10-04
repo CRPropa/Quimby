@@ -24,6 +24,12 @@ public:
 	float_t mass;
 	float_t rho;
 
+	void scale(float_t f, vector_t pivot) {
+		smoothingLength *= f;
+		mass *= f;
+		position.scale(f, pivot);
+	}
+
 	// see http://arxiv.org/abs/0807.3553v2
 	static float_t kernel(float_t r) {
 		if (r < 0.5) {
@@ -46,8 +52,10 @@ public:
 		return value * kernel(std::fabs((center - position).length() / hsml));
 	}
 
-	float_t kernel(const vector_t &center) const {
-		return kernel(std::fabs((center - position).length() / smoothingLength));
+	float_t kernel(const vector_t &point) const {
+		float_t distance = (point - position).length();
+		float_t normalizedDistance = distance /  smoothingLength;
+		return kernel(normalizedDistance);
 	}
 
 	float_t weight() const {
