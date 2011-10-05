@@ -363,10 +363,10 @@ void DirectMagneticField::index(size_t i) {
 	upper.y = (uint32_t) std::ceil(u.y / cl);
 	upper.z = (uint32_t) std::ceil(u.z / cl);
 
-	if (particle.rho == 0)
-		std::cerr << "Warning: particle has rho = 0" << std::endl;
-	else
-		particle.bfield *= particle.weight() * particle.mass / particle.rho;
+//	if (particle.rho == 0)
+//		std::cerr << "Warning: particle has rho = 0" << std::endl;
+//	else
+//		particle.bfield *= particle.weight() * particle.mass / particle.rho;
 
 	for (size_t x = lower.x; x < upper.x; x++)
 		for (size_t y = lower.y; y < upper.y; y++)
@@ -408,7 +408,7 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 		const SmoothParticle &sp = _particles[idx[i]];
 		double k = sp.kernel(positionKpc);
 		if (k != 0) {
-			b += sp.bfield * k;
+			b += sp.bfield * (sp.weight() * k) * (sp.mass / sp.rho);
 			_statistics.actualSum++;
 		}
 		_statistics.totalSum++;
@@ -435,7 +435,7 @@ float DirectMagneticField::getRho(const Vector3f &positionKpc) const {
 		const SmoothParticle &sp = _particles[idx[i]];
 		double k = sp.kernel(positionKpc);
 		if (k != 0) {
-			rho += sp.rho * k;
+			rho += sp.mass * k * sp.weight();
 		}
 	}
 

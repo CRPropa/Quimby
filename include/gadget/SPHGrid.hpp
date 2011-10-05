@@ -11,8 +11,10 @@
 #include "gadget/Grid.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/Index3.hpp"
+#include "gadget/GadgetFile.hpp"
 
 #include <vector>
+#include <stdexcept>
 
 class SPHGrid: public Grid<std::vector<SmoothParticle> > {
 	Vector3f offset;
@@ -79,6 +81,63 @@ public:
 		}
 
 		return count;
+	}
+
+	size_t loadFromGadgetFile(const std::string &filename, float h,
+			Vector3f pivot) {
+		GadgetFile file;
+		file.open(filename);
+		if (file.good() == false) {
+			throw std::runtime_error("Failed to open file " + filename);
+		}
+
+		file.readHeader();
+		int pn = file.getHeader().particleNumberList[0];
+		if (pn < 1)
+			return 0;
+
+		std::vector<float> pos;
+		if (file.readFloatBlock("POS ", pos) == false) {
+			throw std::runtime_error("Failed read POS from file " + filename);
+		}
+
+		std::vector<float> bfld;
+		if (file.readFloatBlock("BFLD", bfld) == false) {
+			throw std::runtime_error("Failed read BFLD from file " + filename);
+		}
+
+		std::vector<float> hsml;
+		if (file.readFloatBlock("HSML", hsml) == false) {
+			throw std::runtime_error("Failed read HSML from file " + filename);
+		}
+
+		std::vector<float> rho;
+		if (file.readFloatBlock("RHO ", rho) == false) {
+			throw std::runtime_error("Failed read RHO from file " + filename);
+		}
+
+		size_t overlaps = 0;
+		for (int iP = 0; iP < pn; iP++) {
+			SmoothParticle particle;
+			particle.smoothingLength = hsml[iP];
+			particle.position.x = pos[iP * 3];
+			particle.position.y = pos[iP * 3 + 1];
+			particle.position.z = pos[iP * 3 + 2];
+
+			particle.bfield.x = bfld[iP * 3];
+			particle.bfield.y = bfld[iP * 3 + 1];
+			particle.bfield.z = bfld[iP * 3 + 2];
+
+			particle.mass = file.getHeader().massList[0];
+			particle.rho = rho[iP];
+
+			particle.toKpc(h, pivot);
+
+			overlaps += add(particle);
+		}
+
+		std::cout << "Overlaps: " << overlaps << std::endl;
+		return pn;
 	}
 };
 

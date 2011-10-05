@@ -24,10 +24,11 @@ public:
 	float_t mass;
 	float_t rho;
 
-	void scale(float_t f, vector_t pivot) {
-		smoothingLength *= f;
-		mass *= f;
-		position.scale(f, pivot);
+	void toKpc(float_t h, vector_t pivot) {
+		smoothingLength /= h;
+		mass /= h;
+		rho *= (h * h);
+		position.scale(1. / h, pivot);
 	}
 
 	// see http://arxiv.org/abs/0807.3553v2
@@ -54,12 +55,12 @@ public:
 
 	float_t kernel(const vector_t &point) const {
 		float_t distance = (point - position).length();
-		float_t normalizedDistance = distance /  smoothingLength;
+		float_t normalizedDistance = distance / smoothingLength;
 		return kernel(normalizedDistance);
 	}
 
 	float_t weight() const {
-		return 8 / (M_PI * smoothingLength * smoothingLength * smoothingLength);
+		return 8. / (M_PI * smoothingLength * smoothingLength * smoothingLength);
 	}
 
 	void updateRho(const std::vector<SmoothParticle> &particles) {
@@ -92,6 +93,17 @@ public:
 		size_t bytes = sizeof(SmoothParticle) * s;
 		in.read((char *) &particles[0], bytes);
 		if (!in)
+			return false;
+		return true;
+	}
+
+	static bool write(const std::string &filename,
+			const std::vector<SmoothParticle> &particles) {
+		std::ofstream out(filename.c_str(), std::ofstream::binary);
+		uint32_t s = particles.size();
+		out.write((const char *) &s, sizeof(uint32_t));
+		out.write((const char *) &particles[0], sizeof(SmoothParticle) * s);
+		if (!out)
 			return false;
 		return true;
 	}

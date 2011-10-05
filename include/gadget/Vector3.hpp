@@ -153,8 +153,16 @@ public:
 		return Vector3<T>(std::ceil(x), std::ceil(y), std::ceil(z));
 	}
 
-	Vector3<T> scale(float f, const Vector3<T> &origin = Vector3<T>(0, 0, 0)) const {
-		return ((*this - origin) * f + origin);
+	Vector3<T> &scale(float f, const Vector3<T> &origin = Vector3<T>(0, 0, 0)) {
+		*this -= origin;
+		*this *= f;
+		*this += origin;
+		return *this;
+	}
+
+	Vector3<T> scaled(float f,
+			const Vector3<T> &origin = Vector3<T>(0, 0, 0)) const {
+		return (*this -= origin) * f + origin;
 	}
 
 	//

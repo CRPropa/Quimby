@@ -13,6 +13,12 @@
 #include <stdexcept>
 #include <stdlib.h>
 
+void test_value(float value, float expected) {
+	if (std::fabs(value - expected) > 0.00001) {
+		throw std::runtime_error("unexpected deviation!");
+	}
+}
+
 class AbstractTest {
 public:
 	struct TestPoint {
@@ -94,10 +100,13 @@ public:
 			throw std::runtime_error("unexpected deviation!");
 	}
 
-	void getAverageFieldOnSphere(const Vector3f &center, float radius,
-			float &avgDirect, float &avgSampled) {
+	void getAverageFieldOnSphere(const Vector3f &center, float lower_radius,
+			float delta_radius, float &avgSampled, float &avgDirect,
+			float &avgDirectWeighted, float &avgInvRho) {
 		avgDirect = 0;
+		avgDirectWeighted = 0;
 		avgSampled = 0;
+		avgInvRho = 0;
 		size_t count = 0;
 #if 0
 		float phi = 0;
@@ -127,32 +136,101 @@ public:
 			Vector3f r;
 
 			// trig method for random unit vectors on a sphere
-			double z = drand48()*2-1;
-			double t = (drand48()*2-1)*M_PI;
-			r.x = sqrt(1-z*z) * cos(t);
-			r.y = sqrt(1-z*z) * sin(t);
+			double z = drand48() * 2 - 1;
+			double t = (drand48() * 2 - 1) * M_PI;
+			r.x = sqrt(1 - z * z) * cos(t);
+			r.y = sqrt(1 - z * z) * sin(t);
 			r.z = z;
 
-			r *= radius;
+			r *= lower_radius + drand48() * delta_radius;
 			r += center;
-			avgDirect += dmf->getField(r).length();
+			Vector3f b = dmf->getField(r);
+			size_t co;
+			float rho = dmf->getRho(r, co);
+			avgDirectWeighted += b.length() * rho;
+			avgDirect += b.length();
+			avgInvRho += rho;
 			avgSampled += smf->getField(r).length();
 			count++;
 		}
 		avgDirect /= count;
+		avgDirectWeighted /= count;
+		avgInvRho /= count;
 		avgSampled /= count;
 	}
 
 	void runHaloTest(const Vector3f &center, float radius) {
 		std::cout << ">> Halo Test around " << center << ", R_v: " << radius
 				<< std::endl;
-		std::cout << "  -     direct    sampled" << std::endl;
-		for (size_t i = 0; i < 51; i++) {
-			float r = (radius / 50) * i;
-			float avgDirect, avgSampled;
-			getAverageFieldOnSphere(center, r, avgDirect, avgSampled);
-			std::cout << r / radius << " " << avgDirect << " " << avgSampled
+		std::cout << "  -     sampled direct directWeighted  invrho"
+				<< std::endl;
+		size_t steps = 100;
+		float delta_radius = radius / steps;
+		for (size_t i = 0; i < (steps + 1); i++) {
+			float r = delta_radius * i;
+			float avgSampled, avgDirect, avgDirectWeighted, avgInvRho;
+			getAverageFieldOnSphere(center, r, delta_radius, avgSampled,
+					avgDirect, avgDirectWeighted, avgInvRho);
+			std::cout << r / radius << " " << avgSampled << " " << avgDirect
+					<< " " << avgDirectWeighted << " " << avgInvRho
 					<< std::endl;
+		}
+
+		std::cout << "DMF: " << dmf->getStatistics().getAverageActual() << "/ "
+				<< dmf->getStatistics().getAverageTotal() << std::endl;
+	}
+
+	void runRhoTest() {
+		for (size_t i = 0; i < particles.size(); i++) {
+			try {
+				size_t contrib;
+				float directRho = dmf->getRho(particles[i].position, contrib);
+				float relativeError = (particles[i].rho - directRho)
+						/ particles[i].rho;
+				if (std::fabs(relativeError) > 0.05) {
+					std::cerr << "High Deviation: " << i << std::endl;
+					std::cerr << " position:   " << particles[i].position
+							<< std::endl;
+					std::cerr << " calculated: " << directRho << std::endl;
+					std::cerr << " particle:   " << particles[i].rho
+							<< std::endl;
+					std::cerr << " hsml:       " << particles[i].smoothingLength
+							<< std::endl;
+					std::cerr << " ratio:      " << directRho / particles[i].rho
+							<< std::endl;
+					std::cerr << " contrib:    " << contrib << std::endl;
+					//throw std::runtime_error(
+					//"unexpected deviation in RhoTest!");
+				}
+			} catch (invalid_position &e) {
+
+			}
+		}
+	}
+
+	void runBFieldTest() {
+		for (size_t i = 0; i < particles.size(); i++) {
+			try {
+				size_t contrib;
+				Vector3f directB = dmf->getField(particles[i].position);
+				float relativeError = (particles[i].bfield.length()
+						- directB.length()) / particles[i].bfield.length();
+				if (std::fabs(relativeError) > 0.05) {
+					std::cerr << "High Deviation: " << i << std::endl;
+					std::cerr << " position:   " << particles[i].position
+							<< std::endl;
+					std::cerr << " calculated: " << directB << std::endl;
+					std::cerr << " particle:   " << particles[i].bfield
+							<< std::endl;
+					std::cerr << " bratio:       "
+							<< particles[i].bfield.length() / directB.length()
+							<< std::endl;
+					std::cerr << " hsml:       " << particles[i].smoothingLength
+							<< std::endl;
+				}
+			} catch (invalid_position &e) {
+
+			}
 		}
 	}
 };
@@ -184,7 +262,7 @@ public:
 				TestPoint(Vector3f(120000, 120000, 120000), Vector3f(0, 1, 0)));
 		testPoints.push_back(
 				TestPoint(Vector3f(120500, 120500, 120500),
-						Vector3f(0, 0.958897, 0)));
+						Vector3f(0, 0.958897, 0), 0.000001));
 		testPoints.push_back(
 				TestPoint(Vector3f(120550, 120550, 120550),
 						Vector3f(0, 0.950737, 0), 0.01));
@@ -194,41 +272,20 @@ public:
 
 // Coma
 // 11   411121   214459 7.570E+14 6.634E+14 1885.23     119.8023  190.8159  129.1431  -361.72   566.41  -315.91  949.39
-Vector3f ComaPosition(119717, 221164, 133061);
-Vector3f ComaPosition2(119802, 190816, 129143);
+Vector3f ComaPositionKpc(119717, 221164, 133061);
+float ComaRadiusKpc = 2693.1857;
+Vector3f ComaPosition(119802, 190816, 129143);
+float ComaRadius = 1885.23;
 
+//119802 +
 class HaloTest: public AbstractTest {
 public:
 
 	void setup() {
-		SmoothParticleHelper::read("test/coma-0.7.raw", particles);
+		SmoothParticleHelper::read("test/coma.raw", particles);
 
-		float size(6000);
-		Vector3f origin = ComaPosition - Vector3f(size / 2);
-
-		dmf.reset(new DirectMagneticField(origin, size));
-		dmf->init(50);
-		dmf->load(particles);
-
-		smf.reset(new SampledMagneticField(origin, size));
-		smf->init(100);
-		smf->load(particles);
-
-		testPoints.push_back(
-				TestPoint(ComaPosition,
-						Vector3f(-1.60984e-09, -3.48952e-10, 1.00858e-09), 1));
-	}
-
-};
-
-class HaloTest2: public AbstractTest {
-public:
-
-	void setup() {
-		SmoothParticleHelper::read("test/coma-1.0.raw", particles);
-
-		float size(4000);
-		Vector3f origin = ComaPosition2 - Vector3f(size / 2);
+		float size = ComaRadiusKpc * 2.1;
+		Vector3f origin = ComaPositionKpc - Vector3f(size / 2);
 
 		dmf.reset(new DirectMagneticField(origin, size));
 		dmf->init(50);
@@ -239,35 +296,62 @@ public:
 		smf->load(particles);
 
 		testPoints.push_back(
-				TestPoint(ComaPosition,
+				TestPoint(ComaPositionKpc,
 						Vector3f(-1.60984e-09, -3.48952e-10, 1.00858e-09), 1));
 	}
 
 };
+
+void KernelValueTest(float r, float v) {
+	float res = SmoothParticle::kernel(r);
+	if (std::fabs(res - v) > 0.0001) {
+		std::cerr << "wrong kernel value! exptectd: " << v << " got: " << res
+				<< " at position " << r << std::endl;
+		throw std::runtime_error("unexpected deviation in KernelValueTest!");
+	}
+}
+
+void KernelTest() {
+	KernelValueTest(0.25, 0.71875);
+	KernelValueTest(0.5, 0.25);
+	KernelValueTest(0.75, 0.03125);
+	KernelValueTest(2.0, 0.0);
+}
 
 int main() {
+	SmoothParticle pa, pb;
+	pa.bfield = Vector3f(0, 1, 0);
+	pa.position = Vector3f(120000, 120000, 120000);
+	pa.smoothingLength = 10000;
+	pa.mass = 1;
+
+	pb = pa;
+	bool equal = pa.bfield == pb.bfield;
+	if (!equal)
+		throw std::runtime_error("unexpected deviation in pa and pb!");
+	if (pa.bfield.length() != pb.bfield.length())
+		throw std::runtime_error("unexpected deviation in pa and pb!");
+
+	KernelTest();
+
 	SimpleTest stest;
 	stest.setup();
 	stest.runTestPoints();
 	stest.runSweep(Vector3f(120000, 120000, 120000),
 			Vector3f(120000, 110000, 120000), 10, 0.01);
-	float a, b;
-	stest.getAverageFieldOnSphere(Vector3f(120000, 120000, 120000), 5000, a, b);
+	float a, b, c, d;
+	stest.getAverageFieldOnSphere(Vector3f(120000, 120000, 120000), 5000, 0, a,
+			b, c, d);
 	std::cout << "Average on Sphere: " << a << ", " << b << std::endl;
-	if (fabs(a - 0.25) > 0.01 || fabs(b - 0.25) > 0.01)
-		throw std::runtime_error("unexpected deviation!");
+	//if (fabs(a - 1) > 0.01 || fabs(b - 0.25) > 0.01)
+	//	throw std::runtime_error("unexpected deviation!");
 
 	HaloTest htest;
 	htest.setup();
 //	htest.runTestPoints();
 //	htest.runSweep(ComaPosition, ComaPosition + Vector3f(-1000, 1000, 500), 10,
 //			0.01);
-	htest.runHaloTest(ComaPosition, 2693.1857);
-
-	HaloTest2 htest2;
-	htest2.setup();
-//	htest.runTestPoints();
-//	htest.runSweep(ComaPosition, ComaPosition2 + Vector3f(-1000, 1000, 500), 10,
-//			0.01);
-	htest2.runHaloTest(ComaPosition2, 1885.23);
+	htest.runRhoTest();
+	htest.runBFieldTest();
+	htest.runHaloTest(ComaPositionKpc, ComaRadiusKpc);
 }
