@@ -137,11 +137,11 @@ public:
 		z = std::max(lower, std::min(z, upper));
 	}
 
-	T length() {
+	T length() const {
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
-	T distanceTo(const Vector3<T> &point) {
+	T distanceTo(const Vector3<T> &point) const {
 		Vector3 d = *this - point;
 		return d.length();
 	}
