@@ -1,6 +1,6 @@
 #! /bin/sh
 
-prefix=@CMAKE_INSTALL_PREFIX@
+prefix=@GADGET_PREFIX@
 exec_prefix=${prefix}
 includedir=${prefix}/include
 
@@ -41,7 +41,7 @@ while test $# -gt 0; do
 
     case "$1" in
     --prefix)
-	echo @CMAKE_INSTALL_PREFIX@
+	echo $prefix
 	;;
 
     --version)
@@ -54,7 +54,7 @@ while test $# -gt 0; do
 	;;
 
     --include)
-       	echo -I@CMAKE_INSTALL_PREFIX@/include
+       	echo -I$includedir
        	;;
 
     --ldflags)
@@ -62,7 +62,7 @@ while test $# -gt 0; do
        	;;
 
     --libs)
-       	echo @CMAKE_INSTALL_PREFIX@/lib/libGadget.a
+       	echo @GADGET_LIBRARY@
        	;;
 
     *)
