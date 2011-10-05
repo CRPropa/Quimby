@@ -125,6 +125,8 @@ bool GadgetFile::readHeader() {
 
 	readBlockSize();
 	blocksize -= read(header.particleNumberList, 6);
+	// if the value in massList is 0, then an array with per particle masses is available.
+	// Unit: 10^10 sun masses per h
 	blocksize -= read(header.massList, 6);
 	blocksize -= read(&header.timeOfSnapshot);
 	blocksize -= read(&header.redshift);
