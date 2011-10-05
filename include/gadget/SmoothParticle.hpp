@@ -8,7 +8,7 @@
 #ifndef SMOOTH_PARTICLE_HPP_
 #define SMOOTH_PARTICLE_HPP_
 
-#include <ostream>
+#include <fstream>
 #include <vector>
 #include "gadget/Vector3.hpp"
 #include <stdint.h>

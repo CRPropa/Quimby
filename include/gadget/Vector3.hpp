@@ -141,6 +141,11 @@ public:
 		return std::sqrt(x * x + y * y + z * z);
 	}
 
+	T distanceTo(const Vector3<T> &point) {
+		Vector3 d = *this - point;
+		return d.length();
+	}
+
 	T length2() {
 		return (x * x + y * y + z * z);
 	}
