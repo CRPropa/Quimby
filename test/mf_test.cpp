@@ -146,7 +146,7 @@ public:
 			r += center;
 			Vector3f b = dmf->getField(r);
 			size_t co;
-			float rho = dmf->getRho(r, co);
+			float rho = dmf->getRho(r);
 			avgDirectWeighted += b.length() * rho;
 			avgDirect += b.length();
 			avgInvRho += rho;
@@ -184,7 +184,7 @@ public:
 		for (size_t i = 0; i < particles.size(); i++) {
 			try {
 				size_t contrib;
-				float directRho = dmf->getRho(particles[i].position, contrib);
+				float directRho = dmf->getRho(particles[i].position);
 				float relativeError = (particles[i].rho - directRho)
 						/ particles[i].rho;
 				if (std::fabs(relativeError) > 0.05) {

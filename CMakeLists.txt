@@ -48,7 +48,7 @@ ENABLE_TESTING()
 
 add_executable(pg_test test/pg_test.cpp)
 add_executable(mf_test test/mf_test.cpp)
-add_executable(coma_profile test/coma_profile.cpp)
+#add_executable(coma_profile test/coma_profile.cpp)
 add_executable(sph_grid_test test/sph_grid_test.cpp)
 target_link_libraries(mf_test gadget-lib)
 target_link_libraries(sph_grid_test gadget-lib)
