@@ -9,13 +9,15 @@
 #include <string>
 #include <exception>
 #include <sstream>
+#include <iostream>
 
 class invalid_position: public std::exception {
 	std::string _msg;
 public:
 	invalid_position(const Vector3f &v) {
-		std::stringstream ss(_msg);
+		std::stringstream ss;
 		ss << "Invalid position: " << v;
+		_msg = ss.str();
 	}
 
 	virtual ~invalid_position() throw () {
