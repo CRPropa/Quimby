@@ -98,7 +98,7 @@ public:
 	const Statistics &getStatistics() const {
 		return _statistics;
 	}
-	float getRho(const Vector3f &positionKpc) const;
+	float getRho(const Vector3f &positionKpc, size_t &overlaps) const;
 
 };
 

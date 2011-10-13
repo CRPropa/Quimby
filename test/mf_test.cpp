@@ -145,8 +145,8 @@ public:
 			r *= lower_radius + drand48() * delta_radius;
 			r += center;
 			Vector3f b = dmf->getField(r);
-			size_t co;
-			float rho = dmf->getRho(r, co);
+			size_t overlaps;
+			float rho = dmf->getRho(r, overlaps);
 			avgDirectWeighted += b.length() * rho;
 			avgDirect += b.length();
 			avgInvRho += rho;
@@ -183,8 +183,8 @@ public:
 	void runRhoTest() {
 		for (size_t i = 0; i < particles.size(); i++) {
 			try {
-				size_t contrib;
-				float directRho = dmf->getRho(particles[i].position, contrib);
+				size_t overlaps;
+				float directRho = dmf->getRho(particles[i].position, overlaps);
 				float relativeError = (particles[i].rho - directRho)
 						/ particles[i].rho;
 				if (std::fabs(relativeError) > 0.05) {
@@ -198,7 +198,6 @@ public:
 							<< std::endl;
 					std::cerr << " ratio:      " << directRho / particles[i].rho
 							<< std::endl;
-					std::cerr << " contrib:    " << contrib << std::endl;
 					//throw std::runtime_error(
 					//"unexpected deviation in RhoTest!");
 				}
