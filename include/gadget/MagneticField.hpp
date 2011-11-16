@@ -50,7 +50,6 @@ class SampledMagneticField: public MagneticField {
 	grid_t _grid;
 	size_t toLowerIndex(double x);
 	size_t toUpperIndex(double x);
-
 	void apply(const SmoothParticle &particle);
 public:
 	SampledMagneticField(const Vector3f &originKpc, float sizeKpc);
@@ -58,7 +57,8 @@ public:
 	void init(float stepsizeKpc);
 	void load(const std::string &filename);
 	void load(const std::vector<SmoothParticle> &particles);
-
+	void dump(const std::string &dumpfilename);
+	bool restore(const std::string &dumpfilename);
 };
 
 class DirectMagneticField: public MagneticField {

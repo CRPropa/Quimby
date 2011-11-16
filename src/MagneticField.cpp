@@ -127,6 +127,23 @@ void SampledMagneticField::init(float stepsizeKpc) {
 	_grid.reset(Vector3f(0, 0, 0));
 }
 
+void SampledMagneticField::load(const std::vector<SmoothParticle> &particles) {
+	size_t s = particles.size();
+	for (size_t i = 0; i < s; i++) {
+		apply(particles[i]);
+	}
+}
+
+void SampledMagneticField::dump(const std::string &dumpfilename) {
+	// dumps the field
+	_grid.dump(dumpfilename);
+}
+
+bool SampledMagneticField::restore(const std::string &dumpfilename) {
+	// tries to load the field from a dumpfile, returns true if successful
+	return _grid.restore(dumpfilename);
+}
+
 void SampledMagneticField::apply(const SmoothParticle &particle) {
 	Vector3f value = particle.bfield * particle.weight() * particle.mass
 			/ particle.rho;
@@ -274,13 +291,6 @@ void SampledMagneticField::load(const std::string &filename) {
 	std::cout << "[TSphMagField] Max (nG): " << vmax / nG << std::endl;
 #endif
 
-}
-
-void SampledMagneticField::load(const std::vector<SmoothParticle> &particles) {
-	size_t s = particles.size();
-	for (size_t i = 0; i < s; i++) {
-		apply(particles[i]);
-	}
 }
 
 Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
