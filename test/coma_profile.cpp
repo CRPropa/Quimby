@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <memory>
 
+using namespace gadget;
+
 const Vector3f ComaPositionKpc(119717, 221166, 133061);
 const float ComaRadiusKpc = 2693.1857;
 

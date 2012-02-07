@@ -1,10 +1,3 @@
-/*
- * SPHGrid.hpp
- *
- *  Created on: Aug 10, 2011
- *      Author: gmueller
- */
-
 #ifndef GADGET_SPH_GRID_HPP_
 #define GADGET_SPH_GRID_HPP_
 
@@ -15,6 +8,8 @@
 
 #include <vector>
 #include <stdexcept>
+
+namespace gadget {
 
 class SPHGrid: public Grid<std::vector<SmoothParticle> > {
 	Vector3f offset;
@@ -141,4 +136,6 @@ public:
 	}
 };
 
-#endif /* SPHGRID_HPP_ */
+} // namespace gadget
+
+#endif /* GADGET_SPHGRID_HPP_ */

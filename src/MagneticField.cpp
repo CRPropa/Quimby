@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+namespace gadget {
+
 template<class T>
 T clamp(const T &value, const T &min, const T&max) {
 	if (value < min)
@@ -430,7 +432,8 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 	return b;
 }
 
-float DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps) const {
+float DirectMagneticField::getRho(const Vector3f &positionKpc,
+		size_t &overlaps) const {
 	checkPosition(positionKpc);
 
 	// get index list
@@ -453,3 +456,5 @@ float DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps)
 
 	return rho;
 }
+
+} // namespace gadget

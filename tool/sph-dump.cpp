@@ -5,6 +5,7 @@
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/GadgetFile.hpp"
 #include "gadget/Vector3.hpp"
+using namespace gadget;
 
 #include <ctime>
 #include <limits>

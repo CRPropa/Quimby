@@ -1,12 +1,7 @@
-/*
- * kernel.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
+#ifndef GADGET_KERNEL_HPP_
+#define GADGET_KERNEL_HPP_
 
-#ifndef KERNEL_HPP_
-#define KERNEL_HPP_
+namespace gadget {
 
 inline float kernel(float r) {
 	if (r < 1.0) {
@@ -20,7 +15,9 @@ inline float kernel(float r) {
 }
 
 inline float kernel(float value, float center, float position, float hsml) {
-	return value * kernel(std::fabs((center - position)/hsml));
+	return value * kernel(std::fabs((center - position) / hsml));
 }
+
+} // namespace gadget
 
 #endif /* KERNEL_HPP_ */

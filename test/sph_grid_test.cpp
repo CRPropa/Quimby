@@ -1,11 +1,5 @@
-/*
- * sph_grid_test.cpp
- *
- *  Created on: Aug 10, 2011
- *      Author: gmueller
- */
-
 #include "gadget/SPHGrid.hpp"
+using namespace gadget;
 
 #include <iostream>
 

@@ -1,10 +1,12 @@
-#include "arguments.hpp"
-
 #include "gadget/SPHGrid.hpp"
 #include "gadget/Index3.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/GadgetFile.hpp"
 #include "gadget/Vector3.hpp"
+
+using namespace gadget;
+
+#include "arguments.hpp"
 
 #include <ctime>
 #include <limits>

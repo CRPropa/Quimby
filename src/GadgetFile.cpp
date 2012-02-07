@@ -1,13 +1,8 @@
-/*
- * GadgetFile.cpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
 #include "gadget/GadgetFile.hpp"
 
 #include <stdexcept>
+
+namespace gadget {
 
 const GadgetFile::Header &GadgetFile::getHeader() const {
 	return header;
@@ -151,3 +146,5 @@ bool GadgetFile::readFloatBlock(const std::string &label,
 
 	return true;
 }
+
+} // namespace gadget

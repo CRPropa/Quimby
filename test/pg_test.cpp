@@ -1,20 +1,7 @@
-/*
- * pg_test.cpp
- *
- *  Created on: 22.09.2010
- *      Author: gmueller
- */
-
-/*
- * paged_grid.cpp
- *
- *  Created on: 06.05.2010
- *      Author: gmueller
- */
-
 #include <string>
 
 #include "gadget/PagedGrid.hpp"
+using namespace gadget;
 
 void write() {
 	BinaryPageIO<int> io;

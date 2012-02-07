@@ -1,30 +1,25 @@
-/*
- * AABB.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef AABB_HPP_
-#define AABB_HPP_
+#ifndef GADGET_AABB_HPP_
+#define GADGET_AABB_HPP_
 
 #include "Vector3.hpp"
 
 #include <iostream>
 
-template <typename T>
+namespace gadget {
+
+template<typename T>
 class AABB {
 public:
 	Vector3<T> min;
 	Vector3<T> max;
 
 	AABB(const AABB<T> &a) :
-		min(a.min), max(a.max) {
+			min(a.min), max(a.max) {
 
 	}
 
 	AABB(const Vector3<T> &Min, const Vector3<T> &Max) :
-		min(Min), max(Max) {
+			min(Min), max(Max) {
 
 	}
 
@@ -62,10 +57,12 @@ public:
 
 };
 
-template <typename T>
+template<typename T>
 std::ostream &operator <<(std::ostream &out, const AABB<T> &a) {
 	out << a.min << " - " << a.max;
 	return out;
 }
 
-#endif /* AABB_HPP_ */
+} // namespace gadget
+
+#endif /* GADGET_AABB_HPP_ */

@@ -1,12 +1,5 @@
-/*
- * Grid.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef PAGED_GRID_HPP_
-#define PAGED_GRID_HPP_
+#ifndef GADGET_PAGED_GRID_HPP_
+#define GADGET_PAGED_GRID_HPP_
 
 #include "MurmurHash2.hpp"
 #include "Index3.hpp"
@@ -21,6 +14,8 @@
 #include <iostream>
 #include <assert.h>
 #include <stdexcept>
+
+namespace gadget {
 
 /// Single Page containing the elements.
 template<typename ELEMENT>
@@ -182,15 +177,16 @@ public:
 private:
 	size_t offset(page_t *page, const Index3 idx) {
 		Index3 offset = idx + (page->origin % elementsPerFile);
-		return sizeof(element_t) * (offset.x + offset.y * elementsPerFile
-				+ offset.z * elementsPerFile * elementsPerFile);
+		return sizeof(element_t)
+				* (offset.x + offset.y * elementsPerFile
+						+ offset.z * elementsPerFile * elementsPerFile);
 	}
 
 	size_t page_offset(page_t *page) {
 		Index3 o = (page->origin % elementsPerFile) / this->elementsPerPage;
 		size_t page_byte_size = this->elementsPerPage3 * sizeof(element_t);
-		return page_byte_size * (o.x * pagesPerFile * pagesPerFile + o.y
-				* pagesPerFile + o.z);
+		return page_byte_size
+				* (o.x * pagesPerFile * pagesPerFile + o.y * pagesPerFile + o.z);
 	}
 
 	std::string createFilename(page_t *page) {
@@ -208,7 +204,8 @@ private:
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (in.good() == false) {
 			if (readOnly)
-				throw std::runtime_error("[BinaryPageIO] file not found:" + filename);
+				throw std::runtime_error(
+						"[BinaryPageIO] file not found:" + filename);
 			return false;
 		}
 
@@ -216,15 +213,16 @@ private:
 
 		in.seekg(0, std::ios::end);
 		if (in.bad()) {
-            if (readOnly)
-                throw std::runtime_error("[BinaryPageIO] error sseking in file.");
+			if (readOnly)
+				throw std::runtime_error(
+						"[BinaryPageIO] error sseking in file.");
 			return false;
 		}
 
 		std::fstream::pos_type pos = in.tellg();
 		if (pos != needed) {
-            if (readOnly)
-                throw std::runtime_error("[BinaryPageIO] file has wrong size.");
+			if (readOnly)
+				throw std::runtime_error("[BinaryPageIO] file has wrong size.");
 			return false;
 		}
 
@@ -244,9 +242,9 @@ private:
 
 template<typename ELEMENT>
 BinaryPageIO<ELEMENT>::BinaryPageIO() :
-	readOnly(false), loadedPages(0), savedPages(0), elementsPerFile(1),
-			elementsPerFile3(1), pagesPerFile(1), pagesPerFile3(1), overwrite(
-					false), forceDump(false), perPage(true) {
+		readOnly(false), loadedPages(0), savedPages(0), elementsPerFile(1), elementsPerFile3(
+				1), pagesPerFile(1), pagesPerFile3(1), overwrite(false), forceDump(
+				false), perPage(true) {
 
 }
 
@@ -263,17 +261,18 @@ void BinaryPageIO<ELEMENT>::loadPage(page_t *page) {
 		std::ifstream in(filename.c_str(), std::ios::binary);
 		if (perPage) {
 			in.seekg(page_offset(page), std::ios::beg);
-			in.read((char *) page->elements, sizeof(element_t)
-					* this->elementsPerPage3);
+			in.read((char *) page->elements,
+					sizeof(element_t) * this->elementsPerPage3);
 		} else {
 			Index3 index;
 			for (index.z = 0; index.z < this->elementsPerPage; index.z++) {
 				for (index.y = 0; index.y < this->elementsPerPage; index.y++) {
 					index.x = 0;
 					in.seekg(offset(page, index), std::ios::beg);
-					in.read((char *) &page->get(index + page->origin,
-							this->elementsPerPage), this->elementsPerPage
-							* sizeof(element_t));
+					in.read(
+							(char *) &page->get(index + page->origin,
+									this->elementsPerPage),
+							this->elementsPerPage * sizeof(element_t));
 				}
 			}
 		}
@@ -309,22 +308,23 @@ inline void BinaryPageIO<ELEMENT>::savePage(page_t *page) {
 	if (checkFile(filename) == false)
 		reserveFile(filename);
 
-	std::fstream out(filename.c_str(), std::ios::in | std::ios::out
-			| std::ios::binary);
+	std::fstream out(filename.c_str(),
+			std::ios::in | std::ios::out | std::ios::binary);
 
 	if (perPage) {
 		out.seekp(page_offset(page), std::ios::beg);
-		out.write((const char *) page->elements, sizeof(element_t)
-				* this->elementsPerPage3);
+		out.write((const char *) page->elements,
+				sizeof(element_t) * this->elementsPerPage3);
 	} else {
 		Index3 index;
 		for (index.z = 0; index.z < this->elementsPerPage; index.z++) {
 			for (index.y = 0; index.y < this->elementsPerPage; index.y++) {
 				index.x = 0;
 				out.seekp(offset(page, index), std::ios::beg);
-				out.write((const char *) &page->get(index + page->origin,
-						this->elementsPerPage), this->elementsPerPage
-						* sizeof(element_t));
+				out.write(
+						(const char *) &page->get(index + page->origin,
+								this->elementsPerPage),
+						this->elementsPerPage * sizeof(element_t));
 
 			}
 		}
@@ -346,7 +346,8 @@ inline void BinaryPageIO<ELEMENT>::setElementsPerFile(size_t elementsPerFile) {
 }
 
 template<typename ELEMENT>
-inline void BinaryPageIO<ELEMENT>::setElementsPerPage(uint32_t elementsPerPage) {
+inline void BinaryPageIO<ELEMENT>::setElementsPerPage(
+		uint32_t elementsPerPage) {
 	PageIO<ELEMENT>::setElementsPerPage(elementsPerPage);
 	pagesPerFile = elementsPerFile / elementsPerPage;
 	pagesPerFile3 = pagesPerFile * pagesPerFile * pagesPerFile;
@@ -401,7 +402,7 @@ private:
 	page_t *first, *last;
 public:
 	LastAccessPagingStrategy() :
-		first(0), last(0) {
+			first(0), last(0) {
 	}
 
 	void loaded(page_t *page) {
@@ -501,7 +502,6 @@ public:
 //static size_t hash3(const Index3 &v) {
 //	return MurmurHash2(&v, sizeof(Index3), 875685);
 //}
-
 template<typename ELEMENT>
 class PagedGrid {
 public:
@@ -510,11 +510,12 @@ public:
 	typedef typename std::vector<page_t> page_container_t;
 	typedef typename std::vector<element_t> element_container_t;
 	typedef typename std::map<Index3, page_t *> page_index_t;
-	typedef typename std::map<Index3, page_t *>::iterator
-			page_index_iterator_t;
+	typedef typename std::map<Index3, page_t *>::iterator page_index_iterator_t;
 
 	class Visitor {
 	public:
+		virtual ~Visitor() {
+		}
 		virtual void visit(PagedGrid<element_t> &grid, size_t x, size_t y,
 				size_t z, element_t &value) = 0;
 	};
@@ -575,7 +576,7 @@ public:
 
 template<typename ELEMENT>
 inline PagedGrid<ELEMENT>::PagedGrid() :
-	lastPage(0), pageSize(0), io(0), size(0), strategy(0), pageMisses(0) {
+		lastPage(0), pageSize(0), io(0), size(0), strategy(0), pageMisses(0) {
 }
 
 template<typename ELEMENT>
@@ -590,7 +591,8 @@ inline void PagedGrid<ELEMENT>::setSize(size_t size) {
 }
 
 template<typename ELEMENT>
-inline void PagedGrid<ELEMENT>::setStrategy(PagingStrategy<element_t> *strategy) {
+inline void PagedGrid<ELEMENT>::setStrategy(
+		PagingStrategy<element_t> *strategy) {
 	this->strategy = strategy;
 }
 
@@ -616,7 +618,8 @@ inline void PagedGrid<ELEMENT>::setPageSize(uint32_t pageSize) {
 template<typename ELEMENT>
 inline void PagedGrid<ELEMENT>::setPageCount(size_t count) {
 	if (pageSize == 0)
-		throw std::runtime_error("[PagedGrid::setPageCount] page size not set!");
+		throw std::runtime_error(
+				"[PagedGrid::setPageCount] page size not set!");
 	if (pages.size() != 0)
 		throw std::runtime_error(
 				"[PagedGrid::setPageCount] page count already set!");
@@ -705,7 +708,8 @@ inline typename PagedGrid<ELEMENT>::page_t *PagedGrid<ELEMENT>::getEmptyPage() {
 	// try second part first
 	for (size_t i = pageIndex.size(); i < pages.size(); i++) {
 		if (pages[i].elements == 0) {
-			pages[i].elements = &elements.at(i * pageSize * pageSize * pageSize);
+			pages[i].elements = &elements.at(
+					i * pageSize * pageSize * pageSize);
 			return &pages[i];
 		}
 	}
@@ -792,8 +796,10 @@ inline void PagedGrid<ELEMENT>::accept(Visitor &v, const Index3 &lower,
 
 	Index3 pageIndex;
 	for (pageIndex.x = lowerPage.x; pageIndex.x <= upperPage.x; pageIndex.x++) {
-		for (pageIndex.y = lowerPage.y; pageIndex.y <= upperPage.y; pageIndex.y++) {
-			for (pageIndex.z = lowerPage.z; pageIndex.z <= upperPage.z; pageIndex.z++) {
+		for (pageIndex.y = lowerPage.y; pageIndex.y <= upperPage.y;
+				pageIndex.y++) {
+			for (pageIndex.z = lowerPage.z; pageIndex.z <= upperPage.z;
+					pageIndex.z++) {
 				page_t *page = getPage(pageIndex * pageSize);
 				assert(page != 0);
 				strategy->accessed(page);
@@ -818,11 +824,14 @@ inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
 			offset.y = (y - page->origin.y) * pageSize;
 			for (uint32_t x = lower.x; x < upper.x; x++) {
 				offset.x = x - page->origin.x;
-				v.visit(*this, x, y, z, page->elements[offset.x + offset.y
-						+ offset.z]);
+				v.visit(*this, x, y, z,
+						page->elements[offset.x + offset.y + offset.z]);
 			}
 		}
 	}
 
 }
-#endif /* PAGED_GRID_HPP_ */
+
+} // namespace gadget
+
+#endif /* GADGET_PAGED_GRID_HPP_ */

@@ -1,12 +1,5 @@
-/*
- * Grid.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef GRID_HPP_
-#define GRID_HPP_
+#ifndef GADGET_GRID_HPP_
+#define GADGET_GRID_HPP_
 
 #include "AABC.hpp"
 
@@ -17,6 +10,8 @@
 #include <cmath>
 #include <inttypes.h>
 
+namespace gadget {
+
 template<class T>
 class Grid {
 
@@ -26,6 +21,8 @@ public:
 
 	class Visitor {
 	public:
+		virtual ~Visitor() {
+		}
 		virtual void visit(Grid<element_t> &grid, size_t x, size_t y, size_t z,
 				element_t &value) = 0;
 	};
@@ -219,7 +216,7 @@ public:
 		}
 	}
 
-	template <class F>
+	template<class F>
 	void acceptZYX(Visitor &v, const AABC<F> &aabc) {
 		size_t zStart = toIndex(aabc.lowerZ());
 		size_t zEnd = toIndex(aabc.upperZ());
@@ -254,8 +251,10 @@ public:
 	}
 };
 
+} // namespace gadget
+
 template<class T>
-std::ostream &operator <<(std::ostream &stream, const Grid<T> &grid) {
+std::ostream &operator <<(std::ostream &stream, const gadget::Grid<T> &grid) {
 	stream << "#bins: " << grid.getBins() << std::endl;
 	stream << "#size: " << grid.getSize() << std::endl;
 
@@ -269,4 +268,4 @@ std::ostream &operator <<(std::ostream &stream, const Grid<T> &grid) {
 	return stream;
 }
 
-#endif /* GRID_HPP_ */
+#endif /* GADGET_GRID_HPP_ */

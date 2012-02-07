@@ -2,6 +2,8 @@
 #include "gadget/Vector3.hpp"
 #include "arguments.hpp"
 
+using namespace gadget;
+
 class TestVisitor1: public PagedGrid<Vector3f>::Visitor {
 public:
 	Index3 center;

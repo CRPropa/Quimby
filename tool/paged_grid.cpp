@@ -1,16 +1,11 @@
-/*
- * paged_grid.cpp
- *
- *  Created on: 06.05.2010
- *      Author: gmueller
- */
-
-#include "arguments.hpp"
-
 #include "gadget/PagedGrid.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/GadgetFile.hpp"
 #include "gadget/Vector3.hpp"
+
+using namespace gadget;
+
+#include "arguments.hpp"
 
 #include <ctime>
 #include <limits>

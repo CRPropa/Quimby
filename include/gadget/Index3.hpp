@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 
+namespace gadget {
 
 struct Index3 {
 	typedef uint32_t index_t;
@@ -128,5 +129,7 @@ inline std::ostream &operator <<(std::ostream &out, const Index3 &v) {
 	out << v.x << " " << v.y << " " << v.z;
 	return out;
 }
+
+} // namespace gadget
 
 #endif

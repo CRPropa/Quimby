@@ -24,8 +24,6 @@ include_directories (include)
 add_library( gadget-lib STATIC
     src/GadgetFile.cpp
     src/MagneticField.cpp
-    src/transpose.c
-    src/fastlz.c
 )
 SET_TARGET_PROPERTIES(gadget-lib PROPERTIES OUTPUT_NAME "Gadget")
 

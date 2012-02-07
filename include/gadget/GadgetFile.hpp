@@ -1,16 +1,11 @@
-/*
- * GadgetFile.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef GADGETFILE_HPP_
-#define GADGETFILE_HPP_
+#ifndef GADGET_GADGETFILE_HPP_
+#define GADGET_GADGETFILE_HPP_
 
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+namespace gadget {
 
 class GadgetFile {
 
@@ -52,5 +47,5 @@ public:
 	bool readFloatBlock(const std::string &label, std::vector<float> &data);
 	void printBlocks();
 };
-
+} // namespace gadget
 #endif /* GADGETFILE_HPP_ */

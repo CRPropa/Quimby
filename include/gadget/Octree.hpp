@@ -1,16 +1,11 @@
-/*
- * Octree.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef OCTREE_HPP_
-#define OCTREE_HPP_
+#ifndef GADGET_OCTREE_HPP_
+#define GADGET_OCTREE_HPP_
 
 #include "AABC.hpp"
 
 #include <vector>
+
+namespace gadget {
 
 template<typename FLOAT, typename ELEMENT>
 class OctreeNode {
@@ -161,4 +156,6 @@ private:
 
 };
 
-#endif /* OCTREE_HPP_ */
+} // namespace gadget
+
+#endif /* GADGET_OCTREE_HPP_ */

@@ -1,15 +1,11 @@
-/*
- * mass.cpp
- *
- *  Created on: 23.09.2010
- *      Author: gmueller
- */
 #include "gadget/GadgetFile.hpp"
 #include "gadget/Grid.hpp"
 #include "gadget/kernel.hpp"
 #include "gadget/Octree.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/PagedGrid.hpp"
+
+using namespace gadget;
 
 #include "arguments.hpp"
 

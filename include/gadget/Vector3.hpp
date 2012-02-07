@@ -1,16 +1,11 @@
-/*
- * Vector3.hpp
- *
- *  Created on: 02.02.2010
- *      Author: gmueller
- */
-
-#ifndef VECTOR3_HPP_
-#define VECTOR3_HPP_
+#ifndef GADGET_VECTOR3_HPP_
+#define GADGET_VECTOR3_HPP_
 
 #include <iostream>
 #include <cmath>
 #include <vector>
+
+namespace gadget {
 
 template<typename T>
 class Vector3 {
@@ -212,4 +207,6 @@ inline std::istream &operator >>(std::istream &in, Vector3<T> &v) {
 typedef Vector3<double> Vector3d;
 typedef Vector3<float> Vector3f;
 
-#endif /* VECTOR3_HPP_ */
+} // namespace gadget
+
+#endif /* GADGET_VECTOR3_HPP_ */

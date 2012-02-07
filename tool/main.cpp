@@ -1,16 +1,11 @@
-/*
- * test.cpp
- *
- *  Created on: 29.01.2010
- *      Author: gmueller
- */
-
 #include "gadget/GadgetFile.hpp"
 #include "gadget/Grid.hpp"
 #include "gadget/kernel.hpp"
 #include "gadget/Octree.hpp"
 #include "gadget/SmoothParticle.hpp"
 #include "gadget/PagedGrid.hpp"
+
+using namespace gadget;
 
 #include "arguments.hpp"
 
@@ -582,7 +577,7 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 }
 
 int info(Arguments &arguments) {
-	for (size_t i = 2; i < arguments.getCount(); i++) {
+	for (size_t i = 2; i < (size_t)arguments.getCount(); i++) {
 		std::cout << "Print info for file: " << arguments.get(i) << std::endl;
 		GadgetFile file;
         file.open(arguments.get(i));

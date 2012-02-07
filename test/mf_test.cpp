@@ -1,12 +1,6 @@
-/*
- * mf_test.cpp
- *
- *  Created on: Aug 7, 2011
- *      Author: gmueller
- */
-
 #include "gadget/MagneticField.hpp"
 #include "gadget/SmoothParticle.hpp"
+using namespace gadget;
 
 #include <memory>
 #include <limits>
@@ -42,7 +36,8 @@ protected:
 	std::auto_ptr<SampledMagneticField> smf;
 	std::vector<TestPoint> testPoints;
 public:
-
+	virtual ~AbstractTest() {
+	}
 	virtual void setup() = 0;
 
 	void runTestPoints() {
@@ -210,7 +205,6 @@ public:
 	void runBFieldTest() {
 		for (size_t i = 0; i < particles.size(); i++) {
 			try {
-				size_t contrib;
 				Vector3f directB = dmf->getField(particles[i].position);
 				float relativeError = (particles[i].bfield.length()
 						- directB.length()) / particles[i].bfield.length();

@@ -1,17 +1,13 @@
-/*
- * Particle.hpp
- *
- *  Created on: 28.04.2010
- *      Author: gmueller
- */
+#ifndef GADGET_SMOOTH_PARTICLE_HPP_
+#define GADGET_SMOOTH_PARTICLE_HPP_
 
-#ifndef SMOOTH_PARTICLE_HPP_
-#define SMOOTH_PARTICLE_HPP_
+#include "gadget/Vector3.hpp"
 
 #include <fstream>
 #include <vector>
-#include "gadget/Vector3.hpp"
 #include <stdint.h>
+
+namespace gadget {
 
 class SmoothParticle {
 public:
@@ -109,12 +105,15 @@ public:
 	}
 };
 
+} // namespace gadget
+
 template<typename T>
-inline std::ostream &operator <<(std::ostream &out, const SmoothParticle &v) {
+inline std::ostream &operator <<(std::ostream &out,
+		const gadget::SmoothParticle &v) {
 	out << "(" << v.position.x << "," << v.position.x << "," << v.position.x
 			<< "), " << "(" << v.bfield.x << "," << v.bfield.x << ","
 			<< v.bfield.x << "), " << v.smoothingLength;
 	return out;
 }
 
-#endif /* PARTICLE_HPP_ */
+#endif /* GADGET_PARTICLE_HPP_ */

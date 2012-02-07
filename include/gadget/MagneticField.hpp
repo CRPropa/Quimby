@@ -1,5 +1,5 @@
-#ifndef GADGET_MAGNETIC_FIELD_H_
-#define GADGET_MAGNETIC_FIELD_H_
+#ifndef GADGET_MAGNETIC_FIELD_HPP_
+#define GADGET_MAGNETIC_FIELD_HPP_
 
 #include "gadget/Grid.hpp"
 #include "gadget/Vector3.hpp"
@@ -10,6 +10,8 @@
 #include <exception>
 #include <sstream>
 #include <iostream>
+
+namespace gadget {
 
 class invalid_position: public std::exception {
 	std::string _msg;
@@ -31,8 +33,8 @@ public:
 
 class MagneticField {
 protected:
-	float _sizeKpc;
 	Vector3f _originKpc;
+	float _sizeKpc;
 	void checkPosition(const Vector3f &positionKpc) const;
 public:
 	MagneticField(const Vector3f &originKpc, double sizeKpc);
@@ -103,5 +105,7 @@ public:
 	float getRho(const Vector3f &positionKpc, size_t &overlaps) const;
 
 };
+
+} // namespace gadget
 
 #endif

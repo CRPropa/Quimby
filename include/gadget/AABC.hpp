@@ -1,16 +1,11 @@
-/*
- * AABC.hpp
- *
- *  Created on: 11.02.2010
- *      Author: gmueller
- */
-
-#ifndef AABC_HPP_
-#define AABC_HPP_
+#ifndef GADGET_AABC_HPP_
+#define GADGET_AABC_HPP_
 
 #include "Vector3.hpp"
 
 #include <iostream>
+
+namespace gadget {
 
 template<typename T>
 class AABC {
@@ -22,26 +17,26 @@ public:
 	}
 
 	AABC(const AABC<T> &a) :
-		center(a.center), extend(a.extend) {
+			center(a.center), extend(a.extend) {
 	}
 
 	AABC(const Vector3<T> &c, T e) :
-		center(c), extend(e) {
+			center(c), extend(e) {
 	}
 
 	bool intersects(const AABC<T> &a) const {
-		if ((center.x - extend > a.center.x + extend) || (center.x + extend
-				< a.center.x - extend)) {
+		if ((center.x - extend > a.center.x + extend)
+				|| (center.x + extend < a.center.x - extend)) {
 			return false;
 		}
 
-		if ((center.y - extend > a.center.y + extend) || (center.y + extend
-				< a.center.y - extend)) {
+		if ((center.y - extend > a.center.y + extend)
+				|| (center.y + extend < a.center.y - extend)) {
 			return false;
 		}
 
-		if ((center.z - extend > a.center.z + extend) || (center.z + extend
-				< a.center.z - extend)) {
+		if ((center.z - extend > a.center.z + extend)
+				|| (center.z + extend < a.center.z - extend)) {
 			return false;
 		}
 
@@ -65,11 +60,11 @@ public:
 	}
 
 	Vector3<T> lower() {
-		return center - Vector3<T> (extend);
+		return center - Vector3<T>(extend);
 	}
 
 	Vector3<T> upper() {
-		return center + Vector3<T> (extend);
+		return center + Vector3<T>(extend);
 	}
 
 	T lowerX() const {
@@ -97,14 +92,16 @@ public:
 	}
 
 	static AABC<T> fromOriginSize(const Vector3<T> &origin, T size) {
-		return AABC<T> (origin + Vector3<T> (size / 2.0), size / 2.0);
+		return AABC<T>(origin + Vector3<T>(size / 2.0), size / 2.0);
 	}
 };
 
+} // namespace gadget
+
 template<typename T>
-std::ostream &operator <<(std::ostream &out, const AABC<T> &a) {
+std::ostream &operator <<(std::ostream &out, const gadget::AABC<T> &a) {
 	out << a.center << " - " << a.extend;
 	return out;
 }
 
-#endif /* AABC_HPP_ */
+#endif /* GADGET_AABC_HPP_ */
