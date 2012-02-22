@@ -75,6 +75,8 @@ protected:
 	uint32_t elementsPerPage3;
 
 public:
+	virtual ~PageIO() {
+	}
 	typedef ELEMENT element_t;
 	typedef Page<element_t> page_t;
 	virtual void setElementsPerPage(uint32_t pageSize) {
@@ -387,6 +389,8 @@ inline size_t BinaryPageIO<ELEMENT>::getSavedPages() {
 template<typename ELEMENT>
 class PagingStrategy {
 public:
+	virtual ~PagingStrategy() {
+	}
 	typedef Page<ELEMENT> page_t;
 	virtual void loaded(page_t *page) = 0;
 	virtual void cleared(page_t *page) = 0;
