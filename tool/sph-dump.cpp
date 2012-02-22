@@ -1,11 +1,10 @@
-#include "arguments.hpp"
+#include "arguments.h"
 
-#include "gadget/Grid.hpp"
-#include "gadget/Index3.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/GadgetFile.hpp"
-#include "gadget/Vector3.hpp"
-using namespace gadget;
+#include "gadget/Grid.h"
+#include "gadget/Index3.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/GadgetFile.h"
+#include "gadget/Vector3.h"
 
 #include <ctime>
 #include <limits>
@@ -13,6 +12,8 @@ using namespace gadget;
 #include <omp.h>
 #include <sstream>
 #include <fstream>
+
+using namespace gadget;
 
 class DumpVectorGridVisitor: public Grid<Vector3f>::Visitor {
 public:
@@ -43,23 +44,20 @@ public:
 	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		if (x != lastX) {
-			b.x = SmoothParticle::kernel(particle.bfield.x,
-					x * reslution_kpc, particle.position.x,
-					particle.smoothingLength);
+			b.x = SmoothParticle::kernel(particle.bfield.x, x * reslution_kpc,
+					particle.position.x, particle.smoothingLength);
 			lastX = x;
 		}
 
 		if (y != lastY) {
-			b.y = SmoothParticle::kernel(particle.bfield.y,
-					y * reslution_kpc, particle.position.y,
-					particle.smoothingLength);
+			b.y = SmoothParticle::kernel(particle.bfield.y, y * reslution_kpc,
+					particle.position.y, particle.smoothingLength);
 			lastY = y;
 		}
 
 		if (z != lastZ) {
-			b.z = SmoothParticle::kernel(particle.bfield.z,
-					z * reslution_kpc, particle.position.z,
-					particle.smoothingLength);
+			b.z = SmoothParticle::kernel(particle.bfield.z, z * reslution_kpc,
+					particle.position.z, particle.smoothingLength);
 			lastZ = z;
 		}
 
@@ -100,8 +98,6 @@ int sph_dump(Arguments &arguments) {
 	grid.create(samples, size_kpc);
 	grid.reset(Vector3f(0, 0, 0));
 
-	bool verbose = arguments.hasFlag("-v");
-
 	std::string filename = arguments.getString("-f", "inputs.raw");
 	std::cout << "Open " << filename << std::endl;
 	std::ifstream file;
@@ -114,17 +110,15 @@ int sph_dump(Arguments &arguments) {
 	uint32_t s;
 	file.read((char *) &s, sizeof(uint32_t));
 	std::cout << "Read " << s << " particles" << std::endl;
-	std::vector<SmoothParticle > sphs;
+	std::vector<SmoothParticle> sphs;
 	sphs.resize(s);
-	std::cout << "Read " << (sizeof(SmoothParticle ) * s)
-			<< " bytes of data" << std::endl;
-	file.read((char *) sphs.data(), sizeof(SmoothParticle ) * s);
+	std::cout << "Read " << (sizeof(SmoothParticle) * s) << " bytes of data"
+			<< std::endl;
+	file.read((char *) sphs.data(), sizeof(SmoothParticle) * s);
 
 	std::cout << "Fill grid" << std::endl;
 	Vector3f origin(offset_kpc.x, offset_kpc.y, offset_kpc.z);
-	size_t cells = 0;
-	size_t pc = 10;
-	for (int iP = 0; iP < s; iP++) {
+	for (size_t iP = 0; iP < s; iP++) {
 		if (iP % 10000 == 0) {
 			std::cout << iP << std::endl;
 		}
@@ -165,8 +159,8 @@ int sph_dump(Arguments &arguments) {
 				if (r_z2 <= 0)
 					continue;
 
-				b.y = SmoothParticle::kernel(sp.bfield.y, p.y,
-						sp.position.y, sp.smoothingLength);
+				b.y = SmoothParticle::kernel(sp.bfield.y, p.y, sp.position.y,
+						sp.smoothingLength);
 				float r_z = sqrt(r_z2);
 
 				size_t z_min = clamp(

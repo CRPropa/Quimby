@@ -1,5 +1,5 @@
-#ifndef GADGET_KERNEL_HPP_
-#define GADGET_KERNEL_HPP_
+#ifndef _GADGET_KERNEL_H_
+#define _GADGET_KERNEL_H_
 
 namespace gadget {
 
@@ -20,4 +20,4 @@ inline float kernel(float value, float center, float position, float hsml) {
 
 } // namespace gadget
 
-#endif /* KERNEL_HPP_ */
+#endif /* _GADGET_KERNEL_H_ */

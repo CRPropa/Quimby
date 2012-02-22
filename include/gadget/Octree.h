@@ -1,7 +1,7 @@
-#ifndef GADGET_OCTREE_HPP_
-#define GADGET_OCTREE_HPP_
+#ifndef _GADGET_OCTREE_H_
+#define _GADGET_OCTREE_H_
 
-#include "AABC.hpp"
+#include "AABC.h"
 
 #include <vector>
 
@@ -158,4 +158,4 @@ private:
 
 } // namespace gadget
 
-#endif /* GADGET_OCTREE_HPP_ */
+#endif /* _GADGET_OCTREE_H_ */

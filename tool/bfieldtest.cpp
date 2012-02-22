@@ -1,6 +1,7 @@
-#include "gadget/PagedGrid.hpp"
-#include "gadget/Vector3.hpp"
-#include "arguments.hpp"
+#include "arguments.h"
+
+#include "gadget/PagedGrid.h"
+#include "gadget/Vector3.h"
 
 using namespace gadget;
 

@@ -1,6 +1,7 @@
 #include <string>
 
-#include "gadget/PagedGrid.hpp"
+#include "gadget/PagedGrid.h"
+
 using namespace gadget;
 
 void write() {

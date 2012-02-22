@@ -1,5 +1,5 @@
-#ifndef GADGET_GADGETFILE_HPP_
-#define GADGET_GADGETFILE_HPP_
+#ifndef _GADGET_GADGETFILE_H_
+#define _GADGET_GADGETFILE_H_
 
 #include <fstream>
 #include <iostream>
@@ -47,5 +47,7 @@ public:
 	bool readFloatBlock(const std::string &label, std::vector<float> &data);
 	void printBlocks();
 };
+
 } // namespace gadget
-#endif /* GADGETFILE_HPP_ */
+
+#endif /* _GADGET_GADGETFILE_H_ */

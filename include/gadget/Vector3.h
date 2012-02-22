@@ -1,5 +1,5 @@
-#ifndef GADGET_VECTOR3_HPP_
-#define GADGET_VECTOR3_HPP_
+#ifndef _GADGET_VECTOR3_H_
+#define _GADGET_VECTOR3_H_
 
 #include <iostream>
 #include <cmath>
@@ -12,7 +12,8 @@ class Vector3 {
 public:
 	T x, y, z;
 
-	Vector3() {
+	Vector3() :
+			x(0), y(0), z(0) {
 	}
 
 	Vector3(const Vector3<T> &v) :
@@ -164,6 +165,24 @@ public:
 			const Vector3<T> &origin = Vector3<T>(0, 0, 0)) const {
 		return (*this -= origin) * f + origin;
 	}
+
+	void setLower(const Vector3<T> &v) {
+		if (v.x < x)
+			x = v.x;
+		if (v.y < y)
+			y = v.y;
+		if (v.z < z)
+			z = v.z;
+	}
+
+	void setUpper(const Vector3<T> &v) {
+		if (v.x > x)
+			x = v.x;
+		if (v.y > y)
+			y = v.y;
+		if (v.z > z)
+			z = v.z;
+	}
 };
 
 template<>
@@ -209,4 +228,4 @@ typedef Vector3<float> Vector3f;
 
 } // namespace gadget
 
-#endif /* GADGET_VECTOR3_HPP_ */
+#endif /* _GADGET_VECTOR3_H_ */

@@ -1,8 +1,8 @@
-#ifndef GADGET_PAGED_GRID_HPP_
-#define GADGET_PAGED_GRID_HPP_
+#ifndef _GADGET_PAGED_GRID_H_
+#define _GADGET_PAGED_GRID_H_
 
-#include "MurmurHash2.hpp"
-#include "Index3.hpp"
+#include "MurmurHash2.h"
+#include "Index3.h"
 
 #include <algorithm>
 #include <vector>
@@ -834,4 +834,4 @@ inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
 
 } // namespace gadget
 
-#endif /* GADGET_PAGED_GRID_HPP_ */
+#endif /* _GADGET_PAGED_GRID_H_ */

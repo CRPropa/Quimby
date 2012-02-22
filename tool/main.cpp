@@ -1,27 +1,27 @@
-#include "gadget/GadgetFile.hpp"
-#include "gadget/Grid.hpp"
-#include "gadget/kernel.hpp"
-#include "gadget/Octree.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/PagedGrid.hpp"
+#include "arguments.h"
 
-using namespace gadget;
-
-#include "arguments.hpp"
+#include "gadget/GadgetFile.h"
+#include "gadget/Grid.h"
+#include "gadget/kernel.h"
+#include "gadget/Octree.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/PagedGrid.h"
 
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
 #include <string>
 #include <ctime>
-
 #include <omp.h>
+
+using namespace gadget;
 
 int sph(Arguments &arguments);
 int sph_dump(Arguments &arguments);
 int paged_grid(Arguments &arguments);
 int bfieldtest(Arguments &arguments);
 int mass(Arguments &arguments);
+int database(Arguments &arguments);
 
 int av(int argc, const char **argv) {
 	if (argc < 3) {
@@ -241,7 +241,7 @@ int bfield(Arguments &arguments) {
 
 struct GridCell {
 	GridCell() :
-		ref_count(0) {
+			ref_count(0) {
 	}
 	std::vector<float> data;
 	int64_t ref_count;
@@ -309,7 +309,7 @@ public:
 	Vector3f b;
 
 	SPVisitor() :
-		lastX(-1), lastY(-1), lastZ(-1) {
+			lastX(-1), lastY(-1), lastZ(-1) {
 	}
 
 	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
@@ -343,7 +343,7 @@ private:
 public:
 
 	DumpBFieldGridVisitor(std::ostream &out) :
-		out(out) {
+			out(out) {
 	}
 
 	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
@@ -457,8 +457,9 @@ int block(Arguments &arguments) {
 		std::cout << "  Done                 " << std::endl;
 	}
 
-	std::cout << grid.get((size_t) bins / 2, (size_t) bins / 2,
-			(size_t) bins / 2) << std::endl;
+	std::cout
+			<< grid.get((size_t) bins / 2, (size_t) bins / 2, (size_t) bins / 2)
+			<< std::endl;
 
 	std::cout << "Write output" << std::endl;
 
@@ -577,10 +578,10 @@ void dump(const std::vector<file_sphs> &fs, size_t x, size_t y, size_t z,
 }
 
 int info(Arguments &arguments) {
-	for (size_t i = 2; i < (size_t)arguments.getCount(); i++) {
+	for (size_t i = 2; i < (size_t) arguments.getCount(); i++) {
 		std::cout << "Print info for file: " << arguments.get(i) << std::endl;
 		GadgetFile file;
-        file.open(arguments.get(i));
+		file.open(arguments.get(i));
 		file.printBlocks();
 	}
 
@@ -656,8 +657,10 @@ int main(int argc, const char **argv) {
 			return sph_dump(arguments);
 		else if (function == "block")
 			return block(arguments);
-        else if (function == "info")
-            return info(arguments);
+		else if (function == "info")
+			return info(arguments);
+		else if (function == "db")
+			return database(arguments);
 		else if (function == "writetest") {
 			if (arguments.hasFlag("-float")) {
 				Grid<float> fg;

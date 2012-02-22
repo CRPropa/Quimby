@@ -1,5 +1,5 @@
-#include "gadget/MagneticField.hpp"
-#include "gadget/Index3.hpp"
+#include "gadget/MagneticField.h"
+#include "gadget/Index3.h"
 
 #include <stdint.h>
 
@@ -43,64 +43,6 @@ void MagneticField::checkPosition(const Vector3f &positionKpc) const {
 	if (positionKpc.z > _originKpc.z + _sizeKpc)
 		throw invalid_position(positionKpc);
 }
-
-//MagneticField::MagneticField(const char* aFileName) :
-//		TXmlParam(aFileName) {
-//	SetType(MAGFIELD_LSS);
-//
-//	_originKpc = TVector3D(0.0);
-//	TiXmlElement* lpXmlField = XmlExtract().GetElement("MagneticField");
-//	TiXmlElement* lpXmlFile = lpXmlField->FirstChildElement("File");
-//	_filename = lpXmlFile->Attribute("name");
-//	std::cout << "[TSphMagField] file: " << _filename << std::endl;
-//
-//	TiXmlElement* lpXmlSize = lpXmlField->FirstChildElement("Size_Mpc");
-//	_fSize = 240;
-//	if (lpXmlSize) {
-//		lpXmlSize->Attribute("value", &_fSize);
-//	}
-//	std::cout << "[TSphMagField] size (Mpc): " << _fSize << std::endl;
-//	_sizeKpc = _fSize * 1000;
-//	_fSize *= Mpc;
-//
-//	TiXmlElement* lpXmlStepsize = lpXmlField->FirstChildElement("Stepsize_Mpc");
-//	_fStepsize = 0.1;
-//	if (lpXmlStepsize) {
-//		lpXmlStepsize->Attribute("value", &_fStepsize);
-//	}
-//	_stepsizeKpc = _fStepsize * 1000;
-//
-//	std::cout << "[TSphMagField] stepsize (Mpc): " << _fStepsize << std::endl;
-//	_fStepsize *= Mpc;
-//
-//	TiXmlElement* lpOrigin = lpXmlField->FirstChildElement("Origin");
-//	if (lpOrigin) {
-//		TiXmlElement* lpX = lpOrigin->FirstChildElement("X_Mpc");
-//		TiXmlElement* lpY = lpOrigin->FirstChildElement("Y_Mpc");
-//		TiXmlElement* lpZ = lpOrigin->FirstChildElement("Z_Mpc");
-//		if (!lpX || !lpY || !lpZ)
-//			throw TXmlErr("MagField origin missing.");
-//		lpX->Attribute("value", &_originKpc[0]);
-//		_originKpc[0] *= Mpc;
-//		lpY->Attribute("value", &_originKpc[1]);
-//		_originKpc[1] *= Mpc;
-//		lpZ->Attribute("value", &_originKpc[2]);
-//		_originKpc[2] *= Mpc;
-//	}
-//
-//	std::cout << "[TSphMagField] Size kpc: " << _sizeKpc << std::endl;
-//	std::cout << "[TSphMagField] Stepsize kpc: " << _stepsizeKpc << std::endl;
-//
-//	_fAvgSphTotalSum = 0;
-//	_fAvgSphTotalCount = 0;
-//	_fAvgSphActualSum = 0;
-//	_fAvgSphActualCount = 0;
-//
-//	if (_fStepsize)
-//		createGrid();
-//	else
-//		createSmoothParticleGrid();
-//}
 
 //----------------------------------------------------------------------------
 // SampledMagneticField
@@ -174,35 +116,6 @@ void SampledMagneticField::apply(const SmoothParticle &particle) {
 		}
 	}
 }
-
-#if 0
-class DotProgress {
-	double step, progress, line_progress, line_width;
-
-	DotProgress(size_t total, size_t width = 80) :
-	progress(0), line_progress(0) {
-		step = 1. / total;
-		line_width =
-	}
-
-	void next() {
-		progress += step;
-		line_progress += step;
-
-		if ((s > 1000) && (i > 0) && ((i % (s / 1000)) == 0)) {
-			dots++;
-			std::cout << ".";
-			if (dots > 100) {
-				std::cout << " " << ((i * 100) / s) << " %" << std::endl;
-				dots = 0;
-			} else {
-				std::cout.flush();
-			}
-		}
-
-	}
-};
-#endif
 
 void SampledMagneticField::load(const std::string &filename) {
 
@@ -413,8 +326,8 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 	const std::vector<size_t> &idx = _grid.get(relativePosition.x,
 			relativePosition.y, relativePosition.z);
 
-// calculate field from overlapping particles
-// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
+	// calculate field from overlapping particles
+	// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
 	Vector3f b(0, 0, 0);
 	for (size_t i = 0; i < idx.size(); i++) {
 		const SmoothParticle &sp = _particles[idx[i]];
@@ -441,8 +354,8 @@ float DirectMagneticField::getRho(const Vector3f &positionKpc,
 	const std::vector<size_t> &idx = _grid.get(relativePosition.x,
 			relativePosition.y, relativePosition.z);
 
-// calculate field from overlapping particles
-// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
+	// calculate field from overlapping particles
+	// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
 	float rho = 0;
 	overlaps = 0;
 	for (size_t i = 0; i < idx.size(); i++) {

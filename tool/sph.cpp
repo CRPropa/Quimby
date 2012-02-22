@@ -1,12 +1,10 @@
-#include "gadget/SPHGrid.hpp"
-#include "gadget/Index3.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/GadgetFile.hpp"
-#include "gadget/Vector3.hpp"
+#include "arguments.h"
 
-using namespace gadget;
-
-#include "arguments.hpp"
+#include "gadget/SPHGrid.h"
+#include "gadget/Index3.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/GadgetFile.h"
+#include "gadget/Vector3.h"
 
 #include <ctime>
 #include <limits>
@@ -14,6 +12,8 @@ using namespace gadget;
 #include <omp.h>
 #include <sstream>
 #include <fstream>
+
+using namespace gadget;
 
 void updateRho(std::vector<SmoothParticle> &sph) {
 	const size_t s = sph.size();
@@ -37,7 +37,7 @@ int sph(Arguments &arguments) {
 	float h = arguments.getFloat("-h", 0.7);
 	std::cout << "h:              " << h << std::endl;
 
-	size_t fileSize = arguments.getInt("-fileSize", 20000);
+	int fileSize = arguments.getInt("-fileSize", 20000);
 	if (fileSize > size)
 		fileSize = size;
 	std::cout << "FileSize:       " << fileSize << " kpc " << std::endl;
@@ -47,12 +47,6 @@ int sph(Arguments &arguments) {
 
 	std::string prefix = arguments.getString("-prefix", "sph");
 	std::cout << "Prefix:         " << prefix << std::endl;
-
-	bool skipRho = arguments.hasFlag("-skipRho");
-	bool verbose = arguments.hasFlag("-v");
-	bool veryverbose = arguments.hasFlag("-vv");
-	if (veryverbose)
-		verbose = true;
 
 	size_t bins = size / fileSize;
 	std::cout << "Bins:           " << bins << std::endl;

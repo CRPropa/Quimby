@@ -1,5 +1,5 @@
-#ifndef GADGET_INDEX3_HPP
-#define GADGET_INDEX3_HPP
+#ifndef _GADGET_INDEX3_H_
+#define _GADGET_INDEX3_H_
 
 #include <inttypes.h>
 #include <algorithm>
@@ -132,4 +132,4 @@ inline std::ostream &operator <<(std::ostream &out, const Index3 &v) {
 
 } // namespace gadget
 
-#endif
+#endif // _GADGET_INDEX3_H_

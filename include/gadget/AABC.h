@@ -1,7 +1,7 @@
-#ifndef GADGET_AABC_HPP_
-#define GADGET_AABC_HPP_
+#ifndef _GADGET_AABC_H_
+#define _GADGET_AABC_H_
 
-#include "Vector3.hpp"
+#include "Vector3.h"
 
 #include <iostream>
 
@@ -104,4 +104,4 @@ std::ostream &operator <<(std::ostream &out, const gadget::AABC<T> &a) {
 	return out;
 }
 
-#endif /* GADGET_AABC_HPP_ */
+#endif /* _GADGET_AABC_H_ */

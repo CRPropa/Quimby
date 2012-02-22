@@ -1,16 +1,16 @@
-#include "gadget/PagedGrid.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/GadgetFile.hpp"
-#include "gadget/Vector3.hpp"
+#include "arguments.h"
 
-using namespace gadget;
-
-#include "arguments.hpp"
+#include "gadget/PagedGrid.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/GadgetFile.h"
+#include "gadget/Vector3.h"
 
 #include <ctime>
 #include <limits>
 #include <algorithm>
 #include <omp.h>
+
+using namespace gadget;
 
 class PagedSPVisitor: public PagedGrid<Vector3f>::Visitor {
 public:
@@ -26,23 +26,20 @@ public:
 	void visit(PagedGrid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		if (x != lastX) {
-			b.x = SmoothParticle::kernel(particle.bfield.x,
-					toCellCenter(x), particle.position.x,
-					particle.smoothingLength);
+			b.x = SmoothParticle::kernel(particle.bfield.x, toCellCenter(x),
+					particle.position.x, particle.smoothingLength);
 		}
 		lastX = x;
 
 		if (y != lastY) {
-			b.y = SmoothParticle::kernel(particle.bfield.y,
-					toCellCenter(y), particle.position.y,
-					particle.smoothingLength);
+			b.y = SmoothParticle::kernel(particle.bfield.y, toCellCenter(y),
+					particle.position.y, particle.smoothingLength);
 		}
 		lastY = y;
 
 		if (z != lastZ) {
-			b.z = SmoothParticle::kernel(particle.bfield.z,
-					toCellCenter(z), particle.position.z,
-					particle.smoothingLength);
+			b.z = SmoothParticle::kernel(particle.bfield.z, toCellCenter(z),
+					particle.position.z, particle.smoothingLength);
 		}
 		lastZ = z;
 

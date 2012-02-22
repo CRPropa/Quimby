@@ -1,15 +1,15 @@
-#include "gadget/GadgetFile.hpp"
-#include "gadget/Grid.hpp"
-#include "gadget/kernel.hpp"
-#include "gadget/Octree.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/PagedGrid.hpp"
+#include "arguments.h"
 
-using namespace gadget;
-
-#include "arguments.hpp"
+#include "gadget/GadgetFile.h"
+#include "gadget/Grid.h"
+#include "gadget/kernel.h"
+#include "gadget/Octree.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/PagedGrid.h"
 
 #include <omp.h>
+
+using namespace gadget;
 
 int mass(Arguments &arguments) {
 	unsigned int bins = arguments.getInt("-bins", 10);
@@ -31,7 +31,7 @@ int mass(Arguments &arguments) {
 
 	bool verbose = arguments.hasFlag("-v");
 
-	std::vector < std::string > files;
+	std::vector<std::string> files;
 	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << std::endl;

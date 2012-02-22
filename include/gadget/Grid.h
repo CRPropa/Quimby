@@ -1,7 +1,7 @@
-#ifndef GADGET_GRID_HPP_
-#define GADGET_GRID_HPP_
+#ifndef _GADGET_GRID_H_
+#define _GADGET_GRID_H_
 
-#include "AABC.hpp"
+#include "AABC.h"
 
 #include <typeinfo>
 #include <vector>
@@ -268,4 +268,4 @@ std::ostream &operator <<(std::ostream &stream, const gadget::Grid<T> &grid) {
 	return stream;
 }
 
-#endif /* GADGET_GRID_HPP_ */
+#endif /* _GADGET_GRID_H_ */

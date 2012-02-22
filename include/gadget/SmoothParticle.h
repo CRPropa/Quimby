@@ -1,7 +1,7 @@
-#ifndef GADGET_SMOOTH_PARTICLE_HPP_
-#define GADGET_SMOOTH_PARTICLE_HPP_
+#ifndef _GADGET_SMOOTH_PARTICLE_H_
+#define _GADGET_SMOOTH_PARTICLE_H_
 
-#include "gadget/Vector3.hpp"
+#include "gadget/Vector3.h"
 
 #include <fstream>
 #include <vector>
@@ -19,6 +19,11 @@ public:
 	float_t smoothingLength;
 	float_t mass;
 	float_t rho;
+
+	SmoothParticle() :
+			mass(0), rho(0) {
+
+	}
 
 	void toKpc(float_t h, vector_t pivot) {
 		smoothingLength /= h;
@@ -116,4 +121,4 @@ inline std::ostream &operator <<(std::ostream &out,
 	return out;
 }
 
-#endif /* GADGET_PARTICLE_HPP_ */
+#endif /* _GADGET_SMOOTH_PARTICLE_H_ */

@@ -1,4 +1,4 @@
-#include "gadget/GadgetFile.hpp"
+#include "gadget/GadgetFile.h"
 
 #include <stdexcept>
 
@@ -20,8 +20,8 @@ void GadgetFile::swapBytes(char *data, int itemCount, int itemSize) {
 
 	for (int count = 0; count < itemCount; count++) {
 		for (int i = 0; i < itemSize / 2; i++) {
-			std::swap(data[count * itemSize + i], data[count * itemSize
-					+ itemSize - 1 - i]);
+			std::swap(data[count * itemSize + i],
+					data[count * itemSize + itemSize - 1 - i]);
 		}
 	}
 }
@@ -52,8 +52,8 @@ size_t GadgetFile::findBlock(const std::string &label) {
 		}
 
 		if (blksize != 8) {
-			throw std::runtime_error("[GadgetFile] incorrect format blksize="
-					+ blksize);
+			throw std::runtime_error(
+					"[GadgetFile] incorrect format blksize=" + blksize);
 		}
 
 		blocklabel.resize(4);
@@ -103,9 +103,9 @@ void GadgetFile::printBlocks() {
 		file.read(&blocklabel.at(0), 4 * sizeof(char));
 		read(&blocksize);
 
-		std::cout << "[GadgetFile] Found Block <" << blocklabel
-		<< "> with " << blocksize << " bytes" << std::endl;
-	
+		std::cout << "[GadgetFile] Found Block <" << blocklabel << "> with "
+				<< blocksize << " bytes" << std::endl;
+
 		readBlockSize();
 		file.seekg(blocksize, std::ios::cur);
 		blocksize = 0;

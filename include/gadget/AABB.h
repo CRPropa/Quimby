@@ -1,7 +1,7 @@
-#ifndef GADGET_AABB_HPP_
-#define GADGET_AABB_HPP_
+#ifndef _GADGET_AABB_H_
+#define _GADGET_AABB_H_
 
-#include "Vector3.hpp"
+#include "Vector3.h"
 
 #include <iostream>
 
@@ -65,4 +65,4 @@ std::ostream &operator <<(std::ostream &out, const AABB<T> &a) {
 
 } // namespace gadget
 
-#endif /* GADGET_AABB_HPP_ */
+#endif /* _GADGET_AABB_H_ */

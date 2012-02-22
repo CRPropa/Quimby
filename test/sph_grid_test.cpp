@@ -1,7 +1,8 @@
-#include "gadget/SPHGrid.hpp"
-using namespace gadget;
+#include "gadget/SPHGrid.h"
 
 #include <iostream>
+
+using namespace gadget;
 
 class SPHGridTest: public SPHGrid {
 public:

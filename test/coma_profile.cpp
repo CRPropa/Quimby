@@ -1,5 +1,5 @@
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/MagneticField.hpp"
+#include "gadget/SmoothParticle.h"
+#include "gadget/MagneticField.h"
 
 #if GADGET_ROOT_ENABLED
 #	include "TNtuple.h"

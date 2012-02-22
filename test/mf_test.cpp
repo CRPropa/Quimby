@@ -1,5 +1,5 @@
-#include "gadget/MagneticField.hpp"
-#include "gadget/SmoothParticle.hpp"
+#include "gadget/MagneticField.h"
+#include "gadget/SmoothParticle.h"
 using namespace gadget;
 
 #include <memory>

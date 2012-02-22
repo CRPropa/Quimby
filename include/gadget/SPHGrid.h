@@ -1,10 +1,10 @@
-#ifndef GADGET_SPH_GRID_HPP_
-#define GADGET_SPH_GRID_HPP_
+#ifndef _GADGET_SPH_GRID_H_
+#define _GADGET_SPH_GRID_H_
 
-#include "gadget/Grid.hpp"
-#include "gadget/SmoothParticle.hpp"
-#include "gadget/Index3.hpp"
-#include "gadget/GadgetFile.hpp"
+#include "gadget/Grid.h"
+#include "gadget/SmoothParticle.h"
+#include "gadget/Index3.h"
+#include "gadget/GadgetFile.h"
 
 #include <vector>
 #include <stdexcept>
@@ -47,7 +47,7 @@ public:
 		int32_t i = (int32_t) v;
 		if (i < 0)
 			return 0;
-		if (i > bins)
+		if ((size_t) i > bins)
 			return bins;
 		return (size_t) i;
 	}
@@ -138,4 +138,4 @@ public:
 
 } // namespace gadget
 
-#endif /* GADGET_SPHGRID_HPP_ */
+#endif /* _GADGET_SPH_GRID_H_ */

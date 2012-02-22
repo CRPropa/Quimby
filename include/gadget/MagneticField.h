@@ -1,9 +1,9 @@
-#ifndef GADGET_MAGNETIC_FIELD_HPP_
-#define GADGET_MAGNETIC_FIELD_HPP_
+#ifndef _GADGET_MAGNETIC_FIELD_H_
+#define _GADGET_MAGNETIC_FIELD_H_
 
-#include "gadget/Grid.hpp"
-#include "gadget/Vector3.hpp"
-#include "gadget/SmoothParticle.hpp"
+#include "gadget/Grid.h"
+#include "gadget/Vector3.h"
+#include "gadget/SmoothParticle.h"
 
 #include <vector>
 #include <string>
@@ -38,6 +38,8 @@ protected:
 	void checkPosition(const Vector3f &positionKpc) const;
 public:
 	MagneticField(const Vector3f &originKpc, double sizeKpc);
+	virtual ~MagneticField() {
+	}
 	const float &getSize() const;
 	const Vector3f &getOrigin() const;
 
@@ -108,4 +110,4 @@ public:
 
 } // namespace gadget
 
-#endif
+#endif // _GADGET_MAGNETIC_FIELD_H_
