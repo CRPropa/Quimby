@@ -89,11 +89,11 @@ int database(Arguments &arguments) {
 
 	std::cout << "create database with " << particles.size() << " particles."
 			<< std::endl;
-	Database::create(particles, output, bins);
+	FileDatabase::create(particles, output, bins);
 
 	std::cout << "done." << std::endl;
 
-	Database db;
+	FileDatabase db;
 	db.open(output);
 	std::cout << "Resulting Database:" << std::endl;
 	std::cout << " count: " << db.getCount() << std::endl;

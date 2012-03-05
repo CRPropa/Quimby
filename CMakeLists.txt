@@ -22,6 +22,7 @@ endif()
 include_directories (include)
 
 add_library( gadget-lib STATIC
+    src/Database.cpp
     src/GadgetFile.cpp
     src/MagneticField.cpp
 )
@@ -64,6 +65,10 @@ add_executable(pg_test test/pg_test.cpp)
 add_executable(mf_test test/mf_test.cpp)
 add_executable(coma_profile test/coma_profile.cpp)
 target_link_libraries(coma_profile gadget-lib)
+
+add_executable(database_test test/database_test.cpp)
+target_link_libraries(database_test gadget-lib)
+
 add_executable(sph_grid_test test/sph_grid_test.cpp)
 target_link_libraries(mf_test gadget-lib)
 target_link_libraries(sph_grid_test gadget-lib)
