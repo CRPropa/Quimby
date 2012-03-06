@@ -23,7 +23,7 @@ public:
 	virtual unsigned int getCount() = 0;
 };
 
-class FileDatabase {
+class FileDatabase: public Database {
 
 	struct Block {
 		float margin;

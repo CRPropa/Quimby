@@ -4,6 +4,7 @@
 #include "gadget/Grid.h"
 #include "gadget/Vector3.h"
 #include "gadget/SmoothParticle.h"
+#include "gadget/Database.h"
 
 #include <vector>
 #include <string>
@@ -37,7 +38,7 @@ protected:
 	float _sizeKpc;
 	void checkPosition(const Vector3f &positionKpc) const;
 public:
-	MagneticField(const Vector3f &originKpc, double sizeKpc);
+	MagneticField();
 	virtual ~MagneticField() {
 	}
 	const float &getSize() const;
@@ -47,8 +48,8 @@ public:
 };
 
 class SampledMagneticField: public MagneticField {
-	typedef Vector3<float> vector_t;
-	typedef Grid<vector_t> grid_t;
+	typedef Vector3<float> vector3_t;
+	typedef Grid<vector3_t> grid_t;
 	double _stepsizeKpc;
 	size_t _samples;
 	grid_t _grid;
@@ -56,11 +57,11 @@ class SampledMagneticField: public MagneticField {
 	size_t toUpperIndex(double x);
 	void apply(const SmoothParticle &particle);
 public:
-	SampledMagneticField(const Vector3f &originKpc, float sizeKpc);
+	SampledMagneticField(size_t samples);
 	Vector3f getField(const Vector3f &position) const;
-	void init(float stepsizeKpc);
-	void load(const std::string &filename);
-	void load(const std::vector<SmoothParticle> &particles);
+	void init(const Vector3f &originKpc, float sizeKpc, Database &db);
+	void init(const Vector3f &originKpc, float sizeKpc, const std::vector<SmoothParticle> &particles);
+
 	void dump(const std::string &dumpfilename);
 	bool restore(const std::string &dumpfilename);
 };
@@ -95,11 +96,11 @@ private:
 	void index(size_t i);
 
 public:
-	DirectMagneticField(const Vector3f &originKpc, float sizeKpc);
+	DirectMagneticField(size_t grid_size);
 	Vector3f getField(const Vector3f &position) const;
-	void init(size_t gid_size);
-	void load(const std::string &filename);
-	void load(const std::vector<SmoothParticle> &particles);
+	void init(const Vector3f &originKpc, float sizeKpc);
+	void init(const Vector3f &originKpc, float sizeKpc, Database &db);
+	void init(const Vector3f &originKpc, float sizeKpc, const std::vector<SmoothParticle> &particles);
 
 	const Statistics &getStatistics() const {
 		return _statistics;

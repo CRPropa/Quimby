@@ -243,13 +243,11 @@ public:
 		Vector3f origin(100000, 100000, 100000);
 		float size(40000);
 
-		dmf.reset(new DirectMagneticField(origin, size));
-		dmf->init(100);
-		dmf->load(particles);
+		dmf.reset(new DirectMagneticField(100));
+		dmf->init(origin, size, particles);
 
-		smf.reset(new SampledMagneticField(origin, size));
-		smf->init(500);
-		smf->load(particles);
+		smf.reset(new SampledMagneticField(500));
+		smf->init(origin, size, particles);
 
 		testPoints.push_back(
 				TestPoint(Vector3f(120000, 120000, 120000), Vector3f(0, 1, 0)));
@@ -280,13 +278,11 @@ public:
 		float size = ComaRadiusKpc * 2.1;
 		Vector3f origin = ComaPositionKpc - Vector3f(size / 2);
 
-		dmf.reset(new DirectMagneticField(origin, size));
-		dmf->init(50);
-		dmf->load(particles);
+		dmf.reset(new DirectMagneticField(50));
+		dmf->init(origin, size, particles);
 
-		smf.reset(new SampledMagneticField(origin, size));
-		smf->init(100);
-		smf->load(particles);
+		smf.reset(new SampledMagneticField(100));
+		smf->init(origin, size, particles);
 
 		testPoints.push_back(
 				TestPoint(ComaPositionKpc,

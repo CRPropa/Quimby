@@ -15,8 +15,8 @@ T clamp(const T &value, const T &min, const T&max) {
 		return value;
 }
 
-MagneticField::MagneticField(const Vector3f &originKpc, double sizeKpc) :
-		_originKpc(originKpc), _sizeKpc(sizeKpc) {
+MagneticField::MagneticField() :
+		_sizeKpc(0) {
 
 }
 
@@ -48,10 +48,9 @@ void MagneticField::checkPosition(const Vector3f &positionKpc) const {
 // SampledMagneticField
 //----------------------------------------------------------------------------
 
-SampledMagneticField::SampledMagneticField(const Vector3f &originKpc,
-		float sizeKpc) :
-		MagneticField(originKpc, sizeKpc) {
-
+SampledMagneticField::SampledMagneticField(size_t samples) :
+		_stepsizeKpc(0), _samples(samples) {
+	_grid.create(samples, _stepsizeKpc);
 }
 
 size_t SampledMagneticField::toLowerIndex(double x) {
@@ -64,14 +63,22 @@ size_t SampledMagneticField::toUpperIndex(double x) {
 			(int) _samples - 1);
 }
 
-void SampledMagneticField::init(float stepsizeKpc) {
-	_stepsizeKpc = stepsizeKpc;
-	_samples = _sizeKpc / _stepsizeKpc + 1;
-	_grid.create(_samples, _sizeKpc);
-	_grid.reset(Vector3f(0, 0, 0));
+void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
+		Database &db) {
+	std::vector<SmoothParticle> particles;
+	db.getParticles(originKpc, originKpc + Vector3f(sizeKpc), particles);
+
+	init(originKpc, sizeKpc, particles);
 }
 
-void SampledMagneticField::load(const std::vector<SmoothParticle> &particles) {
+void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
+		const std::vector<SmoothParticle> &particles) {
+	_originKpc = originKpc;
+	_sizeKpc = sizeKpc;
+	_stepsizeKpc = sizeKpc / _samples;
+	_grid.create(_samples, _sizeKpc);
+	_grid.reset(Vector3f(0, 0, 0));
+
 	size_t s = particles.size();
 	for (size_t i = 0; i < s; i++) {
 		apply(particles[i]);
@@ -115,97 +122,6 @@ void SampledMagneticField::apply(const SmoothParticle &particle) {
 			}
 		}
 	}
-}
-
-void SampledMagneticField::load(const std::string &filename) {
-
-#if CACHE
-	size_t cells = _samples - 1;
-	std::cout << "[TSphMagField] Samples: " << _samples << std::endl;
-
-	std::string basename = _filename.substr(_filename.find_last_of('/') + 1);
-	std::string dumpfile = basename + ".dump";
-	std::cout << "[TSphMagField] checking previous field: " << dumpfile
-	<< std::endl;
-	if (_grid.restore(dumpfile) == false) {
-#endif
-
-	std::vector<SmoothParticle> particles;
-	SmoothParticleHelper::read(filename, particles);
-
-	size_t s = particles.size();
-	for (size_t i = 0; i < s; i++) {
-		apply(particles[i]);
-	}
-
-#if CACHE
-	std::cout << "\n[TSphMagField] dump field" << std::endl;
-	std::string tmpfile = basename + ".dump_";
-	_grid.dump(tmpfile);
-	::rename(tmpfile.c_str(), dumpfile.c_str());
-#endif
-
-#if STATS
-	bool printStats = getenv("CRPROPA_SPH_STATS") != 0;
-	std::ofstream stats;
-	if (printStats) {
-		stats.open("stats.csv");
-		stats
-		<< "x, y, z, h, m, rho, w, Bx_i, By_i, Bz_i, Bx_p, By_p, Bz_p\n";
-	}
-	float eMin = 1e30, eMax = 1e-30, eAvg = 0;
-	for (size_t i = 0; i < s; i++) {
-		SmoothParticle<double> &sp = _smoothParticles[i];
-		Vector3f p = (sp.position + origin);
-		TVector3D pos(p.x * kpc, p.y * kpc, p.z * kpc);
-		if (pos.x() < _originKpc.x() || pos.x() > _originKpc.x() + _fSize)
-		continue;
-		if (pos.y() < _originKpc.y() || pos.y() > _originKpc.y() + _fSize)
-		continue;
-		if (pos.z() < _originKpc.z() || pos.z() > _originKpc.z() + _fSize)
-		continue;
-		TVector3D b = getField(pos);
-		float dx = b.x() - sp.bfield.x * gauss;
-		float dy = b.y() - sp.bfield.y * gauss;
-		float dz = b.z() - sp.bfield.z * gauss;
-		float e = sqrt(dx * dx + dy * dy + dz * dz) / b.mag();
-		if (printStats) {
-			stats << p.x << ", " << p.y << ", " << p.z << ", ";
-			stats << sp.smoothingLength << ", " << sp.mass << ", " << sp.rho
-			<< ", " << sp.weight() << ", ";
-			stats << b.x() / nG << ", " << b.y() / nG << ", " << b.z() / nG
-			<< ", ";
-			stats << sp.bfield.x * gauss / nG << ", "
-			<< sp.bfield.y * gauss / nG << ", "
-			<< sp.bfield.z * gauss / nG << "\n";
-		}
-		if (e < eMin)
-		eMin = e;
-		if (e > eMax)
-		eMax = e;
-		eAvg += e;
-	}
-	if (s)
-	eAvg /= s;
-	std::cout << "[TSphMagField] error: " << eMin << " < " << eAvg << " < "
-	<< eMax << std::endl;
-
-	Vector3f vmax(0.f), vmin(1e31f);
-	for (size_t ix = 0; ix < _samples; ix++) {
-		for (size_t iy = 0; iy < _samples; iy++) {
-			for (size_t iz = 0; iz < _samples; iz++) {
-				Vector3f v = _fGrid.get(ix, iy, iz);
-				if (v.length2() > vmax.length2())
-				vmax = v;
-				if (v.length2() < vmin.length2())
-				vmin = v;
-			}
-		}
-	}
-	std::cout << "[TSphMagField] Min (nG): " << vmin / nG << std::endl;
-	std::cout << "[TSphMagField] Max (nG): " << vmax / nG << std::endl;
-#endif
-
 }
 
 Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
@@ -260,10 +176,8 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 // DirectMagneticField
 //----------------------------------------------------------------------------
 
-DirectMagneticField::DirectMagneticField(const Vector3f &originKpc,
-		float sizeKpc) :
-		MagneticField(originKpc, sizeKpc) {
-
+DirectMagneticField::DirectMagneticField(size_t grid_size) {
+	_grid.create(grid_size, 0);
 }
 
 void DirectMagneticField::index(size_t i) {
@@ -299,20 +213,25 @@ void DirectMagneticField::index(size_t i) {
 				_grid.get(x, y, z).push_back(i);
 }
 
-void DirectMagneticField::init(size_t grid_size = 100) {
-	_statistics.reset();
-	_grid.create(grid_size, _sizeKpc);
+void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc,
+		Database &db) {
+	_particles.clear();
+	db.getParticles(originKpc, originKpc + Vector3f(sizeKpc), _particles);
+	init(originKpc, sizeKpc);
 }
 
-void DirectMagneticField::load(const std::string &filename) {
-	SmoothParticleHelper::read(filename, _particles);
-	for (size_t i = 0; i < _particles.size(); i++) {
-		index(i);
-	}
-}
-
-void DirectMagneticField::load(const std::vector<SmoothParticle> &particles) {
+void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc,
+		const std::vector<SmoothParticle> &particles) {
 	_particles = particles;
+	init(originKpc, sizeKpc);
+}
+
+void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
+	_originKpc = originKpc;
+	_sizeKpc = sizeKpc;
+	_grid.create(_grid.getBins(), _sizeKpc);
+	_grid.reset(std::vector<size_t>());
+
 	for (size_t i = 0; i < _particles.size(); i++) {
 		index(i);
 	}

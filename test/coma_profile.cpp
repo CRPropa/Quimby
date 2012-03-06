@@ -25,16 +25,12 @@ public:
 	void init() {
 		std::cout << "** Load Particles" << std::endl;
 		SmoothParticleHelper::read("test/coma.raw", particles);
-		for (size_t i = 0; i < particles.size(); i++) {
-			particles[i].smoothingLength;
-		}
 
 		std::cout << "** Load DirectMagneticField" << std::endl;
 		float size = ComaRadiusKpc * 3;
 		Vector3f origin = ComaPositionKpc - Vector3f(size / 2);
-		dmf.reset(new DirectMagneticField(origin, size));
-		dmf->init(50);
-		dmf->load(particles);
+		dmf.reset(new DirectMagneticField(50));
+		dmf->init(origin, size, particles);
 	}
 
 	void writeMedianProfile() {
@@ -72,8 +68,17 @@ public:
 		const float rMax = ComaRadiusKpc;
 		const size_t nPoints = 10000;
 
+#if GADGET_ROOT_ENABLED
+		TFile *file = new TFile("coma_profile_volume_weighted.root", "RECREATE",
+				"Rho Weighted");
+		if (file->IsZombie())
+			throw std::runtime_error(
+					"Root output file cannot be properly opened");
+		TNtuple *ntuple = new TNtuple("events", "Rho", "r:B");
+#else
 		std::ofstream out("coma_profile_volume_weighted.csv");
 		out << "r B" << std::endl;
+#endif
 
 		float stepLog = (log10(rMax) - log10(rMin)) / (steps - 1);
 		for (size_t i = 0; i < steps; i++) {
@@ -91,9 +96,19 @@ public:
 				avgB += b.length(); // / nPoints;
 			}
 			avgB /= nPoints;
+
+#if GADGET_ROOT_ENABLED
+			ntuple->Fill(r, avgB);
+#else
 			out << r << " " << avgB << std::endl;
+#endif
+
 		}
 
+#if GADGET_ROOT_ENABLED
+		file->Write();
+		file->Close();
+#endif
 		std::cout << std::endl;
 	}
 
@@ -105,7 +120,8 @@ public:
 		if (file->IsZombie())
 			throw std::runtime_error(
 					"Root output file cannot be properly opened");
-		TNtuple *ntuple = new TNtuple("events", "Rho", "r:rho_i:rho_at_r_i:overlaps");
+		TNtuple *ntuple = new TNtuple("events", "Rho",
+				"r:rho_i:rho_at_r_i:overlaps");
 #else
 		std::ofstream out("coma_profile_rho.csv");
 		out << "r rho_i rho_at_r_i overlaps" << std::endl;
@@ -119,8 +135,8 @@ public:
 #if GADGET_ROOT_ENABLED
 				ntuple->Fill(r, particles[i].rho, directRho, overlaps);
 #else
-				out << r << " " << particles[i].rho << " " << directRho << " " << overlaps
-				<< std::endl;
+				out << r << " " << particles[i].rho << " " << directRho << " "
+				<< overlaps << std::endl;
 #endif
 			} catch (invalid_position &e) {
 
