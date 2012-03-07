@@ -21,7 +21,7 @@ endif()
 
 include_directories (include)
 
-add_library( gadget-lib STATIC
+add_library( gadget-lib
     src/Database.cpp
     src/GadgetFile.cpp
     src/MagneticField.cpp
@@ -46,7 +46,7 @@ target_link_libraries (gadget-tool gadget-lib)
 INSTALL(TARGETS gadget-tool RUNTIME DESTINATION bin)
 INSTALL(TARGETS gadget-lib DESTINATION lib)
 INSTALL(DIRECTORY include/ DESTINATION include
-          FILES_MATCHING PATTERN "*.hpp")
+          FILES_MATCHING PATTERN "*.h")
 if(UNIX)
     SET(GADGET_PREFIX ${CMAKE_INSTALL_PREFIX})
     SET(GADGET_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/libGadget.a)

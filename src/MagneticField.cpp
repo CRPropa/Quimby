@@ -217,6 +217,10 @@ void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 		Database &db) {
 	_particles.clear();
 	db.getParticles(originKpc, originKpc + Vector3f(sizeKpc), _particles);
+#ifdef DEBUG
+	std::cout << "DEBUG [gadget::DirectMagneticField] database with "
+			<< db.getCount() << " particles." << std::endl;
+#endif
 	init(originKpc, sizeKpc);
 }
 
@@ -235,6 +239,11 @@ void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
 	for (size_t i = 0; i < _particles.size(); i++) {
 		index(i);
 	}
+
+#ifdef DEBUG
+	std::cout << "DEBUG [gadget::DirectMagneticField] indexed "
+			<< _particles.size() << " particles." << std::endl;
+#endif
 }
 
 Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
