@@ -6,6 +6,7 @@
 #include <typeinfo>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <cmath>
 #include <inttypes.h>
@@ -58,7 +59,17 @@ public:
 		this->size = size;
 		this->bins2 = bins * bins;
 		cellLength = size / (double) bins;
-		elements.resize(bins * bins * bins);
+		size_t count = bins * bins * bins;
+		if (elements.size() != count) {
+			try {
+				elements.resize(count);
+			} catch (...) {
+				std::stringstream sstr;
+				sstr << "Failed to allocate memory for Grid. Bins: " << bins;
+				sstr << ", Elements size: " << sizeof(element_t);
+				throw std::runtime_error(sstr.str());
+			}
+		}
 	}
 
 	element_t &get(size_t x, size_t y, size_t z) {
