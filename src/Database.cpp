@@ -2,6 +2,36 @@
 
 namespace gadget {
 
+class _CollectVisitor: public Database::Visitor {
+	std::vector<SmoothParticle> &particles;
+
+public:
+	size_t count;
+	_CollectVisitor(std::vector<SmoothParticle> &particles) :
+			particles(particles) {
+	}
+
+	void begin() {
+		count = 0;
+	}
+
+	void visit(const SmoothParticle &particle) {
+		count++;
+		particles.push_back(particle);
+	}
+
+	void end() {
+
+	}
+};
+
+size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
+		std::vector<SmoothParticle> &particles) {
+	_CollectVisitor v(particles);
+	accept(lower, upper, v);
+	return v.count;
+}
+
 FileDatabase::FileDatabase() :
 		count(0) {
 }
@@ -31,22 +61,19 @@ Vector3f FileDatabase::getLowerBounds() {
 Vector3f FileDatabase::getUpperBounds() {
 	return upper;
 }
-
-unsigned int FileDatabase::getCount() {
+size_t FileDatabase::getCount() {
 	return count;
 }
 
-unsigned int FileDatabase::getParticles(const Vector3f &lower,
-		const Vector3f &upper, std::vector<SmoothParticle> &particles) {
+void FileDatabase::accept(const Vector3f &lower, const Vector3f &upper,
+		Database::Visitor &visitor) {
 	if (count == 0)
-		return 0;
+		return;
 
 	std::ifstream in(filename.c_str(), std::ios::binary);
 	in.seekg(data_pos, std::ios::beg);
 	if (!in)
-		return 0;
-
-	unsigned int added = 0;
+		return;
 
 	AABB<float> box(lower, upper);
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
@@ -83,14 +110,11 @@ unsigned int FileDatabase::getParticles(const Vector3f &lower,
 					AABB<float> v(l, u);
 					if (!v.intersects(box))
 						continue;
-					added++;
-					particles.push_back(particle);
+					visitor.visit(particle);
 				}
 			}
 		}
 	}
-
-	return added;
 }
 
 class XSorter {

@@ -11,16 +11,30 @@ namespace gadget {
 
 class Database {
 public:
+
+	class Visitor {
+	public:
+		virtual ~Visitor() {
+
+		}
+		virtual void begin() = 0;
+		virtual void visit(const SmoothParticle &p) = 0;
+		virtual void end() = 0;
+	};
+
 	virtual ~Database() {
 	}
-	virtual unsigned int getParticles(const Vector3f &lower,
-			const Vector3f &upper, std::vector<SmoothParticle> &particles) = 0;
+	size_t getParticles(const Vector3f &lower, const Vector3f &upper,
+			std::vector<SmoothParticle> &particles);
 
 	virtual Vector3f getLowerBounds() =0;
 
 	virtual Vector3f getUpperBounds() = 0;
 
-	virtual unsigned int getCount() = 0;
+	virtual size_t getCount() = 0;
+
+	virtual void accept(const Vector3f &lower, const Vector3f &upper,
+			Visitor &visitor) = 0;
 };
 
 class FileDatabase: public Database {
@@ -46,13 +60,12 @@ public:
 
 	Vector3f getUpperBounds();
 
-	unsigned int getCount();
-
-	unsigned int getParticles(const Vector3f &lower, const Vector3f &upper,
-			std::vector<SmoothParticle> &particles);
+	size_t getCount();
 
 	static void create(std::vector<SmoothParticle> &particles,
 			const std::string &filename, size_t blocks_per_axis = 100);
+
+	void accept(const Vector3f &lower, const Vector3f &upper, Visitor &visitor);
 };
 
 } // namespace gadget

@@ -63,12 +63,37 @@ size_t SampledMagneticField::toUpperIndex(double x) {
 			(int) _samples - 1);
 }
 
+class ApplyVisitor: public Database::Visitor {
+	SampledMagneticField *field;
+public:
+	ApplyVisitor(SampledMagneticField *field) :
+			field(field) {
+
+	}
+
+	void begin() {
+
+	}
+
+	void visit(const SmoothParticle &p) {
+		field->sampleParticle(p);
+	}
+
+	void end() {
+
+	}
+};
+
 void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 		Database &db) {
-	std::vector<SmoothParticle> particles;
-	db.getParticles(originKpc, originKpc + Vector3f(sizeKpc), particles);
+	_originKpc = originKpc;
+	_sizeKpc = sizeKpc;
+	_stepsizeKpc = sizeKpc / _samples;
+	_grid.create(_samples, _sizeKpc);
+	_grid.reset(Vector3f(0, 0, 0));
 
-	init(originKpc, sizeKpc, particles);
+	ApplyVisitor v(this);
+	db.accept(originKpc, originKpc + Vector3f(sizeKpc, sizeKpc, sizeKpc), v);
 }
 
 void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
@@ -81,7 +106,7 @@ void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 
 	size_t s = particles.size();
 	for (size_t i = 0; i < s; i++) {
-		apply(particles[i]);
+		sampleParticle(particles[i]);
 	}
 }
 
@@ -95,7 +120,7 @@ bool SampledMagneticField::restore(const std::string &dumpfilename) {
 	return _grid.restore(dumpfilename);
 }
 
-void SampledMagneticField::apply(const SmoothParticle &particle) {
+void SampledMagneticField::sampleParticle(const SmoothParticle &particle) {
 	Vector3f value = particle.bfield * particle.weight() * particle.mass
 			/ particle.rho;
 	float r = particle.smoothingLength + _stepsizeKpc;
@@ -132,8 +157,8 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 
 	if (r.x >= _samples || r.y >= _samples || r.z >= _samples || r.x <= 0
 			|| r.y <= 0 || r.z <= 0)
-		std::cerr << "[TSphMagField] invalid position: " << positionKpc
-				<< std::endl;
+		std::cerr << "[gadget::DirectMagneticField] invalid position: "
+				<< positionKpc << std::endl;
 
 	int ix = clamp((int) floor(r.x), 0, int(_samples - 1));
 	int iX = ix + 1;
@@ -219,7 +244,7 @@ void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 	db.getParticles(originKpc, originKpc + Vector3f(sizeKpc), _particles);
 #ifdef DEBUG
 	std::cout << "DEBUG [gadget::DirectMagneticField] database with "
-			<< db.getCount() << " particles." << std::endl;
+	<< db.getCount() << " particles." << std::endl;
 #endif
 	init(originKpc, sizeKpc);
 }
@@ -242,7 +267,7 @@ void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
 
 #ifdef DEBUG
 	std::cout << "DEBUG [gadget::DirectMagneticField] indexed "
-			<< _particles.size() << " particles." << std::endl;
+	<< _particles.size() << " particles." << std::endl;
 #endif
 }
 
