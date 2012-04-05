@@ -29,18 +29,18 @@ const Vector3f &MagneticField::getOrigin() const {
 }
 
 void MagneticField::checkPosition(const Vector3f &positionKpc) const {
-	if (positionKpc.x < _originKpc.x)
+	if (positionKpc.x <= _originKpc.x)
 		throw invalid_position(positionKpc);
-	if (positionKpc.y < _originKpc.y)
+	if (positionKpc.y <= _originKpc.y)
 		throw invalid_position(positionKpc);
-	if (positionKpc.z < _originKpc.z)
+	if (positionKpc.z <= _originKpc.z)
 		throw invalid_position(positionKpc);
 
-	if (positionKpc.x > _originKpc.x + _sizeKpc)
+	if (positionKpc.x >= _originKpc.x + _sizeKpc)
 		throw invalid_position(positionKpc);
-	if (positionKpc.y > _originKpc.y + _sizeKpc)
+	if (positionKpc.y >= _originKpc.y + _sizeKpc)
 		throw invalid_position(positionKpc);
-	if (positionKpc.z > _originKpc.z + _sizeKpc)
+	if (positionKpc.z >= _originKpc.z + _sizeKpc)
 		throw invalid_position(positionKpc);
 }
 
@@ -88,7 +88,7 @@ void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 		Database &db) {
 	_originKpc = originKpc;
 	_sizeKpc = sizeKpc;
-	_stepsizeKpc = sizeKpc / _samples;
+	_stepsizeKpc = sizeKpc / (_samples-1);
 	_grid.create(_samples, _sizeKpc);
 	_grid.reset(Vector3f(0, 0, 0));
 
@@ -100,7 +100,7 @@ void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 		const std::vector<SmoothParticle> &particles) {
 	_originKpc = originKpc;
 	_sizeKpc = sizeKpc;
-	_stepsizeKpc = sizeKpc / _samples;
+	_stepsizeKpc = sizeKpc / (_samples-1);
 	_grid.create(_samples, _sizeKpc);
 	_grid.reset(Vector3f(0, 0, 0));
 
@@ -175,22 +175,22 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 	// check: http://paulbourke.net/miscellaneous/interpolation/
 	Vector3f r = (positionKpc - _originKpc) / _stepsizeKpc;
 
-	if (r.x >= _samples || r.y >= _samples || r.z >= _samples || r.x <= 0
+	if (r.x >= (_samples-1) || r.y >= (_samples-1) || r.z >= (_samples-1) || r.x <= 0
 			|| r.y <= 0 || r.z <= 0)
 		std::cerr << "[gadget::DirectMagneticField] invalid position: "
 				<< positionKpc << std::endl;
 
-	int ix = clamp((int) floor(r.x), 0, int(_samples - 1));
+	int ix = clamp((int) floor(r.x), 0, int(_samples - 2));
 	int iX = ix + 1;
 	double fx = r.x - ix;
 	double fX = 1 - fx;
 
-	int iy = clamp((int) floor(r.y), 0, int(_samples - 1));
+	int iy = clamp((int) floor(r.y), 0, int(_samples - 2));
 	int iY = iy + 1;
 	double fy = r.y - iy;
 	double fY = 1 - fy;
 
-	int iz = clamp((int) floor(r.z), 0, int(_samples - 1));
+	int iz = clamp((int) floor(r.z), 0, int(_samples - 2));
 	int iZ = iz + 1;
 	double fz = r.z - iz;
 	double fZ = 1 - fz;
