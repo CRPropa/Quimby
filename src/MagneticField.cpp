@@ -134,7 +134,7 @@ void SampledMagneticField::sampleParticle(const SmoothParticle &particle) {
 
 	size_t z_min = toLowerIndex(relativePosition.z - r);
 	size_t z_max = toUpperIndex(relativePosition.z + r);
-#if 0
+#if 1
 
 	Vector3f p;
 	for (size_t x = x_min; x <= x_max; x++) {
@@ -148,18 +148,16 @@ void SampledMagneticField::sampleParticle(const SmoothParticle &particle) {
 			}
 		}
 	}
-#endif
-
-#if 1
+#else
 
 	size_t nx = x_max - x_min + 1;
 	size_t ny = y_max - y_min + 1;
 	size_t count = nx * ny;
-#pragma omp parallel for schedule(dynamic, 10)
+#pragma omp parallel for if (count > 2000) schedule(dynamic, 1000)
 	for (size_t i = 0; i < count; i++) {
 		Vector3f p;
-		size_t x = x_min + i / nx;
-		size_t y = y_min + i % nx;
+		size_t x = x_min + i % nx;
+		size_t y = y_min + i / nx;
 		p.x = x * _stepsizeKpc;
 		p.y = y * _stepsizeKpc;
 		for (size_t z = z_min; z <= z_max; z++) {
