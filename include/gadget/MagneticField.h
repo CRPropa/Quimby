@@ -58,8 +58,10 @@ class SampledMagneticField: public MagneticField {
 public:
 	SampledMagneticField(size_t samples);
 	Vector3f getField(const Vector3f &position) const;
+	void init(const Vector3f &originKpc, float sizeKpc);
 	void init(const Vector3f &originKpc, float sizeKpc, Database &db);
-	void init(const Vector3f &originKpc, float sizeKpc, const std::vector<SmoothParticle> &particles);
+	void init(const Vector3f &originKpc, float sizeKpc,
+			const std::vector<SmoothParticle> &particles);
 
 	void dump(const std::string &dumpfilename);
 	bool restore(const std::string &dumpfilename);
@@ -100,7 +102,12 @@ public:
 	Vector3f getField(const Vector3f &position) const;
 	void init(const Vector3f &originKpc, float sizeKpc);
 	void init(const Vector3f &originKpc, float sizeKpc, Database &db);
-	void init(const Vector3f &originKpc, float sizeKpc, const std::vector<SmoothParticle> &particles);
+	void init(const Vector3f &originKpc, float sizeKpc,
+			const std::vector<SmoothParticle> &particles);
+
+	const std::vector<SmoothParticle> getParticles() const {
+		return _particles;
+	}
 
 	const Statistics &getStatistics() const {
 		return _statistics;
