@@ -24,6 +24,7 @@ class Test {
 public:
 	void init() {
 		std::cout << "** Load Particles" << std::endl;
+		db.reset(new FileDatabase);
 		db->open("test/coma-mhd_z.db");
 
 		std::cout << "** Load DirectMagneticField" << std::endl;
