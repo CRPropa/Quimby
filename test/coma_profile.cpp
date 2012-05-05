@@ -20,33 +20,47 @@ const float ComaRadiusKpc = 2693.1857;
 class Test {
 
 	std::auto_ptr<DirectMagneticField> dmf;
-	std::vector<SmoothParticle> particles;
+	std::auto_ptr<FileDatabase> db;
 public:
 	void init() {
 		std::cout << "** Load Particles" << std::endl;
-		SmoothParticleHelper::read("test/coma.raw", particles);
+		db->open("test/coma-mhd_z.db");
 
 		std::cout << "** Load DirectMagneticField" << std::endl;
 		float size = ComaRadiusKpc * 3;
 		Vector3f origin = ComaPositionKpc - Vector3f(size / 2);
 		dmf.reset(new DirectMagneticField(50));
-		dmf->init(origin, size, particles);
+		dmf->init(origin, size, *db.get());
 	}
 
-	void writeMedianProfile() {
-		std::cout << "** Write Median Profile" << std::endl;
-		std::ofstream out("coma_profile_median.csv");
-		for (size_t i = 0; i < particles.size(); i++) {
+	class MedianVisitor: public Database::Visitor {
+	public:
+		std::ofstream out;
+		size_t i;
+		void begin() {
+			i = 0;
+		}
+		void visit(const SmoothParticle &p) {
 			if (i % 10000 == 0) {
 				std::cout << ".";
 				std::cout.flush();
 			}
 
-			const SmoothParticle &sp = particles[i];
-			float r = sp.position.distanceTo(ComaPositionKpc);
-			float b = sp.bfield.length();
+			float r = p.position.distanceTo(ComaPositionKpc);
+			float b = p.bfield.length();
 			out << r << " " << b << std::endl;
 		}
+		void end() {
+			out.close();
+		}
+	};
+
+	void writeMedianProfile() {
+		std::cout << "** Write Median Profile" << std::endl;
+		MedianVisitor v;
+		v.out.open("coma_profile_median.csv");
+		db->accept(Vector3f(std::numeric_limits<float>::min()),
+				Vector3f(std::numeric_limits<float>::max()), v);
 		std::cout << std::endl;
 	}
 
@@ -72,13 +86,12 @@ public:
 		TFile *file = new TFile("coma_profile_volume_weighted.root", "RECREATE",
 				"Rho Weighted");
 		if (file->IsZombie())
-			throw std::runtime_error(
-					"Root output file cannot be properly opened");
+		throw std::runtime_error(
+				"Root output file cannot be properly opened");
 		TNtuple *ntuple = new TNtuple("events", "Rho", "r:B");
-#else
+#endif
 		std::ofstream out("coma_profile_volume_weighted.csv");
 		out << "r B" << std::endl;
-#endif
 
 		float stepLog = (log10(rMax) - log10(rMin)) / (steps - 1);
 		for (size_t i = 0; i < steps; i++) {
@@ -99,9 +112,8 @@ public:
 
 #if GADGET_ROOT_ENABLED
 			ntuple->Fill(r, avgB);
-#else
-			out << r << " " << avgB << std::endl;
 #endif
+			out << r << " " << avgB << std::endl;
 
 		}
 
@@ -112,39 +124,56 @@ public:
 		std::cout << std::endl;
 	}
 
-	void writeRhoTest() {
-		std::cout << "** Write Rho Values" << std::endl;
-
+	class WriteRhoVisitor: public Database::Visitor {
+	public:
 #if GADGET_ROOT_ENABLED
-		TFile *file = new TFile("coma_profile_rho.root", "RECREATE", "Rho");
-		if (file->IsZombie())
-			throw std::runtime_error(
-					"Root output file cannot be properly opened");
-		TNtuple *ntuple = new TNtuple("events", "Rho",
-				"r:rho_i:rho_at_r_i:overlaps");
-#else
-		std::ofstream out("coma_profile_rho.csv");
-		out << "r rho_i rho_at_r_i overlaps" << std::endl;
+		TFile *file;
+		TNtuple *ntuple;
 #endif
+		std::ofstream out;
+		void begin() {
 
-		for (size_t i = 0; i < particles.size(); i++) {
+		}
+		void visit(const SmoothParticle &p) {
 			try {
 				size_t overlaps;
-				float directRho = dmf->getRho(particles[i].position, overlaps);
-				float r = particles[i].position.distanceTo(ComaPositionKpc);
+				//float directRho = dmf->getRho(particles[i].position, overlaps);
+				//float r = particles[i].position.distanceTo(ComaPositionKpc);
 #if GADGET_ROOT_ENABLED
 				ntuple->Fill(r, particles[i].rho, directRho, overlaps);
-#else
-				out << r << " " << particles[i].rho << " " << directRho << " "
-				<< overlaps << std::endl;
 #endif
+				//out << r << " " << particles[i].rho << " " << directRho << " "
+				//		<< overlaps << std::endl;
 			} catch (invalid_position &e) {
 
 			}
+
 		}
+		void end() {
+		}
+	};
+
+	void writeRhoTest() {
+		std::cout << "** Write Rho Values" << std::endl;
+
+		WriteRhoVisitor v;
 #if GADGET_ROOT_ENABLED
-		file->Write();
-		file->Close();
+		v.file = new TFile("coma_profile_rho.root", "RECREATE", "Rho");
+		if (v.file->IsZombie())
+		throw std::runtime_error(
+				"Root output file cannot be properly opened");
+		v.ntuple = new TNtuple("events", "Rho",
+				"r:rho_i:rho_at_r_i:overlaps");
+#endif
+		v.out.open("coma_profile_rho.csv");
+		v.out << "r rho_i rho_at_r_i overlaps" << std::endl;
+
+		db->accept(Vector3f(std::numeric_limits<float>::min()),
+				Vector3f(std::numeric_limits<float>::max()), v);
+
+#if GADGET_ROOT_ENABLED
+		v.file->Write();
+		v.file->Close();
 #endif
 		std::cout << std::endl;
 	}
