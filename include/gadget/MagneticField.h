@@ -53,6 +53,7 @@ class SampledMagneticField: public MagneticField {
 	double _stepsizeKpc;
 	size_t _samples;
 	grid_t _grid;
+	double _broadeningFactor;
 	size_t toLowerIndex(double x);
 	size_t toUpperIndex(double x);
 public:
@@ -66,6 +67,7 @@ public:
 	void dump(const std::string &dumpfilename);
 	bool restore(const std::string &dumpfilename);
 	void sampleParticle(const SmoothParticle &particle);
+	void setBroadeningFactor(double broadening);
 };
 
 class DirectMagneticField: public MagneticField {

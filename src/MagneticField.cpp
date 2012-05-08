@@ -49,7 +49,7 @@ void MagneticField::checkPosition(const Vector3f &positionKpc) const {
 //----------------------------------------------------------------------------
 
 SampledMagneticField::SampledMagneticField(size_t samples) :
-		_stepsizeKpc(0), _samples(samples) {
+		_stepsizeKpc(0), _samples(samples), _broadeningFactor(0) {
 	_grid.create(samples, _stepsizeKpc);
 }
 
@@ -87,7 +87,7 @@ public:
 void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
 	_originKpc = originKpc;
 	_sizeKpc = sizeKpc;
-	_stepsizeKpc = sizeKpc / (_samples-1);
+	_stepsizeKpc = sizeKpc / (_samples - 1);
 	_grid.create(_samples, _sizeKpc);
 	_grid.reset(Vector3f(0, 0, 0));
 }
@@ -118,7 +118,10 @@ bool SampledMagneticField::restore(const std::string &dumpfilename) {
 	return _grid.restore(dumpfilename);
 }
 
-void SampledMagneticField::sampleParticle(const SmoothParticle &particle) {
+void SampledMagneticField::sampleParticle(const SmoothParticle &part) {
+	SmoothParticle particle = part;
+	particle.smoothingLength += _broadeningFactor * _grid.getCellLength();
+
 	Vector3f value = particle.bfield * particle.weight() * particle.mass
 			/ particle.rho;
 	float r = particle.smoothingLength + _stepsizeKpc;
@@ -173,8 +176,8 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 	// check: http://paulbourke.net/miscellaneous/interpolation/
 	Vector3f r = (positionKpc - _originKpc) / _stepsizeKpc;
 
-	if (r.x >= (_samples-1) || r.y >= (_samples-1) || r.z >= (_samples-1) || r.x <= 0
-			|| r.y <= 0 || r.z <= 0)
+	if (r.x >= (_samples - 1) || r.y >= (_samples - 1) || r.z >= (_samples - 1)
+			|| r.x <= 0 || r.y <= 0 || r.z <= 0)
 		std::cerr << "[gadget::DirectMagneticField] invalid position: "
 				<< positionKpc << std::endl;
 
@@ -213,6 +216,10 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 	b += _grid.get(iX, iY, iZ) * fx * fy * fz;
 
 	return b;
+}
+
+void SampledMagneticField::setBroadeningFactor(double broadening) {
+	_broadeningFactor = broadening;
 }
 
 //----------------------------------------------------------------------------
