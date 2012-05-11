@@ -80,6 +80,7 @@ void FileDatabase::accept(const Vector3f &lower, const Vector3f &upper,
 	Vector3f box_lower, box_upper;
 
 	for (size_t iX = 0; iX < blocks_per_axis; iX++) {
+		std::cout << iX << "%" << std::endl;
 		box_lower.x = lower.x + iX * blockSize.x;
 		box_upper.x = box_lower.x + blockSize.x;
 		for (size_t iY = 0; iY < blocks_per_axis; iY++) {
