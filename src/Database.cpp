@@ -36,7 +36,7 @@ FileDatabase::FileDatabase() :
 		count(0) {
 }
 
-void FileDatabase::open(const std::string &filename) {
+bool FileDatabase::open(const std::string &filename) {
 	this->filename = filename;
 	std::ifstream in(filename.c_str(), std::ios::binary);
 	in.read((char*) &count, sizeof(count));
@@ -52,6 +52,8 @@ void FileDatabase::open(const std::string &filename) {
 		this->filename.clear();
 		count = 0;
 	}
+
+	return in.good();
 }
 
 Vector3f FileDatabase::getLowerBounds() {
