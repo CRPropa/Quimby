@@ -59,8 +59,9 @@ public:
 		float maxError = std::numeric_limits<float>::min();
 		for (size_t i = 0; i < steps; i++) {
 			position += step;
-			Vector3f df = dmf->getField(position);
-			Vector3f sf = smf->getField(position);
+			Vector3f df, sf;
+			bool dmfGood = dmf->getField(position, df);
+			bool smfGood = smf->getField(position, sf);
 			std::cout << "   -> " << df.length() << std::endl;
 			float error = (df - sf).length();
 			minError = std::min(error, minError);
@@ -81,12 +82,14 @@ public:
 		std::cout << "   TestPoint: " << testPoint.position << " -> "
 				<< testPoint.value << ", +- " << testPoint.error << std::endl;
 
-		Vector3f df = dmf->getField(testPoint.position);
+		Vector3f df;
+		bool dmfGood = dmf->getField(testPoint.position, df);
 		float dfError = (df - testPoint.value).length();
 		std::cout << "    - Direct: " << df << ", Error: " << dfError
 				<< std::endl;
 
-		Vector3f sf = smf->getField(testPoint.position);
+		Vector3f sf;
+		bool smfGood = smf->getField(testPoint.position, sf);
 		float sfError = (sf - testPoint.value).length();
 		std::cout << "    - Samples: " << sf << ", Error: " << sfError
 				<< std::endl;
@@ -139,13 +142,17 @@ public:
 
 			r *= lower_radius + drand48() * delta_radius;
 			r += center;
-			Vector3f b = dmf->getField(r);
+			Vector3f b;
+			bool dmfGood = dmf->getField(r, b);
 			size_t overlaps;
-			float rho = dmf->getRho(r, overlaps);
+			float rho;
+			dmfGood = dmf->getRho(r, overlaps, rho);
 			avgDirectWeighted += b.length() * rho;
 			avgDirect += b.length();
 			avgInvRho += rho;
-			avgSampled += smf->getField(r).length();
+			Vector3f sf;
+			bool smfGood = smf->getField(r, sf);
+			avgSampled += sf.length();
 			count++;
 		}
 		avgDirect /= count;
@@ -177,52 +184,46 @@ public:
 
 	void runRhoTest() {
 		for (size_t i = 0; i < particles.size(); i++) {
-			try {
-				size_t overlaps;
-				float directRho = dmf->getRho(particles[i].position, overlaps);
-				float relativeError = (particles[i].rho - directRho)
-						/ particles[i].rho;
-				if (std::fabs(relativeError) > 0.05) {
-					std::cerr << "High Deviation: " << i << std::endl;
-					std::cerr << " position:   " << particles[i].position
-							<< std::endl;
-					std::cerr << " calculated: " << directRho << std::endl;
-					std::cerr << " particle:   " << particles[i].rho
-							<< std::endl;
-					std::cerr << " hsml:       " << particles[i].smoothingLength
-							<< std::endl;
-					std::cerr << " ratio:      " << directRho / particles[i].rho
-							<< std::endl;
-					//throw std::runtime_error(
-					//"unexpected deviation in RhoTest!");
-				}
-			} catch (invalid_position &e) {
-
+			size_t overlaps;
+			float directRho;
+			bool dmfGood = dmf->getRho(particles[i].position, overlaps,
+					directRho);
+			float relativeError = (particles[i].rho - directRho)
+					/ particles[i].rho;
+			if (std::fabs(relativeError) > 0.05) {
+				std::cerr << "High Deviation: " << i << std::endl;
+				std::cerr << " position:   " << particles[i].position
+						<< std::endl;
+				std::cerr << " calculated: " << directRho << std::endl;
+				std::cerr << " particle:   " << particles[i].rho << std::endl;
+				std::cerr << " hsml:       " << particles[i].smoothingLength
+						<< std::endl;
+				std::cerr << " ratio:      " << directRho / particles[i].rho
+						<< std::endl;
+				//throw std::runtime_error(
+				//"unexpected deviation in RhoTest!");
 			}
 		}
 	}
 
 	void runBFieldTest() {
 		for (size_t i = 0; i < particles.size(); i++) {
-			try {
-				Vector3f directB = dmf->getField(particles[i].position);
-				float relativeError = (particles[i].bfield.length()
-						- directB.length()) / particles[i].bfield.length();
-				if (std::fabs(relativeError) > 0.05) {
-					std::cerr << "High Deviation: " << i << std::endl;
-					std::cerr << " position:   " << particles[i].position
-							<< std::endl;
-					std::cerr << " calculated: " << directB << std::endl;
-					std::cerr << " particle:   " << particles[i].bfield
-							<< std::endl;
-					std::cerr << " bratio:       "
-							<< particles[i].bfield.length() / directB.length()
-							<< std::endl;
-					std::cerr << " hsml:       " << particles[i].smoothingLength
-							<< std::endl;
-				}
-			} catch (invalid_position &e) {
-
+			Vector3f df;
+			bool dmfGood = dmf->getField(particles[i].position, df);
+			float relativeError = (particles[i].bfield.length()
+					- df.length()) / particles[i].bfield.length();
+			if (std::fabs(relativeError) > 0.05) {
+				std::cerr << "High Deviation: " << i << std::endl;
+				std::cerr << " position:   " << particles[i].position
+						<< std::endl;
+				std::cerr << " calculated: " << df << std::endl;
+				std::cerr << " particle:   " << particles[i].bfield
+						<< std::endl;
+				std::cerr << " bratio:       "
+						<< particles[i].bfield.length() / df.length()
+						<< std::endl;
+				std::cerr << " hsml:       " << particles[i].smoothingLength
+						<< std::endl;
 			}
 		}
 	}

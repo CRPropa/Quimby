@@ -106,7 +106,8 @@ public:
 				Vector3f p = randomUnitVector();
 				p *= r;
 				p += ComaPositionKpc;
-				Vector3f b = dmf->getField(p);
+				Vector3f b;
+				bool isGood = dmf->getField(p, b);
 				avgB += b.length(); // / nPoints;
 			}
 			avgB /= nPoints;
@@ -136,19 +137,14 @@ public:
 
 		}
 		void visit(const SmoothParticle &p) {
-			try {
-				size_t overlaps;
-				//float directRho = dmf->getRho(particles[i].position, overlaps);
-				//float r = particles[i].position.distanceTo(ComaPositionKpc);
+			size_t overlaps;
+			//float directRho = dmf->getRho(particles[i].position, overlaps);
+			//float r = particles[i].position.distanceTo(ComaPositionKpc);
 #if GADGET_ROOT_ENABLED
 				ntuple->Fill(r, particles[i].rho, directRho, overlaps);
 #endif
-				//out << r << " " << particles[i].rho << " " << directRho << " "
-				//		<< overlaps << std::endl;
-			} catch (invalid_position &e) {
-
-			}
-
+			//out << r << " " << particles[i].rho << " " << directRho << " "
+			//		<< overlaps << std::endl;
 		}
 		void end() {
 		}

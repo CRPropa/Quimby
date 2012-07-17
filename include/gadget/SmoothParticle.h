@@ -21,8 +21,7 @@ public:
 	float_t rho;
 
 	SmoothParticle() :
-			mass(0), rho(0) {
-
+			mass(0), rho(0), smoothingLength(0) {
 	}
 
 	void toKpc(float_t h, vector_t pivot) {
@@ -37,7 +36,7 @@ public:
 		if (r < 0.5) {
 			return 1.0 + 6 * r * r * (r - 1);
 		} else if (r < 1.0) {
-			float x = (1 - r);
+			float_t x = (1 - r);
 			return 2 * x * x * x;
 		} else {
 			return 0.0;

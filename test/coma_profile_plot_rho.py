@@ -1,6 +1,6 @@
 from pylab import *
 
-x,mhdz,mhd0,mhd1,mhd2,mhd3,mhdgal3 = genfromtxt('test/coma_profile_dolag.csv',delimiter=',',unpack=True,skiprows=1)
+x,mhdz,mhd0,mhd1,mhd2,mhd3,mhdgal3 = genfromtxt('coma_profile_dolag.csv',delimiter=',',unpack=True,skiprows=1)
 plot(x,mhdz,c='b',label='Original')
 #plot(x,mhd0,c='c',label='mhd0')
 #plot(x,mhd1,c='b',label='mhd1')

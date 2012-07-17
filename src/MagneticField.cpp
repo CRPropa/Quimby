@@ -28,22 +28,6 @@ const Vector3f &MagneticField::getOrigin() const {
 	return _originKpc;
 }
 
-void MagneticField::checkPosition(const Vector3f &positionKpc) const {
-	if (positionKpc.x <= _originKpc.x)
-		throw invalid_position(positionKpc);
-	if (positionKpc.y <= _originKpc.y)
-		throw invalid_position(positionKpc);
-	if (positionKpc.z <= _originKpc.z)
-		throw invalid_position(positionKpc);
-
-	if (positionKpc.x >= _originKpc.x + _sizeKpc)
-		throw invalid_position(positionKpc);
-	if (positionKpc.y >= _originKpc.y + _sizeKpc)
-		throw invalid_position(positionKpc);
-	if (positionKpc.z >= _originKpc.z + _sizeKpc)
-		throw invalid_position(positionKpc);
-}
-
 //----------------------------------------------------------------------------
 // SampledMagneticField
 //----------------------------------------------------------------------------
@@ -170,16 +154,19 @@ void SampledMagneticField::sampleParticle(const SmoothParticle &part) {
 #endif
 }
 
-Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
-	checkPosition(positionKpc);
+bool SampledMagneticField::getField(const Vector3f &positionKpc,
+		Vector3f &b) const {
+	b.x = 0;
+	b.y = 0;
+	b.z = 0;
 
 	// check: http://paulbourke.net/miscellaneous/interpolation/
 	Vector3f r = (positionKpc - _originKpc) / _stepsizeKpc;
 
+	// check position
 	if (r.x >= (_samples - 1) || r.y >= (_samples - 1) || r.z >= (_samples - 1)
 			|| r.x <= 0 || r.y <= 0 || r.z <= 0)
-		std::cerr << "[gadget::DirectMagneticField] invalid position: "
-				<< positionKpc << std::endl;
+		return false;
 
 	int ix = clamp((int) floor(r.x), 0, int(_samples - 2));
 	int iX = ix + 1;
@@ -195,8 +182,6 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 	int iZ = iz + 1;
 	double fz = r.z - iz;
 	double fZ = 1 - fz;
-
-	Vector3f b(0.f);
 
 // V000 (1 - x) (1 - y) (1 - z) +
 	b += _grid.get(ix, iy, iz) * fX * fY * fZ;
@@ -215,7 +200,7 @@ Vector3f SampledMagneticField::getField(const Vector3f &positionKpc) const {
 //V111 x y z
 	b += _grid.get(iX, iY, iZ) * fx * fy * fz;
 
-	return b;
+	return true;
 }
 
 void SampledMagneticField::setBroadeningFactor(double broadening) {
@@ -251,11 +236,6 @@ void DirectMagneticField::index(size_t i) {
 	upper.x = (uint32_t) std::ceil(u.x / cl);
 	upper.y = (uint32_t) std::ceil(u.y / cl);
 	upper.z = (uint32_t) std::ceil(u.z / cl);
-
-//	if (particle.rho == 0)
-//		std::cerr << "Warning: particle has rho = 0" << std::endl;
-//	else
-//		particle.bfield *= particle.weight() * particle.mass / particle.rho;
 
 	for (size_t x = lower.x; x < upper.x; x++)
 		for (size_t y = lower.y; y < upper.y; y++)
@@ -296,8 +276,30 @@ void DirectMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
 #endif
 }
 
-Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
-	checkPosition(positionKpc);
+bool DirectMagneticField::badPosition(const Vector3f &positionKpc) const {
+	if (positionKpc.x <= _originKpc.x)
+		return true;
+	if (positionKpc.y <= _originKpc.y)
+		return true;
+	if (positionKpc.z <= _originKpc.z)
+		return true;
+	if (positionKpc.x >= _originKpc.x + _sizeKpc)
+		return true;
+	if (positionKpc.y >= _originKpc.y + _sizeKpc)
+		return true;
+	if (positionKpc.z >= _originKpc.z + _sizeKpc)
+		return true;
+	return false;
+}
+
+bool DirectMagneticField::getField(const Vector3f &positionKpc,
+		Vector3f &b) const {
+	b.x = 0;
+	b.y = 0;
+	b.z = 0;
+
+	if (badPosition(positionKpc))
+		return false;
 
 	// get index list
 	Vector3f relativePosition = positionKpc - _originKpc;
@@ -305,8 +307,7 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 			relativePosition.y, relativePosition.z);
 
 	// calculate field from overlapping particles
-	// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
-	Vector3f b(0, 0, 0);
+	// see eq. 22 in diploma thesis by Ruediger Pakmor TU Munich
 	for (size_t i = 0; i < idx.size(); i++) {
 		const SmoothParticle &sp = _particles[idx[i]];
 		double k = sp.kernel(positionKpc);
@@ -320,12 +321,15 @@ Vector3f DirectMagneticField::getField(const Vector3f &positionKpc) const {
 	_statistics.totalCount++;
 	_statistics.actualCount++;
 
-	return b;
+	return true;
 }
 
-float DirectMagneticField::getRho(const Vector3f &positionKpc,
-		size_t &overlaps) const {
-	checkPosition(positionKpc);
+bool DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps,
+		float &rho) const {
+	rho = 0;
+
+	if (badPosition(positionKpc))
+		return false;
 
 	// get index list
 	Vector3f relativePosition = positionKpc - _originKpc;
@@ -333,8 +337,7 @@ float DirectMagneticField::getRho(const Vector3f &positionKpc,
 			relativePosition.y, relativePosition.z);
 
 	// calculate field from overlapping particles
-	// see eq. 22 in diploma thesis by Rüdiger Pakmor TU Munich
-	float rho = 0;
+	// see eq. 22 in diploma thesis by Ruediger Pakmor TU Munich
 	overlaps = 0;
 	for (size_t i = 0; i < idx.size(); i++) {
 		const SmoothParticle &sp = _particles[idx[i]];
@@ -345,7 +348,7 @@ float DirectMagneticField::getRho(const Vector3f &positionKpc,
 		}
 	}
 
-	return rho;
+	return true;
 }
 
 } // namespace gadget

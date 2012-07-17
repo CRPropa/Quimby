@@ -27,7 +27,7 @@ public:
 	size_t getParticles(const Vector3f &lower, const Vector3f &upper,
 			std::vector<SmoothParticle> &particles);
 
-	virtual Vector3f getLowerBounds() =0;
+	virtual Vector3f getLowerBounds() = 0;
 
 	virtual Vector3f getUpperBounds() = 0;
 
