@@ -13,6 +13,15 @@ public:
 	Vector3<T> min;
 	Vector3<T> max;
 
+	AABB() {
+	}
+
+	AABB(const T &ax, const T &ay, const T &az, const T &bx, const T &by,
+			const T &bz) :
+			min(ax, ay, az), max(bx, by, bz) {
+
+	}
+
 	AABB(const AABB<T> &a) :
 			min(a.min), max(a.max) {
 
@@ -55,6 +64,9 @@ public:
 		return true;
 	}
 
+	bool contains(const AABB<T> &a) const {
+		return (contains(a.min) && contains(a.max));
+	}
 };
 
 template<typename T>

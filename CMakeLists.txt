@@ -25,6 +25,7 @@ add_library( gadget-lib
     src/Database.cpp
     src/GadgetFile.cpp
     src/MagneticField.cpp
+    src/MultiResolutionMagneticField.cpp
 )
 SET_TARGET_PROPERTIES(gadget-lib PROPERTIES OUTPUT_NAME "Gadget")
 
@@ -37,6 +38,7 @@ add_executable( gadget-tool
 	tool/sph
 	tool/sph-dump
 	tool/database
+	tool/mrmf
 )
 SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 

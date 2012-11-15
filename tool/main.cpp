@@ -22,6 +22,7 @@ int paged_grid(Arguments &arguments);
 int bfieldtest(Arguments &arguments);
 int mass(Arguments &arguments);
 int database(Arguments &arguments);
+int mrmf(Arguments &arguments);
 
 int av(int argc, const char **argv) {
 	if (argc < 3) {
@@ -661,6 +662,8 @@ int main(int argc, const char **argv) {
 			return info(arguments);
 		else if (function == "db")
 			return database(arguments);
+		else if (function == "mrmf")
+			return mrmf(arguments);
 		else if (function == "writetest") {
 			if (arguments.hasFlag("-float")) {
 				Grid<float> fg;
