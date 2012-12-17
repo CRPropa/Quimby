@@ -33,7 +33,8 @@ const Vector3f &MagneticField::getOrigin() const {
 //----------------------------------------------------------------------------
 
 SampledMagneticField::SampledMagneticField(size_t samples) :
-		_stepsizeKpc(0), _samples(samples), _broadeningFactor(0) {
+		_stepsizeKpc(0), _samples(samples), _broadeningFactor(0), interpolate(
+				false) {
 	_grid.create(samples, _stepsizeKpc);
 }
 
@@ -47,7 +48,7 @@ size_t SampledMagneticField::toUpperIndex(double x) {
 			(int) _samples - 1);
 }
 
-class ApplyVisitor: public Database::Visitor {
+class ApplyVisitor: public DatabaseVisitor {
 	SampledMagneticField *field;
 public:
 	ApplyVisitor(SampledMagneticField *field) :
@@ -154,6 +155,10 @@ void SampledMagneticField::sampleParticle(const SmoothParticle &part) {
 #endif
 }
 
+void SampledMagneticField::setInterpolate(bool interpolate) {
+	this->interpolate = interpolate;
+}
+
 bool SampledMagneticField::getField(const Vector3f &positionKpc,
 		Vector3f &b) const {
 	b.x = 0;
@@ -169,28 +174,34 @@ bool SampledMagneticField::getField(const Vector3f &positionKpc,
 		return false;
 
 	int ix = clamp((int) floor(r.x), 0, int(_samples - 2));
+	int iy = clamp((int) floor(r.y), 0, int(_samples - 2));
+	int iz = clamp((int) floor(r.z), 0, int(_samples - 2));
+
+	if (!interpolate) {
+		b = _grid.get(ix, iy, iz);
+		return true;
+	}
+
 	int iX = ix + 1;
 	double fx = r.x - ix;
 	double fX = 1 - fx;
 
-	int iy = clamp((int) floor(r.y), 0, int(_samples - 2));
 	int iY = iy + 1;
 	double fy = r.y - iy;
 	double fY = 1 - fy;
 
-	int iz = clamp((int) floor(r.z), 0, int(_samples - 2));
 	int iZ = iz + 1;
 	double fz = r.z - iz;
 	double fZ = 1 - fz;
 
-// V000 (1 - x) (1 - y) (1 - z) +
+	// V000 (1 - x) (1 - y) (1 - z) +
 	b += _grid.get(ix, iy, iz) * fX * fY * fZ;
 //V100 x (1 - y) (1 - z) +
 	b += _grid.get(iX, iy, iz) * fx * fY * fZ;
 //V010 (1 - x) y (1 - z) +
 	b += _grid.get(ix, iY, iz) * fX * fy * fZ;
 //V001 (1 - x) (1 - y) z +
-	b += _grid.get(iy, iy, iZ) * fX * fY * fz;
+	b += _grid.get(ix, iy, iZ) * fX * fY * fz;
 //V101 x (1 - y) z +
 	b += _grid.get(iX, iy, iZ) * fx * fY * fz;
 //V011 (1 - x) y z +

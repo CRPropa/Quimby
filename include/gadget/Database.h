@@ -3,24 +3,25 @@
 
 #include "gadget/AABB.h"
 #include "gadget/SmoothParticle.h"
+#include "gadget/Referenced.h"
 
 #include <algorithm>
 #include <limits>
 
 namespace gadget {
 
-class Database {
+class DatabaseVisitor {
 public:
+	virtual ~DatabaseVisitor() {
 
-	class Visitor {
-	public:
-		virtual ~Visitor() {
+	}
+	virtual void begin() = 0;
+	virtual void visit(const SmoothParticle &p) = 0;
+	virtual void end() = 0;
+};
 
-		}
-		virtual void begin() = 0;
-		virtual void visit(const SmoothParticle &p) = 0;
-		virtual void end() = 0;
-	};
+class Database: public Referenced {
+public:
 
 	virtual ~Database() {
 	}
@@ -34,7 +35,7 @@ public:
 	virtual size_t getCount() = 0;
 
 	virtual void accept(const Vector3f &lower, const Vector3f &upper,
-			Visitor &visitor) = 0;
+			DatabaseVisitor &visitor) = 0;
 };
 
 class FileDatabase: public Database {
@@ -65,7 +66,7 @@ public:
 	static void create(std::vector<SmoothParticle> &particles,
 			const std::string &filename, size_t blocks_per_axis = 100);
 
-	void accept(const Vector3f &lower, const Vector3f &upper, Visitor &visitor);
+	void accept(const Vector3f &lower, const Vector3f &upper, DatabaseVisitor &visitor);
 };
 
 } // namespace gadget

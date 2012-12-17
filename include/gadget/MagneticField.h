@@ -5,6 +5,7 @@
 #include "gadget/Vector3.h"
 #include "gadget/SmoothParticle.h"
 #include "gadget/Database.h"
+#include "gadget/Referenced.h"
 
 #include <vector>
 #include <string>
@@ -14,7 +15,7 @@
 
 namespace gadget {
 
-class MagneticField {
+class MagneticField: public Referenced {
 protected:
 	Vector3f _originKpc;
 	float _sizeKpc;
@@ -35,6 +36,7 @@ class SampledMagneticField: public MagneticField {
 	size_t _samples;
 	grid_t _grid;
 	double _broadeningFactor;
+	bool interpolate;
 	size_t toLowerIndex(double x);
 	size_t toUpperIndex(double x);
 public:
@@ -49,6 +51,7 @@ public:
 	bool restore(const std::string &dumpfilename);
 	void sampleParticle(const SmoothParticle &particle);
 	void setBroadeningFactor(double broadening);
+	void setInterpolate(bool interpolate);
 };
 
 class DirectMagneticField: public MagneticField {
@@ -82,7 +85,8 @@ public:
 	DirectMagneticField(size_t grid_size);
 	bool badPosition(const Vector3f &positionKpc) const;
 	bool getField(const Vector3f &position, Vector3f &field) const;
-	bool getRho(const Vector3f &positionKpc, size_t &overlaps, float &rho) const;
+	bool getRho(const Vector3f &positionKpc, size_t &overlaps,
+			float &rho) const;
 
 	void init(const Vector3f &originKpc, float sizeKpc);
 	void init(const Vector3f &originKpc, float sizeKpc, Database &db);

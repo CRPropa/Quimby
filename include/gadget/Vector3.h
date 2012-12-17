@@ -163,7 +163,7 @@ public:
 
 	Vector3<T> scaled(float f,
 			const Vector3<T> &origin = Vector3<T>(0, 0, 0)) const {
-		return (*this -= origin) * f + origin;
+		return (*this - origin) * f + origin;
 	}
 
 	void setLower(const Vector3<T> &v) {

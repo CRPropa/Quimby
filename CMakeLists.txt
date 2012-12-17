@@ -39,6 +39,7 @@ add_executable( gadget-tool
 	tool/sph-dump
 	tool/database
 	tool/mrmf
+	tool/lmf
 )
 SET_TARGET_PROPERTIES(gadget-tool PROPERTIES OUTPUT_NAME "gadget")
 add_dependencies(gadget-tool gadget-lib) 
@@ -77,3 +78,24 @@ target_link_libraries(sph_grid_test gadget-lib)
 ADD_TEST(mf mf_test)
 ADD_TEST(pg pg_test)
 ADD_TEST(sph_grid sph_grid_test)
+
+# ----------------------------------------------------------------------------
+# Python
+# ----------------------------------------------------------------------------
+option(ENABLE_PYTHON "Create python library via SWIG" OFF)
+if(ENABLE_PYTHON)
+	include(python/Python.cmake)
+	include_directories(${PYTHON_INCLUDE_PATH})
+	
+	file(GLOB_RECURSE GADGET_INCLUDES include/*.h)
+	set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx PROPERTIES GENERATED true )
+	add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx
+	                COMMAND swig -c++ -python ${GADGET_SWIG_DEFINES} -I${CMAKE_SOURCE_DIR}/include -o ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx -outdir ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/python/gadget.i 
+	                DEPENDS ${CMAKE_SOURCE_DIR}/python/gadget.i  ${GADGET_INCLUDES} )
+	add_library(gadget-swig MODULE ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx)
+	set_target_properties(gadget-swig PROPERTIES PREFIX "")
+	set_target_properties(gadget-swig PROPERTIES OUTPUT_NAME "_gadget") 
+	target_link_libraries(gadget-swig gadget-lib ${PYTHON_LIBRARIES})
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/gadget.py" DESTINATION ${PYTHON_SITE_PACKAGES})
+	install(TARGETS gadget-swig LIBRARY DESTINATION ${PYTHON_SITE_PACKAGES})
+endif(ENABLE_PYTHON)

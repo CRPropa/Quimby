@@ -11,7 +11,7 @@
 
 using namespace gadget;
 
-class MassVisitor: public Database::Visitor {
+class MassVisitor: public DatabaseVisitor {
 public:
 	Grid<float> grid;
 	bool cells;

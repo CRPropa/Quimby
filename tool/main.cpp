@@ -23,6 +23,7 @@ int bfieldtest(Arguments &arguments);
 int mass(Arguments &arguments);
 int database(Arguments &arguments);
 int mrmf(Arguments &arguments);
+int lmf(Arguments &arguments);
 
 int av(int argc, const char **argv) {
 	if (argc < 3) {
@@ -664,6 +665,8 @@ int main(int argc, const char **argv) {
 			return database(arguments);
 		else if (function == "mrmf")
 			return mrmf(arguments);
+		else if (function == "lmf")
+			return lmf(arguments);
 		else if (function == "writetest") {
 			if (arguments.hasFlag("-float")) {
 				Grid<float> fg;

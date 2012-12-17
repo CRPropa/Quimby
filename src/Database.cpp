@@ -2,7 +2,7 @@
 
 namespace gadget {
 
-class _CollectVisitor: public Database::Visitor {
+class _CollectVisitor: public DatabaseVisitor {
 	std::vector<SmoothParticle> &particles;
 
 public:
@@ -68,7 +68,7 @@ size_t FileDatabase::getCount() {
 }
 
 void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
-		Database::Visitor &visitor) {
+		DatabaseVisitor &visitor) {
 	if (count == 0)
 		return;
 

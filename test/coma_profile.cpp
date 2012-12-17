@@ -34,7 +34,7 @@ public:
 		dmf->init(origin, size, *db.get());
 	}
 
-	class MedianVisitor: public Database::Visitor {
+	class MedianVisitor: public DatabaseVisitor {
 	public:
 		std::ofstream out;
 		size_t i;
@@ -126,7 +126,7 @@ public:
 		std::cout << std::endl;
 	}
 
-	class WriteRhoVisitor: public Database::Visitor {
+	class WriteRhoVisitor: public DatabaseVisitor {
 	public:
 #if GADGET_ROOT_ENABLED
 		TFile *file;
