@@ -19,6 +19,7 @@
 #include "gadget/Referenced.h"
 #include "gadget/SmoothParticle.h"
 #include "gadget/Vector3.h"
+#include "gadget/HCube.h"
 %}
 
 %exception
@@ -64,11 +65,20 @@
 %template(DatabaseRefPtr) gadget::ref_ptr<gadget::Database>;
 %include "gadget/Database.h"
 
-
 %template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
 %template(SampledMagneticFieldRefPtr) gadget::ref_ptr<gadget::SampledMagneticField>;
 %template(DirectMagneticFieldRefPtr) gadget::ref_ptr<gadget::DirectMagneticField>;
 %include "gadget/MagneticField.h"
+
+%include "gadget/HCube.h"
+%template(HCube2) gadget::HCube<2>;
+%template(HCube4) gadget::HCube<4>;
+%template(HCube8) gadget::HCube<8>;
+%template(HCube16) gadget::HCube<16>;
+%template(HCube32) gadget::HCube<32>;
+%template(HCube64) gadget::HCube<64>;
+%template(HCube128) gadget::HCube<128>;
+%template(HCube256) gadget::HCube<256>;
 
 /*
 %implicitconv mpc::ref_ptr<mpc::MagneticField>;

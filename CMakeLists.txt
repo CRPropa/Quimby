@@ -72,6 +72,9 @@ target_link_libraries(coma_profile gadget-lib)
 add_executable(database_test test/database_test.cpp)
 target_link_libraries(database_test gadget-lib)
 
+add_executable(hcube_test test/hcube_test.cpp)
+target_link_libraries(hcube_test gadget-lib)
+
 add_executable(sph_grid_test test/sph_grid_test.cpp)
 target_link_libraries(mf_test gadget-lib)
 target_link_libraries(sph_grid_test gadget-lib)
@@ -91,7 +94,7 @@ if(ENABLE_PYTHON)
 	set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx PROPERTIES GENERATED true )
 	add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx
 	                COMMAND swig -c++ -python ${GADGET_SWIG_DEFINES} -I${CMAKE_SOURCE_DIR}/include -o ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx -outdir ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/python/gadget.i 
-	                DEPENDS ${CMAKE_SOURCE_DIR}/python/gadget.i  ${GADGET_INCLUDES} )
+	                DEPENDS ${CMAKE_SOURCE_DIR}/python/gadget.i DEPENDS ${GADGET_INCLUDES} )
 	add_library(gadget-swig MODULE ${CMAKE_CURRENT_BINARY_DIR}/gadget_wrap.cxx)
 	set_target_properties(gadget-swig PROPERTIES PREFIX "")
 	set_target_properties(gadget-swig PROPERTIES OUTPUT_NAME "_gadget") 
