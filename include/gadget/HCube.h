@@ -18,13 +18,18 @@ class HCube {
 	Vector3f elements[N * N * N];
 
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			float error, size_t maxdepth, size_t depth) {
+			float error, float threshold, size_t maxdepth, size_t depth) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		if (depth == maxdepth) {
 			SamplingVisitor visitor(*this, offsetKpc, sizeKpc);
 			db->accept(offsetKpc, offsetKpc + Vector3f(sizeKpc), visitor);
+			const float t2 = threshold * threshold;
+			for (size_t n = 0; n < N3; n++) {
+				if (elements[n].length2() < t2)
+					elements[n] = Vector3f(0, 0, 0);
+			}
 		} else if (depth == 0) {
 			HCube<N> hc;
 #pragma omp parallel for schedule(dynamic, 1) private(hc)
@@ -36,7 +41,7 @@ class HCube {
 				std::cout << depth << ", " << n << " / " << N3 << ": " << i
 						<< " " << j << " " << k << std::endl;
 				hc.init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
-						maxdepth, depth + 1);
+						threshold, maxdepth, depth + 1);
 				Vector3f mean;
 				if (hc.collapse(mean, error)) {
 					setValue(i, j, k, mean);
@@ -51,7 +56,7 @@ class HCube {
 				size_t j = (n % N2) / N;
 				size_t k = n % N;
 				hc.init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
-						maxdepth, depth + 1);
+						threshold, maxdepth, depth + 1);
 				Vector3f mean;
 				if (hc.collapse(mean, error)) {
 					setValue(i, j, k, mean);
@@ -147,12 +152,10 @@ public:
 		}
 
 		mean /= n;
+		const float e2 = error * error * mean.length2();
 		for (size_t i = 0; i < n; i++) {
-			Vector3f d = (elements[i] - mean);
-			d.x /= mean.x;
-			d.y /= mean.y;
-			d.z /= mean.z;
-			if (d.x > error || d.y > error || d.z > error)
+			float d2 = (elements[i] - mean).length2();
+			if (d2 > e2)
 				return false;
 		}
 
@@ -325,8 +328,8 @@ public:
 	};
 
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			float error, size_t maxdepth) {
-		init(db, offsetKpc, sizeKpc, error, maxdepth, 0);
+			float error, float threshold, size_t maxdepth) {
+		init(db, offsetKpc, sizeKpc, error, threshold, maxdepth, 0);
 	}
 
 	void save(const std::string &filename) {
