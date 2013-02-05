@@ -80,6 +80,15 @@
 %template(HCube128) gadget::HCube<128>;
 %template(HCube256) gadget::HCube<256>;
 
+%template(HCubeFile2) gadget::HCubeFile<2>;
+%template(HCubeFile4) gadget::HCubeFile<4>;
+%template(HCubeFile8) gadget::HCubeFile<8>;
+%template(HCubeFile16) gadget::HCubeFile<16>;
+%template(HCubeFile32) gadget::HCubeFile<32>;
+%template(HCubeFile64) gadget::HCubeFile<64>;
+%template(HCubeFile128) gadget::HCubeFile<128>;
+%template(HCubeFile256) gadget::HCubeFile<256>;
+
 /*
 %implicitconv mpc::ref_ptr<mpc::MagneticField>;
 %template(MagneticFieldRefPtr) mpc::ref_ptr<mpc::MagneticField>;
