@@ -36,6 +36,7 @@ public:
 
 	virtual void accept(const Vector3f &lower, const Vector3f &upper,
 			DatabaseVisitor &visitor) = 0;
+	virtual void accept(DatabaseVisitor &visitor) = 0;
 };
 
 class FileDatabase: public Database {
@@ -66,7 +67,33 @@ public:
 	static void create(std::vector<SmoothParticle> &particles,
 			const std::string &filename, size_t blocks_per_axis = 100);
 
-	void accept(const Vector3f &lower, const Vector3f &upper, DatabaseVisitor &visitor);
+	void accept(const Vector3f &lower, const Vector3f &upper,
+			DatabaseVisitor &visitor);
+	void accept(DatabaseVisitor &visitor);
+};
+
+class SimpleSamplingVisitor: public DatabaseVisitor {
+	Vector3f *data;
+	size_t N, count;
+	Vector3f offset;
+	float size, cell;
+	bool progress;
+	size_t xmin, xmax, ymin, ymax, zmin, zmax;
+
+	size_t toLowerIndex(double x);
+	size_t toUpperIndex(double x);
+
+public:
+
+	SimpleSamplingVisitor(Vector3f *data, size_t N, const Vector3f &offset,
+			float size);
+	void begin();
+	void visit(const SmoothParticle &part);
+	void end();
+
+	void limit(size_t xmin, size_t xmax, size_t ymin, size_t ymax, size_t zmin,
+			size_t zmax);
+	void showProgress(bool progress);
 };
 
 } // namespace gadget

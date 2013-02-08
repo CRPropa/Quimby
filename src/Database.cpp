@@ -2,13 +2,23 @@
 
 namespace gadget {
 
+template<class T>
+inline T clamp(const T &value, const T &min, const T&max) {
+	if (value < min)
+		return min;
+	else if (value > max)
+		return max;
+	else
+		return value;
+}
+
 class _CollectVisitor: public DatabaseVisitor {
 	std::vector<SmoothParticle> &particles;
 
 public:
 	size_t count;
 	_CollectVisitor(std::vector<SmoothParticle> &particles) :
-			particles(particles) {
+			particles(particles), count(0) {
 	}
 
 	void begin() {
@@ -25,6 +35,96 @@ public:
 	}
 };
 
+size_t SimpleSamplingVisitor::toLowerIndex(double x) {
+	return (size_t) clamp((int) ::floor(x / cell), (int) 0, (int) N - 1);
+}
+
+size_t SimpleSamplingVisitor::toUpperIndex(double x) {
+	return (size_t) clamp((int) ::ceil(x / cell), (int) 0, (int) N - 1);
+}
+
+SimpleSamplingVisitor::SimpleSamplingVisitor(Vector3f *data, size_t N,
+		const Vector3f &offset, float size) :
+		data(data), N(N), offset(offset), size(size), progress(false), count(0), xmin(
+				0), xmax(N - 1), ymin(0), ymax(N - 1), zmin(0), zmax(N - 1) {
+	cell = size / N;
+}
+
+void SimpleSamplingVisitor::limit(size_t xmin, size_t xmax, size_t ymin,
+		size_t ymax, size_t zmin, size_t zmax) {
+	this->xmin = clamp(xmin, (size_t)0, N - 1);
+	this->xmax = clamp(xmax, (size_t)0, N - 1);
+	this->ymin = clamp(ymin, (size_t)0, N - 1);
+	this->ymax = clamp(ymax, (size_t)0, N - 1);
+	this->zmin = clamp(zmin, (size_t)0, N - 1);
+	this->zmax = clamp(zmax, (size_t)0, N - 1);
+}
+
+void SimpleSamplingVisitor::showProgress(bool progress) {
+	this->progress = progress;
+}
+
+void SimpleSamplingVisitor::begin() {
+	count = 0;
+}
+
+void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
+	const size_t N2 = N * N;
+
+	SmoothParticle particle = part;
+//			particle.smoothingLength += _broadeningFactor
+//					* _grid.getCellLength();
+
+	Vector3f value = particle.bfield * particle.weight() * particle.mass
+			/ particle.rho;
+	float r = particle.smoothingLength + cell;
+
+	Vector3f relativePosition = particle.position - offset;
+	size_t x_min = toLowerIndex(relativePosition.x - r);
+	size_t x_max = toUpperIndex(relativePosition.x + r);
+	x_min = clamp(x_min, xmin, xmax);
+	x_max = clamp(x_max, xmin, xmax);
+
+	size_t y_min = toLowerIndex(relativePosition.y - r);
+	size_t y_max = toUpperIndex(relativePosition.y + r);
+	y_min = clamp(y_min, ymin, ymax);
+	y_max = clamp(y_max, ymin, ymax);
+
+	size_t z_min = toLowerIndex(relativePosition.z - r);
+	size_t z_max = toUpperIndex(relativePosition.z + r);
+	z_min = clamp(z_min, zmin, zmax);
+	z_max = clamp(z_max, zmin, zmax);
+
+#pragma omp parallel for
+	for (size_t x = x_min; x <= x_max; x++) {
+		Vector3f p;
+		p.x = x * cell;
+		for (size_t y = y_min; y <= y_max; y++) {
+			p.y = y * cell;
+			for (size_t z = z_min; z <= z_max; z++) {
+				p.z = z * cell;
+				float k = particle.kernel(offset + p);
+				data[x * N2 + y * N + z] += value * k;
+			}
+		}
+	}
+
+	if (progress) {
+		count++;
+		if (count % 10000 == 0) {
+			std::cout << ".";
+			std::cout.flush();
+		}
+		if (count % 1000000 == 0)
+			std::cout << " " << count << std::endl;
+	}
+
+}
+
+void SimpleSamplingVisitor::end() {
+
+}
+
 size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
 		std::vector<SmoothParticle> &particles) {
 	_CollectVisitor v(particles);
@@ -33,7 +133,7 @@ size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
 }
 
 FileDatabase::FileDatabase() :
-		count(0) {
+		count(0), blocks_per_axis(0) {
 }
 
 bool FileDatabase::open(const std::string &filename) {
@@ -117,6 +217,26 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 				}
 			}
 		}
+	}
+
+	visitor.end();
+}
+
+void FileDatabase::accept(DatabaseVisitor &visitor) {
+	if (count == 0)
+		return;
+
+	std::ifstream in(filename.c_str(), std::ios::binary);
+	in.seekg(data_pos, std::ios::beg);
+	if (!in)
+		return;
+
+	visitor.begin();
+
+	SmoothParticle particle;
+	for (size_t i = 0; i < count; i++) {
+		in.read((char*) &particle, sizeof(SmoothParticle));
+		visitor.visit(particle);
 	}
 
 	visitor.end();
