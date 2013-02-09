@@ -2,7 +2,6 @@
 
 #include "gadget/GadgetFile.h"
 #include "gadget/Grid.h"
-#include "gadget/kernel.h"
 #include "gadget/Octree.h"
 #include "gadget/SmoothParticle.h"
 #include "gadget/Database.h"

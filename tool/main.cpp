@@ -2,10 +2,11 @@
 
 #include "gadget/GadgetFile.h"
 #include "gadget/Grid.h"
-#include "gadget/kernel.h"
 #include "gadget/Octree.h"
 #include "gadget/SmoothParticle.h"
 #include "gadget/PagedGrid.h"
+#include "gadget/Database.h"
+#include "gadget/HCube.h"
 
 #include <cmath>
 #include <ctime>
@@ -13,6 +14,10 @@
 #include <string>
 #include <ctime>
 #include <omp.h>
+
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
 using namespace gadget;
 
@@ -102,6 +107,225 @@ public:
 	}
 };
 
+int hc(Arguments &arguments) {
+	size_t n = arguments.getInt("-n", 4);
+	std::cout << "N: " << n << std::endl;
+
+	float sizeKpc = arguments.getFloat("-size", 10);
+	std::cout << "Size: " << sizeKpc << std::endl;
+
+	size_t depth = arguments.getInt("-depth", 2);
+	std::cout << "Depth: " << depth << std::endl;
+
+	std::string output = arguments.getString("-o", "hcube.hc4");
+	std::cout << "Output: " << output << std::endl;
+
+	std::string input = arguments.getString("-i", "field.raw");
+	std::cout << "Input: " << input << std::endl;
+
+	unsigned int bins = arguments.getInt("-bins", 10);
+	std::cout << "Bins: " << bins << std::endl;
+
+	float threshold = arguments.getFloat("-t", 1e-15);
+	std::cout << "Threshold: " << threshold << std::endl;
+
+	float error = arguments.getFloat("-e", 0.01);
+	std::cout << "Error: " << error << std::endl;
+
+	Vector3f offsetKpc;
+	offsetKpc.x = arguments.getFloat("-ox", 0);
+	offsetKpc.y = arguments.getFloat("-oy", 0);
+	offsetKpc.z = arguments.getFloat("-oz", 0);
+	std::cout << "Offset: " << offsetKpc << std::endl;
+
+	switch (n) {
+	case 2:
+		HCubeFile<2>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 4:
+		HCubeFile<4>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 8:
+		HCubeFile<8>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 16:
+		HCubeFile<16>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 32:
+		HCubeFile<32>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 64:
+		HCubeFile<64>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	case 128:
+		HCubeFile<128>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
+				threshold, depth, output);
+		break;
+	default:
+		std::cout << "Invalid n: " << n << std::endl;
+		break;
+	}
+	return 0;
+}
+int bigfield(Arguments &arguments) {
+	uint64_t bins = arguments.getInt("-bins", 10);
+	std::cout << "Bins: " << bins << std::endl;
+
+	unsigned int chunks = arguments.getInt("-c", 1);
+	std::cout << "Chunks: " << chunks << std::endl;
+
+	float sizeKpc = arguments.getFloat("-size", 10);
+	std::cout << "Size: " << sizeKpc << std::endl;
+
+	Vector3f offsetKpc;
+	offsetKpc.x = arguments.getFloat("-ox", 0);
+	offsetKpc.y = arguments.getFloat("-oy", 0);
+	offsetKpc.z = arguments.getFloat("-oz", 0);
+	std::cout << "Offset: " << offsetKpc << std::endl;
+
+	std::string output = arguments.getString("-o", "field.raw");
+	std::cout << "Output: " << output << std::endl;
+
+	std::string database = arguments.getString("-db", "field.db");
+	std::cout << "Database: " << database << std::endl;
+
+	if (bins % chunks) {
+		std::cout << "Bins must be dividable by chunks!" << std::endl;
+		return 1;
+	}
+
+	float chunkSizeKpc = sizeKpc / chunks;
+	size_t chunkSizeBins = bins / chunks;
+
+	FileDatabase db;
+	if (!db.open(database)) {
+		std::cout << "could not open database: " << database << std::endl;
+		return 1;
+	}
+
+	// calculate max size
+	uint64_t n2 = bins * bins;
+	uint64_t n3 = bins * bins * bins;
+
+	FILE *fd = ::fopen(output.c_str(), "wb");
+
+	Vector3f *data = new Vector3f[n2 * chunkSizeBins];
+
+	std::cout << "Sample data..." << std::endl;
+	for (size_t iX = 0; iX < chunks; iX++) {
+		std::cout << "Chunk: " << iX << std::endl;
+
+		// zero
+		for (size_t cx = 0; cx < chunkSizeBins; cx++)
+			for (size_t cy = 0; cy < bins; cy++)
+				for (size_t cz = 0; cz < bins; cz++)
+					data[cx * bins * bins + cy * bins + cz] = Vector3f(0, 0, 0);
+
+		// create visitor
+		Vector3f lower = offsetKpc + Vector3f(iX * chunkSizeKpc, 0, 0);
+		Vector3f upper = lower + Vector3f(chunkSizeKpc, sizeKpc, sizeKpc);
+		std::cout << "  Lower: " << lower << "\n";
+		std::cout << "  Upper: " << upper << std::endl;
+		SimpleSamplingVisitor v(data, bins, lower, sizeKpc);
+		v.showProgress(true);
+
+		v.limit(0, chunkSizeBins - 1, 0, bins, 0, bins);
+		db.accept(lower, upper, v);
+		std::cout << std::endl;
+		::fwrite(data, n2 * sizeof(Vector3f), chunkSizeBins, fd);
+	}
+
+	delete[] data;
+
+	::fclose(fd);
+
+}
+#if 0
+int bigfield(Arguments &arguments) {
+	uint64_t bins = arguments.getInt("-bins", 10);
+	std::cout << "Bins: " << bins << std::endl;
+
+	unsigned int chunks = arguments.getInt("-c", 1);
+	std::cout << "Chunks: " << bins << std::endl;
+
+	float sizeKpc = arguments.getFloat("-size", 10);
+	std::cout << "Size: " << sizeKpc << std::endl;
+
+	Vector3f offsetKpc;
+	offsetKpc.x = arguments.getFloat("-ox", 0);
+	offsetKpc.y = arguments.getFloat("-oy", 0);
+	offsetKpc.z = arguments.getFloat("-oz", 0);
+	std::cout << "Offset: " << offsetKpc << std::endl;
+
+	std::string output = arguments.getString("-o", "field.raw");
+	std::cout << "Output: " << output << std::endl;
+
+	std::string database = arguments.getString("-db", "field.db");
+	std::cout << "Database: " << database << std::endl;
+
+	if (bins % chunks) {
+		std::cout << "Bins must be dividable by chunks!" << std::endl;
+		return 1;
+	}
+
+	float chunkSizeKpc = sizeKpc / chunks;
+	size_t chunkSizeBins = bins / chunks;
+
+	FileDatabase db;
+	db.open(database);
+
+	// calculate max size
+	uint64_t n = bins * bins * bins;
+	std::cout << "N: " << n << std::endl;
+
+	off_t fsize = n * sizeof(Vector3f);
+
+	std::cout << "Size: " << fsize << " bytes, " << fsize / 1000000000
+	<< " Gbytes" << std::endl;
+	int fd = ::open(output.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
+	ftruncate(fd, fsize);
+	void* buffer = ::mmap(NULL, fsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+			0);
+	if (buffer == MAP_FAILED ) {
+		perror("mmap");
+		exit(1);
+	}
+
+	Vector3f *data = (Vector3f *) buffer;
+	std::cout << "Sample data..." << std::endl;
+	SimpleSamplingVisitor v(data, bins, offsetKpc, sizeKpc);
+	v.showProgress(true);
+	for (size_t iX = 0; iX < chunks; iX++) {
+		std::cout << "Chunk: " << iX << std::endl;
+		size_t xmin = iX * chunkSizeBins, xmax = xmin + chunkSizeBins;
+		for (size_t cx = xmin; cx < xmax; cx++)
+		for (size_t cy = 0; cy < bins; cy++)
+		for (size_t cz = 0; cz < bins; cz++)
+		data[cx * bins * bins + cy * bins + cz] = Vector3f(0, 0, 0);
+		v.limit(xmin, xmax - 1, 0, bins, 0, bins);
+		Vector3f lower = offsetKpc + Vector3f(iX, 0, 0) * chunkSizeKpc;
+		Vector3f upper = lower + Vector3f(chunkSizeKpc, sizeKpc, sizeKpc);
+		db.accept(lower, upper, v);
+		std::cout << std::endl;
+		::msync(buffer, fsize, MS_SYNC);
+
+	}
+
+	if (::munmap(buffer, fsize) < 0) {
+		perror("munmap");
+		exit(1);
+	}
+
+	::close(fd);
+
+}
+#endif
 int bfield(Arguments &arguments) {
 	unsigned int bins = arguments.getInt("-bins", 10);
 	std::cout << "Bins: " << bins << std::endl;
@@ -185,13 +409,13 @@ int bfield(Arguments &arguments) {
 			int iZ = pZ / grid.getCellLength();
 			for (int iStepX = -steps; iStepX <= steps; iStepX++) {
 				float x = iStepX * grid.getCellLength() / sl;
-				float vx = kernel(fabs(x)) * bX;
+				float vx = SmoothParticle::kernel(fabs(x)) * bX;
 				for (int iStepY = -steps; iStepY <= steps; iStepY++) {
 					float y = iStepY * grid.getCellLength() / sl;
-					float vy = kernel(fabs(y)) * bY;
+					float vy = SmoothParticle::SmoothParticle::kernel(fabs(y)) * bY;
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
 						float z = iStepZ * grid.getCellLength() / sl;
-						float vz = kernel(fabs(z)) * bZ;
+						float vz = SmoothParticle::kernel(fabs(z)) * bZ;
 
 						Vector3f &v = grid.get(iX + iStepX, iY + iStepY,
 								iZ + iStepZ);
@@ -317,20 +541,23 @@ public:
 	void visit(Grid<Vector3f> &grid, size_t x, size_t y, size_t z,
 			Vector3f &value) {
 		if (x != lastX) {
-			b.x = kernel(particle.bfield.x, grid.toCellCenter(x),
-					particle.position.x, particle.smoothingLength);
+			b.x = SmoothParticle::kernel(particle.bfield.x,
+					grid.toCellCenter(x), particle.position.x,
+					particle.smoothingLength);
 		}
 		lastX = x;
 
 		if (y != lastY) {
-			b.y = kernel(particle.bfield.y, grid.toCellCenter(y),
-					particle.position.y, particle.smoothingLength);
+			b.y = SmoothParticle::kernel(particle.bfield.y,
+					grid.toCellCenter(y), particle.position.y,
+					particle.smoothingLength);
 		}
 		lastY = y;
 
 		if (z != lastZ) {
-			b.z = kernel(particle.bfield.z, grid.toCellCenter(z),
-					particle.position.z, particle.smoothingLength);
+			b.z = SmoothParticle::kernel(particle.bfield.z,
+					grid.toCellCenter(z), particle.position.z,
+					particle.smoothingLength);
 		}
 		lastZ = z;
 
@@ -645,6 +872,10 @@ int main(int argc, const char **argv) {
 			return mass(arguments);
 		else if (function == "bfield")
 			return bfield(arguments);
+		else if (function == "bigfield")
+			return bigfield(arguments);
+		else if (function == "hc")
+			return hc(arguments);
 		else if (function == "bfieldtest")
 			return bfieldtest(arguments);
 		else if (function == "av")
