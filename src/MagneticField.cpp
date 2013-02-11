@@ -2,6 +2,9 @@
 #include "gadget/Index3.h"
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <omp.h>
 
 namespace gadget {
 
@@ -360,6 +363,50 @@ bool DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps,
 	}
 
 	return true;
+}
+
+size_t nSteps, nTrajectories, nThreads;
+size_t seed;
+float step;
+MagneticFieldPerformanceTest::MagneticFieldPerformanceTest() :
+		nSteps(10000), nTrajectories(10000), nThreads(1), seed(0), step(50) {
+
+}
+
+float MagneticFieldPerformanceTest::randomwalk(MagneticField *field) {
+	timeval start, end;
+	gettimeofday(&start, NULL);
+
+	srand48(seed);
+	omp_set_num_threads(nThreads);
+
+#pragma omp parallel for
+	for (size_t iT = 0; iT < nTrajectories; iT++) {
+		Vector3f position = field->getOrigin()
+				+ Vector3f(0.5f, 0.5f, 0.5f) * field->getSize();
+		Vector3f velocity =
+				Vector3f(drand48(), drand48(), drand48()).normalized() * step;
+		for (size_t iS = 0; iS < nSteps; iS++) {
+			Vector3f r = position - field->getOrigin();
+			if (r.x < 0 || r.x >= field->getSize())
+				continue;
+			if (r.y < 0 || r.y >= field->getSize())
+				continue;
+			if (r.z < 0 || r.z >= field->getSize())
+				continue;
+			Vector3f f;
+			field->getField(position, f);
+			position += velocity;
+			velocity = (Vector3f(drand48(), drand48(), drand48()).normalized()
+					* step + velocity) / 2.;
+		}
+	}
+
+	gettimeofday(&end, NULL);
+	double d = double(end.tv_sec - start.tv_sec)
+			+ double(end.tv_usec - start.tv_usec) / 1000000.0;
+
+	return d;
 }
 
 } // namespace gadget

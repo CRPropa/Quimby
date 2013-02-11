@@ -1,5 +1,7 @@
 #include "gadget/Database.h"
 
+#include <stdexcept>
+
 namespace gadget {
 
 template<class T>
@@ -52,12 +54,12 @@ SimpleSamplingVisitor::SimpleSamplingVisitor(Vector3f *data, size_t N,
 
 void SimpleSamplingVisitor::limit(size_t xmin, size_t xmax, size_t ymin,
 		size_t ymax, size_t zmin, size_t zmax) {
-	this->xmin = clamp(xmin, (size_t)0, N - 1);
-	this->xmax = clamp(xmax, (size_t)0, N - 1);
-	this->ymin = clamp(ymin, (size_t)0, N - 1);
-	this->ymax = clamp(ymax, (size_t)0, N - 1);
-	this->zmin = clamp(zmin, (size_t)0, N - 1);
-	this->zmax = clamp(zmax, (size_t)0, N - 1);
+	this->xmin = clamp(xmin, (size_t) 0, N - 1);
+	this->xmax = clamp(xmax, (size_t) 0, N - 1);
+	this->ymin = clamp(ymin, (size_t) 0, N - 1);
+	this->ymax = clamp(ymax, (size_t) 0, N - 1);
+	this->zmin = clamp(zmin, (size_t) 0, N - 1);
+	this->zmax = clamp(zmax, (size_t) 0, N - 1);
 }
 
 void SimpleSamplingVisitor::showProgress(bool progress) {
@@ -134,6 +136,12 @@ size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
 
 FileDatabase::FileDatabase() :
 		count(0), blocks_per_axis(0) {
+}
+
+FileDatabase::FileDatabase(const std::string &filename) :
+		count(0), blocks_per_axis(0) {
+	if(!open(filename))
+		throw std::runtime_error("[FileDatabase] could not open database file!");
 }
 
 bool FileDatabase::open(const std::string &filename) {

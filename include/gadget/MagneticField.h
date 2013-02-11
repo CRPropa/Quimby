@@ -6,6 +6,7 @@
 #include "gadget/SmoothParticle.h"
 #include "gadget/Database.h"
 #include "gadget/Referenced.h"
+#include "gadget/HCube.h"
 
 #include <vector>
 #include <string>
@@ -100,6 +101,37 @@ public:
 		return _statistics;
 	}
 
+};
+
+template<size_t N>
+class HCubeMagneticField: public MagneticField {
+	HCube<N> *_hcube;
+public:
+	HCubeMagneticField(HCube<N> *hcube, const Vector3f &originKpc,
+			float sizeKpc) :
+			_hcube(hcube) {
+		_originKpc = originKpc;
+		_sizeKpc = sizeKpc;
+	}
+
+	~HCubeMagneticField() {
+
+	}
+
+	bool getField(const Vector3f &position, Vector3f &b) const {
+		b = _hcube->getValue(position - _originKpc, _sizeKpc);
+		return true;
+	}
+
+};
+
+class MagneticFieldPerformanceTest: public Referenced {
+public:
+	size_t nSteps, nTrajectories, nThreads;
+	size_t seed;
+	float step;
+	MagneticFieldPerformanceTest();
+	float randomwalk(MagneticField *field);
 };
 
 } // namespace gadget

@@ -183,6 +183,11 @@ public:
 		if (v.z > z)
 			z = v.z;
 	}
+
+	Vector3<T> normalized() {
+		T f = 1 / length();
+		return Vector3<T>(x * f, y * f, z * f);
+	}
 };
 
 template<>

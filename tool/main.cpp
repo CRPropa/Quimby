@@ -30,49 +30,6 @@ int database(Arguments &arguments);
 int mrmf(Arguments &arguments);
 int lmf(Arguments &arguments);
 
-int av(int argc, const char **argv) {
-	if (argc < 3) {
-		std::cout << "missing filename!" << std::endl;
-		return -1;
-	}
-
-	GadgetFile file;
-	file.open(argv[2]);
-	if (file.good() == false) {
-		std::cerr << "Failed to open file " << argv[2] << std::endl;
-		return 1;
-	}
-
-	file.readHeader();
-	size_t pn = file.getHeader().particleNumberList[0];
-	std::cerr << "Number of #0 Particles: " << pn << std::endl;
-
-	std::vector<float> bfield;
-	if (file.readFloatBlock("BFLD", bfield) == false) {
-		std::cerr << "Failed to read BFLD block" << std::endl;
-		return 1;
-	}
-
-	if ((bfield.size() / 3) != pn) {
-		std::cerr << "BFLD size mismatch. BFLD count: " << (bfield.size() / 3)
-				<< " Particle count: " << pn << std::endl;
-		return 1;
-	}
-
-	float avgBx = 0.0, avgBy = 0.0, avgBz = 0.0;
-	for (size_t i = 0; i < pn; i++) {
-		avgBx += fabs(bfield[i * 3]);
-		avgBy += fabs(bfield[i * 3 + 1]);
-		avgBz += fabs(bfield[i * 3 + 2]);
-	}
-
-	std::cout << "Average Bx = " << avgBx / pn << std::endl;
-	std::cout << "Average By = " << avgBy / pn << std::endl;
-	std::cout << "Average Bz = " << avgBz / pn << std::endl;
-
-	return 0;
-}
-
 class DumpMagnitudeGridVisitor: public Grid<Vector3f>::Visitor {
 private:
 	std::ofstream outfile;
@@ -173,6 +130,7 @@ int hc(Arguments &arguments) {
 	}
 	return 0;
 }
+
 int bigfield(Arguments &arguments) {
 	uint64_t bins = arguments.getInt("-bins", 10);
 	std::cout << "Bins: " << bins << std::endl;
@@ -412,7 +370,8 @@ int bfield(Arguments &arguments) {
 				float vx = SmoothParticle::kernel(fabs(x)) * bX;
 				for (int iStepY = -steps; iStepY <= steps; iStepY++) {
 					float y = iStepY * grid.getCellLength() / sl;
-					float vy = SmoothParticle::SmoothParticle::kernel(fabs(y)) * bY;
+					float vy = SmoothParticle::SmoothParticle::kernel(fabs(y))
+							* bY;
 					for (int iStepZ = -steps; iStepZ <= steps; iStepZ++) {
 						float z = iStepZ * grid.getCellLength() / sl;
 						float vz = SmoothParticle::kernel(fabs(z)) * bZ;
@@ -852,7 +811,22 @@ int pp(Arguments &arguments) {
 	return 0;
 }
 
+typedef int (*function_pointer)(Arguments &arguments);
+
+struct function {
+	function(const std::string &name, const std::string &desc,
+			function_pointer f) :
+			name(name), description(desc), f(f) {
+	}
+	std::string name, description;
+	function_pointer f;
+};
+
 int main(int argc, const char **argv) {
+	std::vector<function> functions;
+	functions.push_back(
+			function("bigfield", "Create raw magnetic field from database",
+					&bigfield));
 	try {
 		Arguments arguments(argc, argv);
 		if (arguments.getCount() < 2) {
@@ -878,8 +852,6 @@ int main(int argc, const char **argv) {
 			return hc(arguments);
 		else if (function == "bfieldtest")
 			return bfieldtest(arguments);
-		else if (function == "av")
-			return av(argc, argv);
 		else if (function == "pp")
 			return pp(arguments);
 		else if (function == "pg")

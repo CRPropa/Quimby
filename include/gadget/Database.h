@@ -56,6 +56,7 @@ class FileDatabase: public Database {
 public:
 
 	FileDatabase();
+	FileDatabase(const std::string &filename);
 	bool open(const std::string &filename);
 
 	Vector3f getLowerBounds();

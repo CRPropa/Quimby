@@ -8,26 +8,37 @@
 
 using namespace gadget;
 
-int database(Arguments &arguments) {
-	float h = arguments.getFloat("-h", 0.7);
-	std::cout << "h:              " << h << std::endl;
+const char database_usage[] = "create database file from GADGET files.\n"
+		"\nOptions:\n\n"
+		"-f     list of input files, space seperated\n"
+		"-o     filename of the database\n"
+		"-h     Hubble constant to use, default: 0.7\n"
+		"-px, -py, -pz\n"
+		"       x, y, z of the pivot point for hubble streching, default: 120000\n"
+		"-bins  number of bins used for database lookup, default: 100\n";
 
+int database(Arguments &arguments) {
+	std::vector<std::string> files;
+	arguments.getVector("-f", files);
+	std::string output = arguments.getString("-o", "");
+	float h = arguments.getFloat("-h", 0.7);
 	Vector3f pivot;
 	pivot.x = arguments.getFloat("-px", 120000);
 	pivot.y = arguments.getFloat("-py", 120000);
 	pivot.z = arguments.getFloat("-pz", 120000);
-	std::cout << "Pivot:         " << pivot << " kpc" << std::endl;
-
 	size_t bins = arguments.getFloat("-bins", 100);
-	std::cout << "bins:              " << bins << std::endl;
 
-	std::string output = arguments.getString("-o", "particles.db");
-	std::cout << "Output:         " << output << std::endl;
+	if ((files.size() == 0) || (output.size() == 0)) {
+		std::cout << database_usage << std::endl;
+		return 1;
+	}
+
+	std::cout << "Output:   " << output << std::endl;
+	std::cout << "h:        " << h << std::endl;
+	std::cout << "Pivot:    " << pivot << " kpc" << std::endl;
+	std::cout << "bins:     " << bins << std::endl;
 
 	std::vector<SmoothParticle> particles;
-
-	std::vector<std::string> files;
-	arguments.getVector("-f", files);
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
 		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
 				<< files.size() << ")" << std::endl;

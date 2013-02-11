@@ -24,19 +24,19 @@
 
 %exception
 {
- try
- {
-   $action
- }
- catch (const std::exception& e) {
-   SWIG_exception(SWIG_RuntimeError, e.what());
- }
- catch( Swig::DirectorException &e ){
-	 PyErr_Print();
-	 SWIG_exception(SWIG_RuntimeError, e.getMessage());
- } catch (...) { 
-   SWIG_exception(SWIG_RuntimeError, "unknown exception");
- } 
+	try
+	{
+		$action
+	}
+	catch (const std::exception& e) {
+		SWIG_exception(SWIG_RuntimeError, e.what());
+	}
+	catch( Swig::DirectorException &e ) {
+		PyErr_Print();
+		SWIG_exception(SWIG_RuntimeError, e.getMessage());
+	} catch (...) {
+		SWIG_exception(SWIG_RuntimeError, "unknown exception");
+	}
 }
 
 %ignore operator<<;
@@ -45,13 +45,13 @@
 %ignore *::operator!;
 %ignore operator gadget::**;
 /*
-%ignore operator mpc::Candidate*;
-%ignore operator mpc::Module*;
-%ignore operator mpc::ModuleList*;
-%ignore operator mpc::MagneticField*;
-*/
+ %ignore operator mpc::Candidate*;
+ %ignore operator mpc::Module*;
+ %ignore operator mpc::ModuleList*;
+ %ignore operator mpc::MagneticField*;
+ */
 
-%feature("ref")   gadget::Referenced "$this->addReference();"
+%feature("ref") gadget::Referenced "$this->addReference();"
 %feature("unref") gadget::Referenced "$this->removeReference();"
 
 %include "gadget/Vector3.h"
@@ -61,14 +61,9 @@
 %include "gadget/Referenced.h"
 %include "gadget/SmoothParticle.h"
 
-%feature("director") DatabaseVisitor;      
+%feature("director") DatabaseVisitor;
 %template(DatabaseRefPtr) gadget::ref_ptr<gadget::Database>;
 %include "gadget/Database.h"
-
-%template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
-%template(SampledMagneticFieldRefPtr) gadget::ref_ptr<gadget::SampledMagneticField>;
-%template(DirectMagneticFieldRefPtr) gadget::ref_ptr<gadget::DirectMagneticField>;
-%include "gadget/MagneticField.h"
 
 %include "gadget/HCube.h"
 %template(HCube2) gadget::HCube<2>;
@@ -89,47 +84,17 @@
 %template(HCubeFile128) gadget::HCubeFile<128>;
 %template(HCubeFile256) gadget::HCubeFile<256>;
 
-/*
-%implicitconv mpc::ref_ptr<mpc::MagneticField>;
-%template(MagneticFieldRefPtr) mpc::ref_ptr<mpc::MagneticField>;
-%include "mpc/magneticField/MagneticField.h"
+%template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
+%template(SampledMagneticFieldRefPtr) gadget::ref_ptr<gadget::SampledMagneticField>;
+%template(DirectMagneticFieldRefPtr) gadget::ref_ptr<gadget::DirectMagneticField>;
 
-%include "mpc/Grid.h"
-%include "mpc/GridTools.h"
-
-%implicitconv mpc::ref_ptr<mpc::Grid<mpc::Vector3<float> > >;
-%template(VectorGridRefPtr) mpc::ref_ptr<mpc::Grid<mpc::Vector3<float> > >;
-%template(VectorGrid) mpc::Grid<mpc::Vector3<float> >;
-
-%implicitconv mpc::ref_ptr<mpc::Grid<float> >;
-%template(ScalarGridRefPtr) mpc::ref_ptr<mpc::Grid<float> >;
-%template(ScalarGrid) mpc::Grid<float>;
-
-
-%include "mpc/magneticField/MagneticFieldGrid.h"
-%include "mpc/magneticField/SPHMagneticField.h"
-%include "mpc/magneticField/JF2012Field.h"
-
-%include "mpc/ExplicitRungeKutta.h"
-%include "mpc/PhasePoint.h"
-
-%include "mpc/module/BreakCondition.h"
-%include "mpc/module/Boundary.h"
-%include "mpc/module/Observer.h"
-%include "mpc/module/SimplePropagation.h"
-%include "mpc/module/DeflectionCK.h"
-%include "mpc/module/Output.h"
-%include "mpc/module/ElectronPairProduction.h"
-%include "mpc/module/StochasticInteraction.h"
-%include "mpc/module/NuclearDecay.h"
-%include "mpc/module/PhotoPionProduction.h"
-%include "mpc/module/PhotoDisintegration.h"
-%include "mpc/module/Redshift.h"
-%include "mpc/module/Tools.h"
-
-%template(SourceRefPtr) mpc::ref_ptr<mpc::Source>;
-%include "mpc/Source.h"
-
-%template(ModuleListRefPtr) mpc::ref_ptr<mpc::ModuleList>;
-%include "mpc/ModuleList.h"
-*/
+%include "gadget/MagneticField.h"
+%template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
+%template(HCubeMagneticField2) gadget::HCubeMagneticField<2>;
+%template(HCubeMagneticField4) gadget::HCubeMagneticField<4>;
+%template(HCubeMagneticField8) gadget::HCubeMagneticField<8>;
+%template(HCubeMagneticField16) gadget::HCubeMagneticField<16>;
+%template(HCubeMagneticField32) gadget::HCubeMagneticField<32>;
+%template(HCubeMagneticField64) gadget::HCubeMagneticField<64>;
+%template(HCubeMagneticField128) gadget::HCubeMagneticField<128>;
+%template(HCubeMagneticField256) gadget::HCubeMagneticField<256>;

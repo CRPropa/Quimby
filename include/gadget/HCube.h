@@ -10,6 +10,7 @@
 
 #include "Vector3.h"
 #include "Database.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -63,6 +64,240 @@ public:
 			}
 
 		}
+	}
+
+	void init(const Vector3f *data, size_t dataN, float dataSize,
+			const Vector3f &offsetKpc, float sizeKpc, float error,
+			float threshold, size_t maxdepth, size_t depth, size_t &idx) {
+		const float s = sizeKpc / N;
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
+		size_t thisidx = idx;
+		idx++;
+		if (depth == maxdepth) {
+			float dataStep = dataSize / dataN;
+			size_t oX = offsetKpc.x / dataStep;
+			size_t oY = offsetKpc.y / dataStep;
+			size_t oZ = offsetKpc.z / dataStep;
+			const size_t dataN2 = dataN * dataN;
+			for (size_t iX = 0; iX < N; iX++) {
+				for (size_t iY = 0; iY < N; iY++) {
+					for (size_t iZ = 0; iZ < N; iZ++) {
+						elements[iX * N2 + iY * N + iZ] = data[(iX + oX)
+								* dataN2 + (iY + oY) * dataN + (iZ + oZ)];
+					}
+				}
+			}
+			const float t2 = threshold * threshold;
+			for (size_t n = 0; n < N3; n++) {
+				if (elements[n].length2() < t2)
+					elements[n] = Vector3f(0, 0, 0);
+			}
+		} else {
+
+			for (size_t n = 0; n < N3; n++) {
+				HCube<N> *hc = this + (idx - thisidx);
+				size_t i = n / N2;
+				size_t j = (n % N2) / N;
+				size_t k = n % N;
+				size_t tmpidx = idx;
+				hc->init(data, dataN, dataSize,
+						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
+						threshold, maxdepth, depth + 1, tmpidx);
+				Vector3f mean;
+				if (hc->collapse(mean, error)) {
+					setValue(i, j, k, mean);
+				} else {
+					setCube(i, j, k, idx - thisidx);
+					idx = tmpidx;
+				}
+			}
+
+		}
+	}
+
+	void load(std::istream &in, size_t dataN, float dataSize,
+			const Vector3f &offsetKpc, float sizeKpc, float threshold) {
+		const float s = sizeKpc / N;
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
+
+		float dataStep = dataSize / dataN;
+		size_t oX = offsetKpc.x / dataStep;
+		size_t oY = offsetKpc.y / dataStep;
+		size_t oZ = offsetKpc.z / dataStep;
+		const size_t dataN2 = dataN * dataN;
+		for (size_t iX = 0; iX < N; iX++) {
+			for (size_t iY = 0; iY < N; iY++) {
+				size_t offsetN = (iX + oX) * dataN2 + (iY + oY) * dataN + oZ;
+				in.seekg(offsetN * sizeof(Vector3f), std::ios::beg);
+				in.read((char *) (elements + (iX * N2 + iY * N)),
+						N * sizeof(Vector3f));
+			}
+		}
+//		const float t2 = threshold * threshold;
+//		for (size_t n = 0; n < N3; n++) {
+//			if (elements[n].length2() < t2)
+//				elements[n] = Vector3f(0, 0, 0);
+//		}
+	}
+
+	void init(std::istream &in, size_t dataN, float dataSize,
+			const Vector3f &offsetKpc, float sizeKpc, float error,
+			float threshold, size_t maxdepth, size_t depth, size_t &idx) {
+		const float s = sizeKpc / N;
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
+		size_t thisidx = idx;
+		idx++;
+		if (depth == maxdepth) {
+			load(in, dataN, dataSize, offsetKpc, sizeKpc, threshold);
+		} else {
+			for (size_t n = 0; n < N3; n++) {
+				if (depth == 0) {
+					std::cout << (n + 1) << "/" << N3 << std::endl;
+				} else if (depth == 1) {
+					if (n && (n % N == 0)) {
+						std::cout << ".";
+						if (n % N2 == 0)
+							std::cout << std::endl;
+						else
+							std::cout.flush();
+					}
+				}
+				HCube<N> *hc = this + (idx - thisidx);
+				size_t i = n / N2;
+				size_t j = (n % N2) / N;
+				size_t k = n % N;
+				size_t tmpidx = idx;
+				hc->init(in, dataN, dataSize,
+						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
+						threshold, maxdepth, depth + 1, tmpidx);
+				Vector3f mean;
+				if (hc->collapse(mean, error)) {
+					setValue(i, j, k, mean);
+				} else {
+					setCube(i, j, k, idx - thisidx);
+					idx = tmpidx;
+				}
+			}
+			if (depth == 1) {
+				std::cout << "." << std::endl;
+			}
+		}
+	}
+
+	static void create(HCube<N> &hc, std::ostream &out, std::istream &in,
+			size_t dataN, float dataSize, const Vector3f &offsetKpc,
+			float sizeKpc, float error, float threshold, size_t maxdepth,
+			size_t depth, size_t &idx) {
+		const float s = sizeKpc / N;
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
+		HCube<N> thishc;
+		size_t thisidx = idx;
+		idx++;
+		for (size_t n = 0; n < N3; n++) {
+			if (depth == 0) {
+				std::cout << (n + 1) << "/" << N3 << std::endl;
+			} else if (depth == 1) {
+				if (n && (n % N == 0)) {
+					std::cout << ".";
+					if (n % N2 == 0)
+						std::cout << std::endl;
+					else
+						std::cout.flush();
+				}
+			}
+			size_t i = n / N2;
+			size_t j = (n % N2) / N;
+			size_t k = n % N;
+			if (depth == (maxdepth - 1)) {
+				HCube<N> hc; //  = this + (idx - thisidx)
+				hc.load(in, dataN, dataSize,
+						offsetKpc + Vector3f(i * s, j * s, k * s), s,
+						threshold);
+				Vector3f mean;
+				if (hc.collapse(mean, error)) {
+					thishc.setValue(i, j, k, mean);
+				} else {
+					out.seekp(idx * sizeof(HCube<N> ), std::ios::beg);
+					out.write((char *) &hc, sizeof(HCube<N> ));
+					thishc.setCube(i, j, k, idx - thisidx);
+					idx++;
+				}
+			} else {
+				size_t tmpidx = idx;
+
+			}
+		}
+
+		if (depth == 0) {
+			out.seekp(thisidx * sizeof(HCube<N> ), std::ios::beg);
+			out.write((char *) &thishc, sizeof(HCube<N> ));
+		}
+
+		if (depth == 1) {
+			std::cout << "." << std::endl;
+		}
+
+	}
+
+	static void create(std::ostream &out, std::istream &in, size_t dataN,
+			float dataSize, const Vector3f &offsetKpc, float sizeKpc,
+			float error, float threshold, size_t maxdepth, size_t depth,
+			size_t &idx) {
+		const float s = sizeKpc / N;
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
+		HCube<N> thishc;
+		size_t thisidx = idx;
+		idx++;
+		for (size_t n = 0; n < N3; n++) {
+			if (depth == 0) {
+				std::cout << (n + 1) << "/" << N3 << std::endl;
+			} else if (depth == 1) {
+				if (n && (n % N == 0)) {
+					std::cout << ".";
+					if (n % N2 == 0)
+						std::cout << std::endl;
+					else
+						std::cout.flush();
+				}
+			}
+			size_t i = n / N2;
+			size_t j = (n % N2) / N;
+			size_t k = n % N;
+			if (depth == (maxdepth - 1)) {
+				HCube<N> hc; //  = this + (idx - thisidx)
+				hc.load(in, dataN, dataSize,
+						offsetKpc + Vector3f(i * s, j * s, k * s), s,
+						threshold);
+				Vector3f mean;
+				if (hc.collapse(mean, error)) {
+					thishc.setValue(i, j, k, mean);
+				} else {
+					out.seekp(idx * sizeof(HCube<N> ), std::ios::beg);
+					out.write((char *) &hc, sizeof(HCube<N> ));
+					thishc.setCube(i, j, k, idx - thisidx);
+					idx++;
+				}
+			} else {
+				HCube<N> hc; //  = this + (idx - thisidx)
+				size_t tmpidx = idx;
+
+			}
+		}
+
+		if (depth == 0) {
+			out.seekp(thisidx * sizeof(HCube<N> ), std::ios::beg);
+			out.write((char *) &thishc, sizeof(HCube<N> ));
+		}
+
+		if (depth == 1) {
+			std::cout << "." << std::endl;
+		}
+
 	}
 
 	size_t getN() {
@@ -149,7 +384,7 @@ public:
 			throw std::runtime_error("invalid y");
 		}
 		if (k >= N) {
-			std::cout << "invalid k: " << k << " z" << position.z << " size: "
+			std::cout << "invalid k: " << k << " z:" << position.z << " size: "
 					<< size << std::endl;
 			throw std::runtime_error("invalid z");
 		}
@@ -286,6 +521,14 @@ public:
 
 		}
 	};
+
+	static size_t memoryUsage(size_t depth) {
+		size_t n = N * N * N;
+		size_t size = 0;
+		for (size_t i = 0; i <= depth; i++)
+			size += ::pow(n, i) * n * sizeof(Vector3f);
+		return size;
+	}
 };
 
 typedef HCube<2> HCube2;
@@ -298,6 +541,60 @@ typedef HCube<128> HCube128;
 typedef HCube<256> HCube256;
 typedef HCube<512> HCube512;
 typedef HCube<1024> HCube1024;
+
+class MappedWriteFile {
+private:
+	int _file;
+	void *_data;
+	size_t _data_size;
+public:
+
+	MappedWriteFile(const std::string filename, size_t size) :
+			_file(-1), _data(MAP_FAILED ), _data_size(size) {
+		_file = ::open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
+		if (_file == -1)
+			throw std::runtime_error("[MappedFile] error opening file!");
+		truncate(_data_size);
+
+		_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_SHARED,
+				_file, 0);
+
+		if (_data == MAP_FAILED )
+			throw std::runtime_error("[MappedFile] error mapping file!");
+	}
+
+	void truncate(size_t size) {
+		if (_file == -1)
+			return;
+		if (ftruncate(_file, size) == -1)
+			throw std::runtime_error("[MappedFile] error truncating file!");
+	}
+
+	~MappedWriteFile() {
+		unmap();
+		close();
+	}
+
+	void unmap() {
+		if (_data != MAP_FAILED ) {
+			::msync(_data, _data_size, MS_SYNC);
+			::munmap(_data, _data_size);
+			_data = MAP_FAILED;
+		}
+
+	}
+	void close() {
+		if (_file != -1) {
+			::close(_file);
+			_file = -1;
+		}
+
+	}
+
+	void *data() {
+		return _data;
+	}
+};
 
 template<int N>
 class HCubeFile {
@@ -323,15 +620,17 @@ public:
 
 	bool open(const std::string &filename) {
 		_fd = ::open(filename.c_str(), O_RDWR);
+		if (_fd == -1) {
+			perror("HCubeFile");
+			throw std::runtime_error("[HCubeFile] error opening file!");
+		}
 		_size = lseek(_fd, 0, SEEK_END);
-		//printf("Opened %ld b file\n", _size);
 
 		_buffer = mmap(NULL, _size, PROT_READ, MAP_SHARED, _fd, 0);
 		if (_buffer == MAP_FAILED ) {
 			close();
-			return false;
+			throw std::runtime_error("[HCubeFile] error mapping file!");
 		}
-		//printf("Done mmap - returned 0x0%lx\n", (unsigned long) _buffer);
 
 		return true;
 	}
@@ -361,43 +660,56 @@ public:
 			float error, float threshold, size_t maxdepth,
 			const std::string &filename) {
 
-		// calculate max size
-		size_t n = N * N * N;
-		off_t size = n;
-		for (size_t i = 1; i < maxdepth; i++)
-			size *= n;
-		size += 1;
-		size *= sizeof(HCube<N> );
+		MappedWriteFile mapping(filename, HCube<N>::memoryUsage(maxdepth));
 
-		int fd = ::open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
-		ftruncate(fd, size);
-		//printf("Created %ld b sparse file\n", size);
-
-		void* buffer = mmap(NULL, (size_t) size, PROT_READ | PROT_WRITE,
-				MAP_SHARED, fd, 0);
-		if (buffer == MAP_FAILED ) {
-			perror("mmap");
-			exit(1);
-		}
-		//printf("Done mmap - returned 0x0%lx\n", (unsigned long) buffer);
-
-		HCube<N> *hcube = new (buffer) HCube<N>;
+		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
 		hcube->init(db, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
-		if (munmap(buffer, (size_t) size) < 0) {
-			perror("munmap");
-			exit(1);
-		}
+		mapping.unmap();
+		mapping.truncate(rsize);
 
-		ftruncate(fd, rsize);
-		//printf("Truncated sparse file at %ld b\n", rsize);
+		return true;
+	}
 
-		::close(fd);
+	static bool create(Vector3f *data, size_t dataN, const Vector3f &offsetKpc,
+			float sizeKpc, float error, float threshold, size_t maxdepth,
+			const std::string &filename) {
 
-		return 0;
+		MappedWriteFile mapping(filename, HCube<N>::memoryUsage(maxdepth));
+
+		HCube<N> *hcube = new (mapping.data()) HCube<N>;
+		size_t idx = 0;
+		hcube->init(data, dataN, sizeKpc, offsetKpc, sizeKpc, error, threshold,
+				maxdepth, 0, idx);
+
+		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
+
+		mapping.unmap();
+		mapping.truncate(rsize);
+
+		return true;
+	}
+
+	static bool createFromRaw(const std::string rawfilename, size_t dataN,
+			const Vector3f &offsetKpc, float sizeKpc, float error,
+			float threshold, size_t maxdepth, const std::string &filename) {
+		std::ifstream in(rawfilename.c_str(), std::ios::binary);
+		MappedWriteFile mapping(filename, HCube<N>::memoryUsage(maxdepth));
+
+		HCube<N> *hcube = new (mapping.data()) HCube<N>;
+		size_t idx = 0;
+		hcube->init(in, dataN, sizeKpc, offsetKpc, sizeKpc, error, threshold,
+				maxdepth, 0, idx);
+
+		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
+
+		mapping.unmap();
+		mapping.truncate(rsize);
+
+		return true;
 	}
 };
 
