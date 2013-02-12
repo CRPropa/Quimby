@@ -6,7 +6,7 @@ using namespace gadget;
 
 int main() {
 	ref_ptr<FileDatabase> db = new FileDatabase;
-	db->open("/home/gmueller/Workspaces/Tracking/gadget/test/coma-mhd_z.db");
+	db->open("test/coma-mhd_z.db");
 	float size = (db->getUpperBounds() - db->getLowerBounds()).length();
 
 	//hc.init(db, gadget.Vector3f(117200, 118600, 130500), 5000, 0.1, 0)
@@ -14,7 +14,7 @@ int main() {
 			"test.hc4");
 
 	HCubeFile4 hf4("test.hc4");
-	const HCube4 *hc = hf4.get();
+	const HCube4 *hc = hf4.hcube();
 	for (size_t i = 0; i < 10; i++) {
 		std::cout << hc->getValue(Vector3f(i * size / 10), size) << std::endl;
 	}

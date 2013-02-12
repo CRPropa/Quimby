@@ -72,29 +72,34 @@
 %template(HCube16) gadget::HCube<16>;
 %template(HCube32) gadget::HCube<32>;
 %template(HCube64) gadget::HCube<64>;
-%template(HCube128) gadget::HCube<128>;
-%template(HCube256) gadget::HCube<256>;
 
 %template(HCubeFile2) gadget::HCubeFile<2>;
+%template(HCubeFile2RefPtr) gadget::ref_ptr<gadget::HCubeFile2>;
 %template(HCubeFile4) gadget::HCubeFile<4>;
+%template(HCubeFile4RefPtr) gadget::ref_ptr<gadget::HCubeFile4>;
 %template(HCubeFile8) gadget::HCubeFile<8>;
+%template(HCubeFile8RefPtr) gadget::ref_ptr<gadget::HCubeFile8>;
 %template(HCubeFile16) gadget::HCubeFile<16>;
+%template(HCubeFile16RefPtr) gadget::ref_ptr<gadget::HCubeFile16>;
 %template(HCubeFile32) gadget::HCubeFile<32>;
+%template(HCubeFile32RefPtr) gadget::ref_ptr<gadget::HCubeFile32>;
 %template(HCubeFile64) gadget::HCubeFile<64>;
-%template(HCubeFile128) gadget::HCubeFile<128>;
-%template(HCubeFile256) gadget::HCubeFile<256>;
+%template(HCubeFile64RefPtr) gadget::ref_ptr<gadget::HCubeFile64>;
 
 %template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
 %template(SampledMagneticFieldRefPtr) gadget::ref_ptr<gadget::SampledMagneticField>;
 %template(DirectMagneticFieldRefPtr) gadget::ref_ptr<gadget::DirectMagneticField>;
 
 %include "gadget/MagneticField.h"
-%template(MagneticFieldRefPtr) gadget::ref_ptr<gadget::MagneticField>;
 %template(HCubeMagneticField2) gadget::HCubeMagneticField<2>;
+%template(HCubeMagneticField2RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField2>;
 %template(HCubeMagneticField4) gadget::HCubeMagneticField<4>;
+%template(HCubeMagneticField4RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField4>;
 %template(HCubeMagneticField8) gadget::HCubeMagneticField<8>;
+%template(HCubeMagneticField8RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField8>;
 %template(HCubeMagneticField16) gadget::HCubeMagneticField<16>;
+%template(HCubeMagneticField16RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField16>;
 %template(HCubeMagneticField32) gadget::HCubeMagneticField<32>;
+%template(HCubeMagneticField32RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField32>;
 %template(HCubeMagneticField64) gadget::HCubeMagneticField<64>;
-%template(HCubeMagneticField128) gadget::HCubeMagneticField<128>;
-%template(HCubeMagneticField256) gadget::HCubeMagneticField<256>;
+%template(HCubeMagneticField64RefPtr) gadget::ref_ptr<gadget::HCubeMagneticField64>;

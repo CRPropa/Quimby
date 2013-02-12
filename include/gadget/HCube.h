@@ -539,10 +539,6 @@ typedef HCube<8> HCube8;
 typedef HCube<16> HCube16;
 typedef HCube<32> HCube32;
 typedef HCube<64> HCube64;
-typedef HCube<128> HCube128;
-typedef HCube<256> HCube256;
-typedef HCube<512> HCube512;
-typedef HCube<1024> HCube1024;
 
 class MappedWriteFile {
 private:
@@ -599,7 +595,7 @@ public:
 };
 
 template<int N>
-class HCubeFile {
+class HCubeFile: public Referenced {
 private:
 	int _fd;
 	off_t _size;
@@ -637,7 +633,7 @@ public:
 		return true;
 	}
 
-	const HCube<N> *get() {
+	const HCube<N> *hcube() {
 		return (const HCube<N> *) _buffer;
 	}
 
@@ -721,10 +717,6 @@ typedef HCubeFile<8> HCubeFile8;
 typedef HCubeFile<16> HCubeFile16;
 typedef HCubeFile<32> HCubeFile32;
 typedef HCubeFile<64> HCubeFile64;
-typedef HCubeFile<128> HCubeFile128;
-typedef HCubeFile<256> HCubeFile256;
-typedef HCubeFile<512> HCubeFile512;
-typedef HCubeFile<1024> HCubeFile1024;
 
 }
 
