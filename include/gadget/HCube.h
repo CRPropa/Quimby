@@ -39,11 +39,6 @@ public:
 		if (depth == maxdepth) {
 			SamplingVisitor visitor(*this, offsetKpc, sizeKpc);
 			db->accept(offsetKpc, offsetKpc + Vector3f(sizeKpc), visitor);
-			const float t2 = threshold * threshold;
-			for (size_t n = 0; n < N3; n++) {
-				if (elements[n].length2() < t2)
-					elements[n] = Vector3f(0, 0, 0);
-			}
 		} else {
 
 			for (size_t n = 0; n < N3; n++) {
@@ -55,7 +50,7 @@ public:
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
 						error, threshold, maxdepth, depth + 1, tmpidx);
 				Vector3f mean;
-				if (hc->collapse(mean, error)) {
+				if (hc->collapse(mean, error, threshold)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -88,11 +83,6 @@ public:
 					}
 				}
 			}
-			const float t2 = threshold * threshold;
-			for (size_t n = 0; n < N3; n++) {
-				if (elements[n].length2() < t2)
-					elements[n] = Vector3f(0, 0, 0);
-			}
 		} else {
 
 			for (size_t n = 0; n < N3; n++) {
@@ -105,7 +95,7 @@ public:
 						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
 						threshold, maxdepth, depth + 1, tmpidx);
 				Vector3f mean;
-				if (hc->collapse(mean, error)) {
+				if (hc->collapse(mean, error, threshold)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -174,7 +164,7 @@ public:
 						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
 						threshold, maxdepth, depth + 1, tmpidx);
 				Vector3f mean;
-				if (hc->collapse(mean, error)) {
+				if (hc->collapse(mean, error, threshold)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -186,7 +176,7 @@ public:
 			}
 		}
 	}
-
+#if 0
 	static void create(HCube<N> &hc, std::ostream &out, std::istream &in,
 			size_t dataN, float dataSize, const Vector3f &offsetKpc,
 			float sizeKpc, float error, float threshold, size_t maxdepth,
@@ -204,9 +194,9 @@ public:
 				if (n && (n % N == 0)) {
 					std::cout << ".";
 					if (n % N2 == 0)
-						std::cout << std::endl;
+					std::cout << std::endl;
 					else
-						std::cout.flush();
+					std::cout.flush();
 				}
 			}
 			size_t i = n / N2;
@@ -242,17 +232,15 @@ public:
 		}
 
 	}
-
-	static void create(std::ostream &out, std::istream &in, size_t dataN,
-			float dataSize, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth, size_t depth,
-			size_t &idx) {
+#endif
+	static void create(HCube<N> &thishc, std::ostream &out, std::istream &in,
+			size_t dataN, float dataSize, const Vector3f &offsetKpc,
+			float sizeKpc, float error, float threshold, size_t maxdepth,
+			size_t depth, size_t &idx) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
-		HCube<N> thishc;
 		size_t thisidx = idx;
-		idx++;
 		for (size_t n = 0; n < N3; n++) {
 			if (depth == 0) {
 				std::cout << (n + 1) << "/" << N3 << std::endl;
@@ -268,36 +256,42 @@ public:
 			size_t i = n / N2;
 			size_t j = (n % N2) / N;
 			size_t k = n % N;
+			HCube<N> hc;
+			size_t tmpidx = idx + 1;
+			size_t nextidx = tmpidx;
+			Vector3f subOffsetKpc = offsetKpc + Vector3f(i * s, j * s, k * s);
 			if (depth == (maxdepth - 1)) {
-				HCube<N> hc; //  = this + (idx - thisidx)
-				hc.load(in, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						threshold);
-				Vector3f mean;
-				if (hc.collapse(mean, error)) {
-					thishc.setValue(i, j, k, mean);
-				} else {
-					out.seekp(idx * sizeof(HCube<N> ), std::ios::beg);
-					out.write((char *) &hc, sizeof(HCube<N> ));
-					thishc.setCube(i, j, k, idx - thisidx);
-					idx++;
-				}
+				hc.load(in, dataN, dataSize, subOffsetKpc, s, threshold);
 			} else {
-				HCube<N> hc; //  = this + (idx - thisidx)
-				size_t tmpidx = idx;
-
+				create(hc, out, in, dataN, dataSize, subOffsetKpc, s, error,
+						threshold, maxdepth, depth + 1, tmpidx);
 			}
-		}
-
-		if (depth == 0) {
-			out.seekp(thisidx * sizeof(HCube<N> ), std::ios::beg);
-			out.write((char *) &thishc, sizeof(HCube<N> ));
+			Vector3f mean;
+			if (hc.collapse(mean, error, threshold)) {
+				thishc.setValue(i, j, k, mean);
+			} else {
+				idx = tmpidx;
+				out.seekp(nextidx * sizeof(HCube<N> ), std::ios::beg);
+				out.write((char *) &hc, sizeof(HCube<N> ));
+				thishc.setCube(i, j, k, nextidx - thisidx);
+			}
 		}
 
 		if (depth == 1) {
 			std::cout << "." << std::endl;
 		}
 
+	}
+
+	static void create(std::ostream &out, std::istream &in, size_t dataN,
+			float dataSize, const Vector3f &offsetKpc, float sizeKpc,
+			float error, float threshold, size_t maxdepth) {
+		size_t idx = 0;
+		HCube<N> hc;
+		create(hc, out, in, dataN, dataSize, offsetKpc, sizeKpc, error,
+				threshold, maxdepth, 0, idx);
+		out.seekp(0, std::ios::beg);
+		out.write((char *) &hc, sizeof(HCube<N> ));
 	}
 
 	size_t getN() {
@@ -336,24 +330,32 @@ public:
 		return (h + c);
 	}
 
-	bool collapse(Vector3f &mean, float error) {
-		const size_t n = N * N * N;
+	bool collapse(Vector3f &mean, float error, float threshold) {
+		const size_t N3 = N * N * N;
 		mean = Vector3f(0, 0, 0);
-		for (size_t i = 0; i < n; i++) {
+		for (size_t i = 0; i < N3; i++) {
 			if (isCube(elements[i]))
 				return false;
 			mean += elements[i];
 		}
+		mean /= N3;
 
-		mean /= n;
+		const float t2 = threshold * threshold;
 		const float e2 = error * error * mean.length2();
-		for (size_t i = 0; i < n; i++) {
+		bool collapseByError = true;
+		bool collapseByThreshold = true;
+
+		for (size_t i = 0; i < N3; i++) {
 			float d2 = (elements[i] - mean).length2();
 			if (d2 > e2)
+				collapseByError = false;
+			if (d2 > t2)
+				collapseByThreshold = false;
+			if (!collapseByThreshold && !collapseByError)
 				return false;
 		}
 
-		return true;
+		return (collapseByThreshold || collapseByError);
 	}
 
 	void setCube(size_t i, size_t j, size_t k, uint64_t cube) {

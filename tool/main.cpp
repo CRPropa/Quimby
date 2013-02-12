@@ -95,34 +95,36 @@ int hc(Arguments &arguments) {
 	offsetKpc.z = arguments.getFloat("-oz", 0);
 	std::cout << "Offset: " << offsetKpc << std::endl;
 
+	std::ifstream in(input.c_str(), std::ios::binary);
+	std::ofstream out(output.c_str(), std::ios::binary);
 	switch (n) {
 	case 2:
-		HCubeFile<2>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<2>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 4:
-		HCubeFile<4>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<4>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 8:
-		HCubeFile<8>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<8>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 16:
-		HCubeFile<16>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<16>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 32:
-		HCubeFile<32>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<32>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 64:
-		HCubeFile<64>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<64>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	case 128:
-		HCubeFile<128>::createFromRaw(input, bins, offsetKpc, sizeKpc, error,
-				threshold, depth, output);
+		HCube<128>::create(out, in, bins, sizeKpc, offsetKpc, sizeKpc, error,
+				threshold, depth);
 		break;
 	default:
 		std::cout << "Invalid n: " << n << std::endl;
