@@ -76,6 +76,14 @@ Use the cli to convert snapshot files to a database. E.g. a 240 Mpc snapshot, wi
 
 The database stores the particles and a regular grid for indexing. Uses DatabaseVisitor to access data.
 
+HCube
+~~~~~
+
+Hierarchy Cube.
+Start with top level cube.
+Each cell can point to antother cube.
+x is nan, y and z contain the offset to the next cube.
+
 Examples
 --------
 
