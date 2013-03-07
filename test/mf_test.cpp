@@ -144,9 +144,8 @@ public:
 			r += center;
 			Vector3f b;
 			bool dmfGood = dmf->getField(r, b);
-			size_t overlaps;
 			float rho;
-			dmfGood = dmf->getRho(r, overlaps, rho);
+			dmfGood = dmf->getRho(r, rho);
 			avgDirectWeighted += b.length() * rho;
 			avgDirect += b.length();
 			avgInvRho += rho;
@@ -184,10 +183,8 @@ public:
 
 	void runRhoTest() {
 		for (size_t i = 0; i < particles.size(); i++) {
-			size_t overlaps;
 			float directRho;
-			bool dmfGood = dmf->getRho(particles[i].position, overlaps,
-					directRho);
+			bool dmfGood = dmf->getRho(particles[i].position, directRho);
 			float relativeError = (particles[i].rho - directRho)
 					/ particles[i].rho;
 			if (std::fabs(relativeError) > 0.05) {

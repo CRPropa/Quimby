@@ -338,8 +338,7 @@ bool DirectMagneticField::getField(const Vector3f &positionKpc,
 	return true;
 }
 
-bool DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps,
-		float &rho) const {
+bool DirectMagneticField::getRho(const Vector3f &positionKpc, float &rho) const {
 	rho = 0;
 
 	if (badPosition(positionKpc))
@@ -352,13 +351,11 @@ bool DirectMagneticField::getRho(const Vector3f &positionKpc, size_t &overlaps,
 
 	// calculate field from overlapping particles
 	// see eq. 22 in diploma thesis by Ruediger Pakmor TU Munich
-	overlaps = 0;
 	for (size_t i = 0; i < idx.size(); i++) {
 		const SmoothParticle &sp = _particles[idx[i]];
 		double k = sp.kernel(positionKpc);
 		if (k != 0) {
 			rho += sp.mass * k * sp.weight();
-			overlaps++;
 		}
 	}
 

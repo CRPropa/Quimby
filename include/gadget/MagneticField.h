@@ -86,8 +86,7 @@ public:
 	DirectMagneticField(size_t grid_size);
 	bool badPosition(const Vector3f &positionKpc) const;
 	bool getField(const Vector3f &position, Vector3f &field) const;
-	bool getRho(const Vector3f &positionKpc, size_t &overlaps,
-			float &rho) const;
+	bool getRho(const Vector3f &positionKpc, float &rho) const;
 
 	void init(const Vector3f &originKpc, float sizeKpc);
 	void init(const Vector3f &originKpc, float sizeKpc, Database &db);

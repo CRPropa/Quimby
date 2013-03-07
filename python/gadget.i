@@ -12,6 +12,7 @@
 %include stdint.i
 %include std_container.i
 %include "exception.i"
+%include "typemaps.i"
 
 %{
 #include "gadget/Database.h"
@@ -91,6 +92,7 @@ TPL_REF_PTR(HCubeFile16, gadget::HCubeFile<16>)
 TPL_REF_PTR(HCubeFile32, gadget::HCubeFile<32>)
 TPL_REF_PTR(HCubeFile64, gadget::HCubeFile<64>)
 
+%apply float &INOUT { float &rho };
 %include "gadget/MagneticField.h"
 REF_PTR(MagneticField, gadget::MagneticField)
 REF_PTR(SampledMagneticField, gadget::SampledMagneticField)
