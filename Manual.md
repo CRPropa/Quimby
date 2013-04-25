@@ -61,8 +61,9 @@ mkdir build && cd build
 cmake
     -DCMAKE_INSTALL_PREFIX=$HOME/quimby
     -DCMAKE_BUILD_TYPE=Release
-    -DENABLE_ROOT=True
-    -DENABLE_PYTHON=True
+    -DQUIMBY_ENABLE_ROOT=True
+    -DQUIMBY_ENABLE_PYTHON=True
+    -DQUIMBY_ENABLE_TESTING=True
     ..
 make && make install
 ~~~
@@ -77,11 +78,14 @@ CMAKE_INSTALL_PREFIX
 CMAKE_BUILD_TYPE
   defines the build type. Typically 'Debug' or 'Release'.
 
-ENABLE_ROOT
+QUIMBY_ENABLE_ROOT
   enables the use of ROOT_ in some tests and tools.
 
-ENABLE_PYTHON
+QUIMBY_ENABLE_PYTHON
   enables the Python_ bindings.  
+
+QUIMBY_ENABLE_TESTING
+  enables testing methods and build unit tests.  
 
 Finally 'make' and 'make install' compile and install GADGET_.
 

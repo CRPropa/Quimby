@@ -4,21 +4,30 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	SET(CMAKE_CXX_FLAGS "-fopenmp -fPIC -D_FILE_OFFSET_BITS=64 ${CMAKE_CXX_FLAGS}")
 endif()
 
-option(ENABLE_ROOT "ENABLE ROOT Output" off)
-if (ENABLE_ROOT)
+# ----------------------------------------------------------------------------
+# ROOT
+# ----------------------------------------------------------------------------
+option(QUIMBY_ENABLE_ROOT "ENABLE ROOT Output" off)
+if (QUIMBY_ENABLE_ROOT)
 	FIND_PROGRAM(ROOT_CONFIG root-config REQUIRED ROOT_CONFIG_PATH) 
 	execute_process(COMMAND ${ROOT_CONFIG} "--cflags" OUTPUT_VARIABLE ROOT_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-	message(STATUS "ROOT cflags: ${ROOT_CFLAGS}")
-
 	execute_process(COMMAND ${ROOT_CONFIG} "--libs" OUTPUT_VARIABLE ROOT_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
-	message(STATUS "ROOT libs: ${ROOT_LIBS}")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_CFLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${ROOT_LIBS}")
-
-	add_definitions(-DQUIMBY_ROOT_ENABLED)
+	if(ROOT_CFLAGS AND ROOT_LIBS)
+		message(STATUS "ROOT found!")
+		message(STATUS "  CFLAGS:      ${ROOT_CFLAGS}")
+		message(STATUS "  LIBS:        ${ROOT_LIBS}")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_CFLAGS}")
+    	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${ROOT_LIBS}")
+		add_definitions(-DQUIMBY_ROOT_ENABLED)
+	else()
+		set(QUIMBY_ENABLE_ROOT Off)
+	endif()
 endif()
 
+# ----------------------------------------------------------------------------
+# Quimby
+# ----------------------------------------------------------------------------
 include_directories (include)
 
 add_library( quimby-lib
@@ -43,7 +52,6 @@ SET_TARGET_PROPERTIES(quimby-tool PROPERTIES OUTPUT_NAME "quimby")
 add_dependencies(quimby-tool quimby-lib) 
 target_link_libraries (quimby-tool quimby-lib) 
 
-
 INSTALL(TARGETS quimby-tool RUNTIME DESTINATION bin)
 INSTALL(TARGETS quimby-lib DESTINATION lib)
 INSTALL(DIRECTORY include/ DESTINATION include
@@ -57,31 +65,36 @@ if(UNIX)
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif(UNIX)
 
-ENABLE_TESTING()
-
-add_executable(pg_test test/pg_test.cpp)
-add_executable(mf_test test/mf_test.cpp)
-add_executable(coma_profile test/coma_profile.cpp)
-target_link_libraries(coma_profile quimby-lib)
-
-add_executable(database_test test/database_test.cpp)
-target_link_libraries(database_test quimby-lib)
-
-add_executable(hcube_test test/hcube_test.cpp)
-target_link_libraries(hcube_test quimby-lib)
-
-add_executable(sph_grid_test test/sph_grid_test.cpp)
-target_link_libraries(mf_test quimby-lib)
-target_link_libraries(sph_grid_test quimby-lib)
-ADD_TEST(mf mf_test)
-ADD_TEST(pg pg_test)
-ADD_TEST(sph_grid sph_grid_test)
+# ----------------------------------------------------------------------------
+# Testing
+# ----------------------------------------------------------------------------
+option(QUIMBY_ENABLE_TESTING "Build unit tests" OFF)
+if(QUIMBY_ENABLE_TESTING)
+    enable_testing()
+    add_executable(pg_test test/pg_test.cpp)
+    add_executable(mf_test test/mf_test.cpp)
+    add_executable(coma_profile test/coma_profile.cpp)
+    target_link_libraries(coma_profile quimby-lib)
+    
+    add_executable(database_test test/database_test.cpp)
+    target_link_libraries(database_test quimby-lib)
+    
+    add_executable(hcube_test test/hcube_test.cpp)
+    target_link_libraries(hcube_test quimby-lib)
+    
+    add_executable(sph_grid_test test/sph_grid_test.cpp)
+    target_link_libraries(mf_test quimby-lib)
+    target_link_libraries(sph_grid_test quimby-lib)
+    ADD_TEST(mf mf_test)
+    ADD_TEST(pg pg_test)
+    ADD_TEST(sph_grid sph_grid_test)
+endif()
 
 # ----------------------------------------------------------------------------
 # Python
 # ----------------------------------------------------------------------------
-option(ENABLE_PYTHON "Create python library via SWIG" OFF)
-if(ENABLE_PYTHON)
+option(QUIMBY_ENABLE_PYTHON "Create python library via SWIG" OFF)
+if(QUIMBY_ENABLE_PYTHON)
 	include(python/Python.cmake)
 	include_directories(${PYTHON_INCLUDE_PATH})
 	
@@ -97,4 +110,27 @@ if(ENABLE_PYTHON)
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/quimby.py" DESTINATION ${PYTHON_SITE_PACKAGES})
 	install(TARGETS quimby-swig LIBRARY DESTINATION ${PYTHON_SITE_PACKAGES})
 	install(FILES python/quimby.i DESTINATION share/quimby)
-endif(ENABLE_PYTHON)
+endif()
+
+# ----------------------------------------------------------------------------
+# Print feature overview
+# ----------------------------------------------------------------------------
+message(STATUS "Features:")
+
+if(QUIMBY_ENABLE_ROOT)
+	message(STATUS "  ROOT:        Yes")
+else()
+	message(STATUS "  ROOT:        No")
+endif()
+
+if(QUIMBY_ENABLE_PYTHON)
+	message(STATUS "  Python:      Yes")
+else()
+	message(STATUS "  Python:      No")
+endif()
+
+if(QUIMBY_ENABLE_TESTING)
+	message(STATUS "  Testing:     Yes")
+else()
+	message(STATUS "  Testing:     No")
+endif()
