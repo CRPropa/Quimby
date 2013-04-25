@@ -1,14 +1,14 @@
 #include "arguments.h"
 
-#include "gadget/GadgetFile.h"
-#include "gadget/Grid.h"
-#include "gadget/Octree.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/Database.h"
+#include "quimby/GadgetFile.h"
+#include "quimby/Grid.h"
+#include "quimby/Octree.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/Database.h"
 
 #include <omp.h>
 
-using namespace gadget;
+using namespace quimby;
 
 class MassVisitor: public DatabaseVisitor {
 public:

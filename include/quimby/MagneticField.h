@@ -1,12 +1,11 @@
-#ifndef _GADGET_MAGNETIC_FIELD_H_
-#define _GADGET_MAGNETIC_FIELD_H_
+#pragma once
 
-#include "gadget/Grid.h"
-#include "gadget/Vector3.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/Database.h"
-#include "gadget/Referenced.h"
-#include "gadget/HCube.h"
+#include "Grid.h"
+#include "Vector3.h"
+#include "SmoothParticle.h"
+#include "Database.h"
+#include "Referenced.h"
+#include "HCube.h"
 
 #include <vector>
 #include <string>
@@ -14,7 +13,7 @@
 #include <sstream>
 #include <iostream>
 
-namespace gadget {
+namespace quimby {
 
 class MagneticField: public Referenced {
 protected:
@@ -140,6 +139,4 @@ public:
 	float randomwalk(MagneticField *field);
 };
 
-} // namespace gadget
-
-#endif // _GADGET_MAGNETIC_FIELD_H_
+} // namespace

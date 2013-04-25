@@ -1,8 +1,8 @@
-#include "gadget/Database.h"
+#include "quimby/Database.h"
 
 #include <stdexcept>
 
-namespace gadget {
+namespace quimby {
 
 template<class T>
 inline T clamp(const T &value, const T &min, const T&max) {
@@ -140,8 +140,9 @@ FileDatabase::FileDatabase() :
 
 FileDatabase::FileDatabase(const std::string &filename) :
 		count(0), blocks_per_axis(0) {
-	if(!open(filename))
-		throw std::runtime_error("[FileDatabase] could not open database file!");
+	if (!open(filename))
+		throw std::runtime_error(
+				"[FileDatabase] could not open database file!");
 }
 
 bool FileDatabase::open(const std::string &filename) {
@@ -364,4 +365,4 @@ void FileDatabase::create(std::vector<SmoothParticle> &particles,
 	}
 }
 
-} // namespace gadget
+} // namespace

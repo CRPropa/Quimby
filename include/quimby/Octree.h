@@ -1,11 +1,10 @@
-#ifndef _GADGET_OCTREE_H_
-#define _GADGET_OCTREE_H_
+#pragma once
 
 #include "AABB.h"
 
 #include <vector>
 
-namespace gadget {
+namespace quimby {
 
 template<typename FLOAT, typename ELEMENT>
 class OctreeNode {
@@ -177,6 +176,4 @@ private:
 
 };
 
-} // namespace gadget
-
-#endif /* _GADGET_OCTREE_H_ */
+} // namespace

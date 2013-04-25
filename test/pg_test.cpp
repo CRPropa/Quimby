@@ -1,8 +1,8 @@
 #include <string>
 
-#include "gadget/PagedGrid.h"
+#include "quimby/PagedGrid.h"
 
-using namespace gadget;
+using namespace quimby;
 
 void write() {
 	BinaryPageIO<int> io;

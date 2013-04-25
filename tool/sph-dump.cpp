@@ -1,10 +1,10 @@
 #include "arguments.h"
 
-#include "gadget/Grid.h"
-#include "gadget/Index3.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/GadgetFile.h"
-#include "gadget/Vector3.h"
+#include "quimby/Grid.h"
+#include "quimby/Index3.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/GadgetFile.h"
+#include "quimby/Vector3.h"
 
 #include <ctime>
 #include <limits>
@@ -13,7 +13,7 @@
 #include <sstream>
 #include <fstream>
 
-using namespace gadget;
+using namespace quimby;
 
 class DumpVectorGridVisitor: public Grid<Vector3f>::Visitor {
 public:

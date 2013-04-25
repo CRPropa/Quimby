@@ -1,12 +1,4 @@
-/*
- * hcube.h
- *
- *  Created on: 18.12.2012
- *      Author: gmueller
- */
-
-#ifndef HCUBE_H_
-#define HCUBE_H_
+#pragma once
 
 #include "Vector3.h"
 #include "Database.h"
@@ -20,7 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace gadget {
+namespace quimby {
 
 template<size_t N>
 class HCube {
@@ -548,7 +540,7 @@ private:
 public:
 
 	MappedWriteFile(const std::string filename, size_t size) :
-			_file(-1), _data(MAP_FAILED ), _data_size(size) {
+			_file(-1), _data(MAP_FAILED), _data_size(size) {
 		_file = ::open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
 		if (_file == -1)
 			throw std::runtime_error("[MappedFile] error opening file!");
@@ -557,7 +549,7 @@ public:
 		_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_SHARED,
 				_file, 0);
 
-		if (_data == MAP_FAILED )
+		if (_data == MAP_FAILED)
 			throw std::runtime_error("[MappedFile] error mapping file!");
 	}
 
@@ -574,7 +566,7 @@ public:
 	}
 
 	void unmap() {
-		if (_data != MAP_FAILED ) {
+		if (_data != MAP_FAILED) {
 			::msync(_data, _data_size, MS_SYNC);
 			::munmap(_data, _data_size);
 			_data = MAP_FAILED;
@@ -625,7 +617,7 @@ public:
 		_size = lseek(_fd, 0, SEEK_END);
 
 		_buffer = mmap(NULL, _size, PROT_READ, MAP_SHARED, _fd, 0);
-		if (_buffer == MAP_FAILED ) {
+		if (_buffer == MAP_FAILED) {
 			close();
 			throw std::runtime_error("[HCubeFile] error mapping file!");
 		}
@@ -718,6 +710,4 @@ typedef HCubeFile<16> HCubeFile16;
 typedef HCubeFile<32> HCubeFile32;
 typedef HCubeFile<64> HCubeFile64;
 
-}
-
-#endif /* HCUBE_H_ */
+} // namespace

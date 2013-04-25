@@ -1,13 +1,12 @@
-#ifndef _GADGET_SMOOTH_PARTICLE_H_
-#define _GADGET_SMOOTH_PARTICLE_H_
+#pragma once
 
-#include "gadget/Vector3.h"
+#include "Vector3.h"
 
 #include <fstream>
 #include <vector>
 #include <stdint.h>
 
-namespace gadget {
+namespace quimby {
 
 class SmoothParticle {
 public:
@@ -109,15 +108,13 @@ public:
 	}
 };
 
-} // namespace gadget
+} // namespace
 
 template<typename T>
 inline std::ostream &operator <<(std::ostream &out,
-		const gadget::SmoothParticle &v) {
+		const quimby::SmoothParticle &v) {
 	out << "(" << v.position.x << "," << v.position.x << "," << v.position.x
 			<< "), " << "(" << v.bfield.x << "," << v.bfield.x << ","
 			<< v.bfield.x << "), " << v.smoothingLength;
 	return out;
 }
-
-#endif /* _GADGET_SMOOTH_PARTICLE_H_ */

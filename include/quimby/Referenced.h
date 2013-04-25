@@ -1,5 +1,4 @@
-#ifndef GADGET_REFERENCED_H
-#define GADGET_REFERENCED_H
+#pragma once
 
 #include <stddef.h>
 
@@ -8,7 +7,7 @@
 #include <typeinfo>
 #endif
 
-namespace gadget {
+namespace quimby {
 
 /**
  @class Referenced
@@ -211,5 +210,3 @@ template<class T, class Y> inline ref_ptr<T> const_pointer_cast(
 }
 
 } // namespace
-
-#endif

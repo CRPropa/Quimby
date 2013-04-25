@@ -1,8 +1,8 @@
-#include "gadget/SPHGrid.h"
+#include "quimby/SPHGrid.h"
 
 #include <iostream>
 
-using namespace gadget;
+using namespace quimby;
 
 class SPHGridTest: public SPHGrid {
 public:

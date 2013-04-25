@@ -1,5 +1,4 @@
-#ifndef _GADGET_GRID_H_
-#define _GADGET_GRID_H_
+#pragma once
 
 #include "AABC.h"
 
@@ -11,7 +10,7 @@
 #include <cmath>
 #include <inttypes.h>
 
-namespace gadget {
+namespace quimby {
 
 template<class T>
 class Grid {
@@ -262,10 +261,10 @@ public:
 	}
 };
 
-} // namespace gadget
+} // namespace
 
 template<class T>
-std::ostream &operator <<(std::ostream &stream, const gadget::Grid<T> &grid) {
+std::ostream &operator <<(std::ostream &stream, const quimby::Grid<T> &grid) {
 	stream << "#bins: " << grid.getBins() << std::endl;
 	stream << "#size: " << grid.getSize() << std::endl;
 
@@ -278,5 +277,3 @@ std::ostream &operator <<(std::ostream &stream, const gadget::Grid<T> &grid) {
 	}
 	return stream;
 }
-
-#endif /* _GADGET_GRID_H_ */

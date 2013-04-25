@@ -1,14 +1,13 @@
-#ifndef _GADGET_DATABASE_H_
-#define _GADGET_DATABASE_H_
+#pragma once
 
-#include "gadget/AABB.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/Referenced.h"
+#include "AABB.h"
+#include "SmoothParticle.h"
+#include "Referenced.h"
 
 #include <algorithm>
 #include <limits>
 
-namespace gadget {
+namespace quimby {
 
 class DatabaseVisitor {
 public:
@@ -97,6 +96,4 @@ public:
 	void showProgress(bool progress);
 };
 
-} // namespace gadget
-
-#endif /* _GADGET_DATABASE_H_ */
+} // namespace

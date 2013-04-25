@@ -1,8 +1,8 @@
-#include "gadget/GadgetFile.h"
+#include "quimby/GadgetFile.h"
 
 #include <stdexcept>
 
-namespace gadget {
+namespace quimby {
 
 const GadgetFile::Header &GadgetFile::getHeader() const {
 	return header;
@@ -147,4 +147,4 @@ bool GadgetFile::readFloatBlock(const std::string &label,
 	return true;
 }
 
-} // namespace gadget
+} // namespace

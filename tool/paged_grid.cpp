@@ -1,16 +1,16 @@
 #include "arguments.h"
 
-#include "gadget/PagedGrid.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/GadgetFile.h"
-#include "gadget/Vector3.h"
+#include "quimby/PagedGrid.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/GadgetFile.h"
+#include "quimby/Vector3.h"
 
 #include <ctime>
 #include <limits>
 #include <algorithm>
 #include <omp.h>
 
-using namespace gadget;
+using namespace quimby;
 
 class PagedSPVisitor: public PagedGrid<Vector3f>::Visitor {
 public:

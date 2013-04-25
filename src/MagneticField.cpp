@@ -1,12 +1,12 @@
-#include "gadget/MagneticField.h"
-#include "gadget/Index3.h"
+#include "quimby/MagneticField.h"
+#include "quimby/Index3.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <omp.h>
 
-namespace gadget {
+namespace quimby {
 
 template<class T>
 T clamp(const T &value, const T &min, const T&max) {
@@ -338,7 +338,8 @@ bool DirectMagneticField::getField(const Vector3f &positionKpc,
 	return true;
 }
 
-bool DirectMagneticField::getRho(const Vector3f &positionKpc, float &rho) const {
+bool DirectMagneticField::getRho(const Vector3f &positionKpc,
+		float &rho) const {
 	rho = 0;
 
 	if (badPosition(positionKpc))
@@ -406,4 +407,4 @@ float MagneticFieldPerformanceTest::randomwalk(MagneticField *field) {
 	return d;
 }
 
-} // namespace gadget
+} // namespace

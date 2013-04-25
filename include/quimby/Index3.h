@@ -1,11 +1,10 @@
-#ifndef _GADGET_INDEX3_H_
-#define _GADGET_INDEX3_H_
+#pragma once
 
 #include <inttypes.h>
 #include <algorithm>
 #include <iostream>
 
-namespace gadget {
+namespace quimby {
 
 inline uint32_t spread3(uint32_t x) {
 	x = (0xF0000000 & x) | ((0x0F000000 & x) >> 8) | (x >> 16);
@@ -136,15 +135,13 @@ struct Index3 {
 	}
 
 	uint32_t morton() const {
-		return gadget::morton(x, y, z);
+		return quimby::morton(x, y, z);
 	}
 };
 
-inline std::ostream &operator <<(std::ostream &out, const Index3 &v) {
+} // namespace
+
+inline std::ostream &operator <<(std::ostream &out, const quimby::Index3 &v) {
 	out << v.x << " " << v.y << " " << v.z;
 	return out;
 }
-
-} // namespace gadget
-
-#endif // _GADGET_INDEX3_H_

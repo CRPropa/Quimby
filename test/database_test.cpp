@@ -1,9 +1,10 @@
-#include "gadget/Database.h"
+#include "quimby/Database.h"
 
 #include <vector>
 #include <assert.h>
 #include <iostream>
-using namespace gadget;
+
+using namespace quimby;
 using namespace std;
 
 int main() {

@@ -1,11 +1,10 @@
-#ifndef _GADGET_GADGETFILE_H_
-#define _GADGET_GADGETFILE_H_
+#pragma once
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-namespace gadget {
+namespace quimby {
 
 class GadgetFile {
 
@@ -48,6 +47,4 @@ public:
 	void printBlocks();
 };
 
-} // namespace gadget
-
-#endif /* _GADGET_GADGETFILE_H_ */
+} // namespace

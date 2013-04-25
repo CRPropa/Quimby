@@ -1,12 +1,12 @@
 #include "arguments.h"
 
-#include "gadget/Database.h"
-#include "gadget/GadgetFile.h"
+#include "quimby/Database.h"
+#include "quimby/GadgetFile.h"
 
 #include <iostream>
 #include <stdexcept>
 
-using namespace gadget;
+using namespace quimby;
 
 int lmf(Arguments &arguments) {
 	int n1 = arguments.getFloat("-n1", 256);

@@ -1,9 +1,9 @@
 #include "arguments.h"
 
-#include "gadget/PagedGrid.h"
-#include "gadget/Vector3.h"
+#include "quimby/PagedGrid.h"
+#include "quimby/Vector3.h"
 
-using namespace gadget;
+using namespace quimby;
 
 class TestVisitor1: public PagedGrid<Vector3f>::Visitor {
 public:

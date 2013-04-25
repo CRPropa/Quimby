@@ -1,10 +1,3 @@
-/*
- * arguments.hpp
- *
- *  Created on: 06.05.2010
- *      Author: gmueller
- */
-
 #include <cstdlib>
 #include <string>
 #include <vector>

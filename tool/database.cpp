@@ -1,12 +1,12 @@
 #include "arguments.h"
 
-#include "gadget/Database.h"
-#include "gadget/GadgetFile.h"
+#include "quimby/Database.h"
+#include "quimby/GadgetFile.h"
 
 #include <iostream>
 #include <stdexcept>
 
-using namespace gadget;
+using namespace quimby;
 
 const char database_usage[] = "create database file from GADGET files.\n"
 		"\nOptions:\n\n"

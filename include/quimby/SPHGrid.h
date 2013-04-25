@@ -1,15 +1,14 @@
-#ifndef _GADGET_SPH_GRID_H_
-#define _GADGET_SPH_GRID_H_
+#pragma once
 
-#include "gadget/Grid.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/Index3.h"
-#include "gadget/GadgetFile.h"
+#include "Grid.h"
+#include "SmoothParticle.h"
+#include "Index3.h"
+#include "GadgetFile.h"
 
 #include <vector>
 #include <stdexcept>
 
-namespace gadget {
+namespace quimby {
 
 class SPHGrid: public Grid<std::vector<SmoothParticle> > {
 	Vector3f offset;
@@ -19,7 +18,7 @@ public:
 	typedef Grid<std::vector<SmoothParticle> > base;
 
 	SPHGrid() :
-			base(), offset(0.f) {
+			base(), offset(0.f), margin(0.f) {
 	}
 
 	SPHGrid(size_t bins, float size) :
@@ -136,6 +135,4 @@ public:
 	}
 };
 
-} // namespace gadget
-
-#endif /* _GADGET_SPH_GRID_H_ */
+} // namespace

@@ -1,6 +1,6 @@
-#include "gadget/MagneticField.h"
-#include "gadget/SmoothParticle.h"
-using namespace gadget;
+#include "quimby/MagneticField.h"
+#include "quimby/SmoothParticle.h"
+using namespace quimby;
 
 #include <memory>
 #include <limits>

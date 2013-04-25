@@ -1,10 +1,10 @@
 #include "arguments.h"
 
-#include "gadget/SPHGrid.h"
-#include "gadget/Index3.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/GadgetFile.h"
-#include "gadget/Vector3.h"
+#include "quimby/SPHGrid.h"
+#include "quimby/Index3.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/GadgetFile.h"
+#include "quimby/Vector3.h"
 
 #include <ctime>
 #include <limits>
@@ -13,7 +13,7 @@
 #include <sstream>
 #include <fstream>
 
-using namespace gadget;
+using namespace quimby;
 
 void updateRho(std::vector<SmoothParticle> &sph) {
 	const size_t s = sph.size();

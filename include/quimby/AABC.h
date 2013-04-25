@@ -1,11 +1,10 @@
-#ifndef _GADGET_AABC_H_
-#define _GADGET_AABC_H_
+#pragma once
 
 #include "Vector3.h"
 
 #include <iostream>
 
-namespace gadget {
+namespace quimby {
 
 template<typename T>
 class AABC {
@@ -96,12 +95,10 @@ public:
 	}
 };
 
-} // namespace gadget
+} // namespace
 
 template<typename T>
-std::ostream &operator <<(std::ostream &out, const gadget::AABC<T> &a) {
+std::ostream &operator <<(std::ostream &out, const quimby::AABC<T> &a) {
 	out << a.center << " - " << a.extend;
 	return out;
 }
-
-#endif /* _GADGET_AABC_H_ */

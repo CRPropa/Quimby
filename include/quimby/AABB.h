@@ -1,11 +1,10 @@
-#ifndef _GADGET_AABB_H_
-#define _GADGET_AABB_H_
+#pragma once
 
 #include "Vector3.h"
 
 #include <iostream>
 
-namespace gadget {
+namespace quimby {
 
 template<typename T>
 class AABB {
@@ -69,12 +68,10 @@ public:
 	}
 };
 
+} // namespace
+
 template<typename T>
-std::ostream &operator <<(std::ostream &out, const AABB<T> &a) {
+std::ostream &operator <<(std::ostream &out, const quimby::AABB<T> &a) {
 	out << a.min << " - " << a.max;
 	return out;
 }
-
-} // namespace gadget
-
-#endif /* _GADGET_AABB_H_ */

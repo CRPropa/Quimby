@@ -1,5 +1,5 @@
-#include "gadget/SmoothParticle.h"
-#include "gadget/MagneticField.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/MagneticField.h"
 
 #if GADGET_ROOT_ENABLED
 #	include "TNtuple.h"
@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <memory>
 
-using namespace gadget;
+using namespace quimby;
 
 const Vector3f ComaPositionKpc(119717, 221166, 133061);
 const float ComaRadiusKpc = 2693.1857;

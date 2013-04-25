@@ -1,11 +1,10 @@
-#ifndef _GADGET_VECTOR3_H_
-#define _GADGET_VECTOR3_H_
+#pragma once
 
 #include <iostream>
 #include <cmath>
 #include <vector>
 
-namespace gadget {
+namespace quimby {
 
 template<typename T>
 class Vector3 {
@@ -231,6 +230,4 @@ inline std::istream &operator >>(std::istream &in, Vector3<T> &v) {
 typedef Vector3<double> Vector3d;
 typedef Vector3<float> Vector3f;
 
-} // namespace gadget
-
-#endif /* _GADGET_VECTOR3_H_ */
+} // namespace

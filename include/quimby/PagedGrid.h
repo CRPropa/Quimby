@@ -1,5 +1,4 @@
-#ifndef _GADGET_PAGED_GRID_H_
-#define _GADGET_PAGED_GRID_H_
+#pragma once
 
 #include "MurmurHash2.h"
 #include "Index3.h"
@@ -15,7 +14,7 @@
 #include <assert.h>
 #include <stdexcept>
 
-namespace gadget {
+namespace quimby {
 
 /// Single Page containing the elements.
 template<typename ELEMENT>
@@ -836,6 +835,4 @@ inline void PagedGrid<ELEMENT>::pageAccept(Page<ELEMENT> *page, Visitor &v,
 
 }
 
-} // namespace gadget
-
-#endif /* _GADGET_PAGED_GRID_H_ */
+} // namespace

@@ -1,8 +1,8 @@
-#include "gadget/MagneticField.h"
-#include "gadget/SmoothParticle.h"
-#include "gadget/HCube.h"
+#include "quimby/MagneticField.h"
+#include "quimby/SmoothParticle.h"
+#include "quimby/HCube.h"
 
-using namespace gadget;
+using namespace quimby;
 
 int main() {
 	ref_ptr<FileDatabase> db = new FileDatabase;
