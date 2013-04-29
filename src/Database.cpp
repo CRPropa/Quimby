@@ -4,6 +4,8 @@
 
 namespace quimby {
 
+using namespace std;
+
 template<class T>
 inline T clamp(const T &value, const T &min, const T&max) {
 	if (value < min)
@@ -15,11 +17,11 @@ inline T clamp(const T &value, const T &min, const T&max) {
 }
 
 class _CollectVisitor: public DatabaseVisitor {
-	std::vector<SmoothParticle> &particles;
+	vector<SmoothParticle> &particles;
 
 public:
 	size_t count;
-	_CollectVisitor(std::vector<SmoothParticle> &particles) :
+	_CollectVisitor(vector<SmoothParticle> &particles) :
 			particles(particles), count(0) {
 	}
 
@@ -114,11 +116,11 @@ void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 	if (progress) {
 		count++;
 		if (count % 10000 == 0) {
-			std::cout << ".";
-			std::cout.flush();
+			cout << ".";
+			cout.flush();
 		}
 		if (count % 1000000 == 0)
-			std::cout << " " << count << std::endl;
+			cout << " " << count << endl;
 	}
 
 }
@@ -128,7 +130,7 @@ void SimpleSamplingVisitor::end() {
 }
 
 size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
-		std::vector<SmoothParticle> &particles) {
+		vector<SmoothParticle> &particles) {
 	_CollectVisitor v(particles);
 	accept(lower, upper, v);
 	return v.count;
@@ -138,16 +140,15 @@ FileDatabase::FileDatabase() :
 		count(0), blocks_per_axis(0) {
 }
 
-FileDatabase::FileDatabase(const std::string &filename) :
+FileDatabase::FileDatabase(const string &filename) :
 		count(0), blocks_per_axis(0) {
 	if (!open(filename))
-		throw std::runtime_error(
-				"[FileDatabase] could not open database file!");
+		throw runtime_error("[FileDatabase] could not open database file!");
 }
 
-bool FileDatabase::open(const std::string &filename) {
+bool FileDatabase::open(const string &filename) {
 	this->filename = filename;
-	std::ifstream in(filename.c_str(), std::ios::binary);
+	ifstream in(filename.c_str(), ios::binary);
 	in.read((char*) &count, sizeof(count));
 	in.read((char*) &lower, sizeof(lower));
 	in.read((char*) &upper, sizeof(upper));
@@ -181,8 +182,8 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 	if (count == 0)
 		return;
 
-	std::ifstream in(filename.c_str(), std::ios::binary);
-	in.seekg(data_pos, std::ios::beg);
+	ifstream in(filename.c_str(), ios::binary);
+	in.seekg(data_pos, ios::beg);
 	if (!in)
 		return;
 
@@ -210,7 +211,7 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 				if (!block_box.intersects(box))
 					continue;
 				in.seekg(block.start * sizeof(SmoothParticle) + data_pos,
-						std::ios::beg);
+						ios::beg);
 
 				for (size_t i = 0; i < block.count; i++) {
 					SmoothParticle particle;
@@ -235,8 +236,8 @@ void FileDatabase::accept(DatabaseVisitor &visitor) {
 	if (count == 0)
 		return;
 
-	std::ifstream in(filename.c_str(), std::ios::binary);
-	in.seekg(data_pos, std::ios::beg);
+	ifstream in(filename.c_str(), ios::binary);
+	in.seekg(data_pos, ios::beg);
 	if (!in)
 		return;
 
@@ -258,17 +259,27 @@ public:
 	}
 };
 
-void FileDatabase::create(std::vector<SmoothParticle> &particles,
-		const std::string &filename, size_t blocks_per_axis) {
+void FileDatabase::create(vector<SmoothParticle> &particles,
+		const string &filename, size_t blocks_per_axis, bool verbose) {
+
+	if (verbose)
+		cout << "Create FileDatabase '" << filename << "' ..." << endl;
+
 	// set count
 	unsigned int count = particles.size();
 
+	if (verbose)
+		cout << "  sort paticles" << endl;
+
 	// sort the particles using position.x
-	std::sort(particles.begin(), particles.end(), XSorter());
+	sort(particles.begin(), particles.end(), XSorter());
+
+	if (verbose)
+		cout << "  find bounds" << endl;
 
 	// find lower, upper bounds
-	Vector3f lower(std::numeric_limits<float>::max()), upper(
-			std::numeric_limits<float>::min());
+	Vector3f lower(numeric_limits<float>::max()), upper(
+			numeric_limits<float>::min());
 	float maxSL = 0;
 	for (size_t i = 0; i < count; i++) {
 		Vector3f l = particles[i].position
@@ -279,22 +290,25 @@ void FileDatabase::create(std::vector<SmoothParticle> &particles,
 				+ Vector3f(particles[i].smoothingLength);
 		lower.setLower(u);
 		upper.setUpper(u);
-		maxSL = std::max(maxSL, particles[i].smoothingLength);
+		maxSL = max(maxSL, particles[i].smoothingLength);
 	}
 
 	// write meta information
-	std::ofstream out(filename.c_str(), std::ios::binary);
+	ofstream out(filename.c_str(), ios::binary);
 	out.write((char*) &count, sizeof(count));
 	out.write((char*) &lower, sizeof(lower));
 	out.write((char*) &upper, sizeof(upper));
 	out.write((char*) &blocks_per_axis, sizeof(blocks_per_axis));
 
 	// write dummy Blocks. Fill with data later.
-	std::vector<Block> blocks;
+	vector<Block> blocks;
 	blocks.resize(blocks_per_axis * blocks_per_axis * blocks_per_axis);
-	std::ifstream::pos_type block_pos = out.tellp();
+	ifstream::pos_type block_pos = out.tellp();
 	for (size_t i = 0; i < blocks.size(); i++)
 		out.write((char*) &blocks[i], sizeof(Block));
+
+	if (verbose)
+		cout << "  write particles" << endl;
 
 	unsigned int particleOffet = 0;
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
@@ -315,10 +329,15 @@ void FileDatabase::create(std::vector<SmoothParticle> &particles,
 		}
 
 		for (size_t iY = 0; iY < blocks_per_axis; iY++) {
+			if (verbose && (iY > 0)) {
+				cout << ".";
+				cout.flush();
+			}
+
 			box_lower.y = lower.y + iY * blockSize.y;
 			box_upper.y = box_lower.y + blockSize.y;
 
-			std::vector<size_t> indices;
+			vector<size_t> indices;
 			for (size_t i = first_in; i < first_out; i++) {
 				Vector3f pl = particles[i].position
 						- Vector3f(particles[i].smoothingLength);
@@ -349,15 +368,17 @@ void FileDatabase::create(std::vector<SmoothParticle> &particles,
 					if (!block_box.contains(p.position))
 						continue;
 					block.count++;
-					block.margin = std::max(block.margin, p.smoothingLength);
+					block.margin = max(block.margin, p.smoothingLength);
 					out.write((char*) &p, sizeof(SmoothParticle));
 				}
 				particleOffet += block.count;
 			}
 		}
+		if (verbose)
+			cout << " " << iX << endl;
 	}
 
-	out.seekp(block_pos, std::ios::beg);
+	out.seekp(block_pos, ios::beg);
 	size_t total_count = 0;
 	for (size_t i = 0; i < blocks.size(); i++) {
 		out.write((char*) &blocks[i], sizeof(Block));

@@ -100,7 +100,7 @@ int database(Arguments &arguments) {
 
 	std::cout << "create database with " << particles.size() << " particles."
 			<< std::endl;
-	FileDatabase::create(particles, output, bins);
+	FileDatabase::create(particles, output, bins, true);
 
 	std::cout << "done." << std::endl;
 

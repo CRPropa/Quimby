@@ -65,7 +65,7 @@ public:
 	size_t getCount();
 
 	static void create(std::vector<SmoothParticle> &particles,
-			const std::string &filename, size_t blocks_per_axis = 100);
+			const std::string &filename, size_t blocks_per_axis = 100, bool verbose = false);
 
 	void accept(const Vector3f &lower, const Vector3f &upper,
 			DatabaseVisitor &visitor);
