@@ -13,7 +13,8 @@ int main() {
 	HCubeFile4::create(db, db->getLowerBounds(), size, 0.5, 1e-14, 2,
 			"test.hc4");
 
-	HCubeFile4 hf4("test.hc4");
+	HCubeFile4 hf4;
+	hf4.load("test.hc4");
 	const HCube4 *hc = hf4.hcube();
 	for (size_t i = 0; i < 10; i++) {
 		std::cout << hc->getValue(Vector3f(i * size / 10), size) << std::endl;
