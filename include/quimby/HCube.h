@@ -592,24 +592,32 @@ private:
 	int _fd;
 	off_t _size;
 	void *_data;
-	bool _mapped;
+
 public:
+	
+	enum MappingType {
+		Auto,
+		OnDemand,
+		ReadAhead	
+	};
 
 	HCubeFile() :
-			_fd(-1), _size(0), _data(0), _mapped(false) {
+			_fd(-1), _size(0), _data(MAP_FAILED) {
 
+	}
+
+	HCubeFile(const std::string &filename, MappingType mtype = Auto) :
+			_fd(-1), _size(0), _data(MAP_FAILED) {
+		open(filename, mtype);
 	}
 
 	~HCubeFile() {
 		close();
 	}
 
-	bool map(const std::string &filename) {
-		if (_mapped && (_data != MAP_FAILED))
-			return false;
-
-		if (!_mapped && (_data != 0))
-			return false;
+	
+	void open(const std::string &filename, MappingType mtype = Auto) {
+		close();
 
 		_fd = ::open(filename.c_str(), O_RDWR);
 		if (_fd == -1) {
@@ -618,49 +626,27 @@ public:
 		}
 		_size = lseek(_fd, 0, SEEK_END);
 
-		_data = mmap(NULL, _size, PROT_READ, MAP_SHARED, _fd, 0);
+		int flags = MAP_PRIVATE;
+		if (mtype == ReadAhead)
+			flags |= MAP_POPULATE;
+		else if (mtype == Auto) {
+			size_t mem = sysconf (_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+			if (_size < mem - 200) {
+				#ifdef DEBUG
+				std::cout << "[HCubeFile] Automatic mapping: ReadAhead, " << mem / 1000 / 1000 << " MB physical, " << _size / 1000 / 1000 << " MB required" << std::endl;
+				#endif
+				flags |= MAP_POPULATE;
+			} else {
+				#ifdef DEBUG
+				std::cout << "[HCubeFile] Automatic mapping: OnDemand, " << mem / 1000 / 1000 << " MB physical, " << _size / 1000 / 1000 << " MB required" << std::endl;
+				#endif
+			}
+		}
+		_data = mmap(NULL, _size, PROT_READ, flags, _fd, 0);
 		if (_data == MAP_FAILED) {
 			close();
 			throw std::runtime_error("[HCubeFile] error mapping file!");
 		}
-
-		_mapped = true;
-
-		return true;
-	}
-	bool load(const std::string &filename) {
-		if (_mapped && (_data != MAP_FAILED))
-			return false;
-
-		if (!_mapped && (_data != 0))
-			return false;
-
-		FILE *f = ::fopen(filename.c_str(), "rb");
-		if (f == NULL) {
-			perror("HCubeFile");
-			throw std::runtime_error("[HCubeFile] error opening file!");
-		}
-		::fseek(f, 0, SEEK_END);
-		_size = ftell(f);
-		_data = ::malloc(_size);
-		if (_data == 0) {
-			throw std::runtime_error("[HCubeFile] error allocating memory!");
-		}
-
-		size_t element_size = sizeof(HCube<N> );
-		size_t element_count = _size / element_size;
-		::fseek(f, 0, SEEK_SET);
-		std::cout << "[HCubeFile] load " << element_count
-				<< " elements of size " << element_size << std::endl;
-		size_t count = ::fread(_data, element_size, element_count, f);
-		if (count != element_count) {
-			throw std::runtime_error("[HCubeFile] error loading data!");
-		}
-		::fclose(f);
-
-		_mapped = false;
-
-		return true;
 	}
 
 	const HCube<N> *hcube() {
@@ -668,20 +654,15 @@ public:
 	}
 
 	void close() {
-		if (_data && _mapped) {
+		if (_data != MAP_FAILED) {
 			int result = munmap(_data, _size);
 //          if (result < 0) {
 //              printf("Error unmapping 0x0%lx of size %ld\n",
 //                      (unsigned long) _data, _size);
 //          }
-			_data = 0;
+			_data = MAP_FAILED;
 		}
 
-		if (_data || !_mapped) {
-			::free(_data);
-			_data = 0;
-		}
-		_mapped = false;
 		_size = 0;
 
 		if (_fd >= 0) {
