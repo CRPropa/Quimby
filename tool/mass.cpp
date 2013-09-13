@@ -17,7 +17,7 @@ public:
 	Vector3f offset;
 	size_t i;
 
-	void begin() {
+	void begin(const Database &db) {
 		i = 0;
 	}
 

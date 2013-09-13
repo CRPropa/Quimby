@@ -9,12 +9,14 @@
 
 namespace quimby {
 
+class Database;
+
 class DatabaseVisitor {
 public:
 	virtual ~DatabaseVisitor() {
 
 	}
-	virtual void begin() = 0;
+	virtual void begin(const Database &db) = 0;
 	virtual void visit(const SmoothParticle &p) = 0;
 	virtual void end() = 0;
 };
@@ -25,17 +27,17 @@ public:
 	virtual ~Database() {
 	}
 	size_t getParticles(const Vector3f &lower, const Vector3f &upper,
-			std::vector<SmoothParticle> &particles);
+			std::vector<SmoothParticle> &particles) const;
 
-	virtual Vector3f getLowerBounds() = 0;
+	virtual Vector3f getLowerBounds() const = 0;
 
-	virtual Vector3f getUpperBounds() = 0;
+	virtual Vector3f getUpperBounds() const = 0;
 
-	virtual size_t getCount() = 0;
+	virtual size_t getCount() const = 0;
 
 	virtual void accept(const Vector3f &lower, const Vector3f &upper,
-			DatabaseVisitor &visitor) = 0;
-	virtual void accept(DatabaseVisitor &visitor) = 0;
+			DatabaseVisitor &visitor) const = 0;
+	virtual void accept(DatabaseVisitor &visitor) const = 0;
 };
 
 class FileDatabase: public Database {
@@ -58,18 +60,19 @@ public:
 	FileDatabase(const std::string &filename);
 	bool open(const std::string &filename);
 
-	Vector3f getLowerBounds();
+	Vector3f getLowerBounds() const;
 
-	Vector3f getUpperBounds();
+	Vector3f getUpperBounds() const;
 
-	size_t getCount();
+	size_t getCount() const;
 
 	static void create(std::vector<SmoothParticle> &particles,
-			const std::string &filename, size_t blocks_per_axis = 100, bool verbose = false);
+			const std::string &filename, size_t blocks_per_axis = 100,
+			bool verbose = false);
 
 	void accept(const Vector3f &lower, const Vector3f &upper,
-			DatabaseVisitor &visitor);
-	void accept(DatabaseVisitor &visitor);
+			DatabaseVisitor &visitor) const;
+	void accept(DatabaseVisitor &visitor) const;
 };
 
 class SimpleSamplingVisitor: public DatabaseVisitor {
@@ -87,7 +90,7 @@ public:
 
 	SimpleSamplingVisitor(Vector3f *data, size_t N, const Vector3f &offset,
 			float size);
-	void begin();
+	void begin(const Database &db);
 	void visit(const SmoothParticle &part);
 	void end();
 

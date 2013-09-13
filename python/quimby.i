@@ -14,6 +14,9 @@
 %include "exception.i"
 %include "typemaps.i"
 
+%template(FloatVector) std::vector<float>;
+
+
 %{
 #include "quimby/Database.h"
 #include "quimby/MagneticField.h"
@@ -72,6 +75,8 @@
 
 %include "quimby/Referenced.h"
 %include "quimby/SmoothParticle.h"
+
+%template(SmoothParticleVector) std::vector<quimby::SmoothParticle>;
 
 %feature("director") DatabaseVisitor;
 %template(DatabaseRefPtr) quimby::ref_ptr<quimby::Database>;

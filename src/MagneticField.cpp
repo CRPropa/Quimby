@@ -59,7 +59,7 @@ public:
 
 	}
 
-	void begin() {
+	void begin(const Database &db) {
 
 	}
 

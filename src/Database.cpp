@@ -25,7 +25,7 @@ public:
 			particles(particles), count(0) {
 	}
 
-	void begin() {
+	void begin(const Database &db) {
 		count = 0;
 	}
 
@@ -68,7 +68,7 @@ void SimpleSamplingVisitor::showProgress(bool progress) {
 	this->progress = progress;
 }
 
-void SimpleSamplingVisitor::begin() {
+void SimpleSamplingVisitor::begin(const Database &db) {
 	count = 0;
 }
 
@@ -130,7 +130,7 @@ void SimpleSamplingVisitor::end() {
 }
 
 size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
-		vector<SmoothParticle> &particles) {
+		vector<SmoothParticle> &particles) const {
 	_CollectVisitor v(particles);
 	accept(lower, upper, v);
 	return v.count;
@@ -166,19 +166,19 @@ bool FileDatabase::open(const string &filename) {
 	return in.good();
 }
 
-Vector3f FileDatabase::getLowerBounds() {
+Vector3f FileDatabase::getLowerBounds() const {
 	return lower;
 }
 
-Vector3f FileDatabase::getUpperBounds() {
+Vector3f FileDatabase::getUpperBounds() const {
 	return upper;
 }
-size_t FileDatabase::getCount() {
+size_t FileDatabase::getCount() const {
 	return count;
 }
 
 void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
-		DatabaseVisitor &visitor) {
+		DatabaseVisitor &visitor) const {
 	if (count == 0)
 		return;
 
@@ -191,7 +191,7 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
 	Vector3f box_lower, box_upper;
 
-	visitor.begin();
+	visitor.begin(*this);
 
 	for (size_t iX = 0; iX < blocks_per_axis; iX++) {
 		box_lower.x = lower.x + iX * blockSize.x;
@@ -202,8 +202,8 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 			for (size_t iZ = 0; iZ < blocks_per_axis; iZ++) {
 				box_lower.z = lower.z + iZ * blockSize.z;
 				box_upper.z = box_lower.z + blockSize.z;
-				Block &block = blocks[iX * blocks_per_axis * blocks_per_axis
-						+ iY * blocks_per_axis + iZ];
+				const Block &block = blocks[iX * blocks_per_axis
+						* blocks_per_axis + iY * blocks_per_axis + iZ];
 
 				AABB<float> block_box(box_lower - Vector3f(block.margin),
 						box_upper + Vector3f(block.margin));
@@ -232,7 +232,7 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 	visitor.end();
 }
 
-void FileDatabase::accept(DatabaseVisitor &visitor) {
+void FileDatabase::accept(DatabaseVisitor &visitor) const {
 	if (count == 0)
 		return;
 
@@ -241,7 +241,7 @@ void FileDatabase::accept(DatabaseVisitor &visitor) {
 	if (!in)
 		return;
 
-	visitor.begin();
+	visitor.begin(*this);
 
 	SmoothParticle particle;
 	for (size_t i = 0; i < count; i++) {

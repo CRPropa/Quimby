@@ -38,7 +38,7 @@ public:
 	public:
 		std::ofstream out;
 		size_t i;
-		void begin() {
+		void begin(const Database &db) {
 			i = 0;
 		}
 		void visit(const SmoothParticle &p) {
@@ -133,7 +133,7 @@ public:
 		TNtuple *ntuple;
 #endif
 		std::ofstream out;
-		void begin() {
+		void begin(const Database &db) {
 
 		}
 		void visit(const SmoothParticle &p) {
