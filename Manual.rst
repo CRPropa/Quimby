@@ -3,7 +3,7 @@ Quimby Manual
 
 :Author: Gero Müller <gero.mueller@physik.rwth-aachen.de>
 :Version: $Revision: initial draft $
-:Date: 07/01/2013
+:Date: 29.04.2013
 
 .. contents:: Table of Contents
    :backlinks: top
@@ -54,7 +54,7 @@ Requirements
 ~~~~~~~~~~~~
 
 * C++ Compiler
-* CMake
+* CMake_
 
 Optional:
 
@@ -294,10 +294,12 @@ Example::
 References
 ----------
 
-.. [Dolag2008] `arXiv:0807.3553 [astro-ph]`__
-__ http://arxiv.org/abs/0807.3553v2
+.. [Dolag2008] `2009MNRAS.398.1678D Dolag, K., \& Stasyszyn, F.\ 2009, \mnras, 398, 1678`__
+__ http://adsabs.harvard.edu/abs/2009MNRAS.398.1678D
 
 .. _GADGET: http://www.mpa-garching.mpg.de/galform/gadget/
 .. _ROOT: http://root.cern.ch/
 .. _Python: http://www.python.org/
 .. _SWIG: http://www.swig.org/
+.. _CMake: http://www.cmake.org/
+ 
