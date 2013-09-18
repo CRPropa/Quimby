@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 
 namespace quimby {
 
@@ -69,6 +70,30 @@ public:
 	static void create(std::vector<SmoothParticle> &particles,
 			const std::string &filename, size_t blocks_per_axis = 100,
 			bool verbose = false);
+
+	void accept(const Vector3f &lower, const Vector3f &upper,
+			DatabaseVisitor &visitor) const;
+	void accept(DatabaseVisitor &visitor) const;
+};
+
+class Databases: public Database {
+
+	unsigned int count;
+	Vector3f lower, upper;
+	typedef std::set<ref_ptr<Database> > set_t;
+	typedef std::set<ref_ptr<Database> >::iterator iter_t;
+	set_t databases;
+
+	void update();
+public:
+
+	Databases();
+	void add(ref_ptr<Database> db);
+	void remove(ref_ptr<Database> db);
+
+	Vector3f getLowerBounds() const;
+	Vector3f getUpperBounds() const;
+	size_t getCount() const;
 
 	void accept(const Vector3f &lower, const Vector3f &upper,
 			DatabaseVisitor &visitor) const;

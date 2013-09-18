@@ -7,21 +7,23 @@
 #include <stdexcept>
 
 using namespace quimby;
+using namespace std;
 
-const char database_usage[] = "create database file from GADGET files.\n"
-		"\nOptions:\n\n"
-		"-f     list of input files, space seperated\n"
-		"-o     filename of the database\n"
-		"-h     Hubble constant to use, default: 0.7\n"
-		"-px, -py, -pz\n"
-		"       x, y, z of the pivot point for hubble streching, default: 120000\n"
-		"-bins  number of bins used for database lookup, default: 100\n";
+const char database_usage[] =
+		"create database file from GADGET files.\n"
+				"\nOptions:\n\n"
+				"-f     list of input files, space seperated\n"
+				"-o     filename of the database\n"
+				"-h     Hubble constant to use, default: use value from file\n"
+				"-px, -py, -pz\n"
+				"       x, y, z of the pivot point for hubble streching, default: 120000\n"
+				"-bins  number of bins used for database lookup, default: 100\n";
 
 int database(Arguments &arguments) {
-	std::vector<std::string> files;
+	vector<string> files;
 	arguments.getVector("-f", files);
-	std::string output = arguments.getString("-o", "");
-	float h = arguments.getFloat("-h", 0.7);
+	string output = arguments.getString("-o", "");
+	float hubble = arguments.getFloat("-h", 0);
 	Vector3f pivot;
 	pivot.x = arguments.getFloat("-px", 120000);
 	pivot.y = arguments.getFloat("-py", 120000);
@@ -29,24 +31,23 @@ int database(Arguments &arguments) {
 	size_t bins = arguments.getFloat("-bins", 100);
 
 	if ((files.size() == 0) || (output.size() == 0)) {
-		std::cout << database_usage << std::endl;
+		cout << database_usage << endl;
 		return 1;
 	}
 
-	std::cout << "Output:   " << output << std::endl;
-	std::cout << "h:        " << h << std::endl;
-	std::cout << "Pivot:    " << pivot << " kpc" << std::endl;
-	std::cout << "bins:     " << bins << std::endl;
+	cout << "Output:   " << output << endl;
+	cout << "Pivot:    " << pivot << " kpc" << endl;
+	cout << "Bins:     " << bins << endl;
 
-	std::vector<SmoothParticle> particles;
+	vector<SmoothParticle> particles;
 	for (size_t iArg = 0; iArg < files.size(); iArg++) {
-		std::cout << "Open " << files[iArg] << " (" << (iArg + 1) << "/"
-				<< files.size() << ")" << std::endl;
+		cout << "Load " << files[iArg] << " (" << (iArg + 1) << "/"
+				<< files.size() << ")" << endl;
 
 		GadgetFile file;
 		file.open(files[iArg]);
 		if (file.good() == false) {
-			throw std::runtime_error("Failed to open file " + files[iArg]);
+			throw runtime_error("Failed to open file " + files[iArg]);
 		}
 
 		file.readHeader();
@@ -54,28 +55,47 @@ int database(Arguments &arguments) {
 		if (pn < 1)
 			return 0;
 
-		std::vector<float> pos;
+		float h = hubble;
+		if (h == 0)
+			h = file.getHeader().hubble;
+		cout << "  Hubble: " << h << endl;
+
+		float constMass = file.getHeader().massList[0];
+
+		cout << "  Read POS Block..." << endl;
+		vector<float> pos;
 		if (file.readFloatBlock("POS ", pos) == false) {
-			throw std::runtime_error(
-					"Failed read POS from file " + files[iArg]);
+			throw runtime_error("Failed read POS from file " + files[iArg]);
 		}
 
-		std::vector<float> bfld;
+		cout << "  Read BFLD Block..." << endl;
+		vector<float> bfld;
 		if (file.readFloatBlock("BFLD", bfld) == false) {
-			throw std::runtime_error(
-					"Failed read BFLD from file " + files[iArg]);
+			throw runtime_error("Failed read BFLD from file " + files[iArg]);
 		}
 
-		std::vector<float> hsml;
+		cout << "  Read HSML Block..." << endl;
+		vector<float> hsml;
 		if (file.readFloatBlock("HSML", hsml) == false) {
-			throw std::runtime_error(
-					"Failed read HSML from file " + files[iArg]);
+			throw runtime_error("Failed read HSML from file " + files[iArg]);
 		}
 
-		std::vector<float> rho;
+		cout << "  Read RHO Block..." << endl;
+		vector<float> rho;
 		if (file.readFloatBlock("RHO ", rho) == false) {
-			throw std::runtime_error(
-					"Failed read RHO from file " + files[iArg]);
+			throw runtime_error("Failed read RHO from file " + files[iArg]);
+		}
+
+		vector<float> mass;
+		if (constMass == 0) {
+			cout << "  Read MASS Block..." << endl;
+			if (file.readFloatBlock("MASS ", mass) == false) {
+				throw runtime_error(
+						"Failed read MASS from file " + files[iArg]);
+			}
+		} else {
+			cout << "  Using constant mass: " << constMass << endl;
+
 		}
 
 		for (int iP = 0; iP < pn; iP++) {
@@ -89,7 +109,11 @@ int database(Arguments &arguments) {
 			particle.bfield.y = bfld[iP * 3 + 1];
 			particle.bfield.z = bfld[iP * 3 + 2];
 
-			particle.mass = file.getHeader().massList[0];
+			if (constMass == 0)
+				particle.mass = mass[iP];
+			else
+				particle.mass = constMass;
+
 			particle.rho = rho[iP];
 
 			particle.toKpc(h, pivot);
@@ -98,18 +122,18 @@ int database(Arguments &arguments) {
 		}
 	}
 
-	std::cout << "create database with " << particles.size() << " particles."
-			<< std::endl;
+	cout << "create database with " << particles.size() << " particles."
+			<< endl;
 	FileDatabase::create(particles, output, bins, true);
 
-	std::cout << "done." << std::endl;
+	cout << "done." << endl;
 
 	FileDatabase db;
 	db.open(output);
-	std::cout << "Resulting Database:" << std::endl;
-	std::cout << " count: " << db.getCount() << std::endl;
-	std::cout << " lower: " << db.getLowerBounds() << std::endl;
-	std::cout << " upper: " << db.getUpperBounds() << std::endl;
+	cout << "Resulting Database:" << endl;
+	cout << " count: " << db.getCount() << endl;
+	cout << " lower: " << db.getLowerBounds() << endl;
+	cout << " upper: " << db.getUpperBounds() << endl;
 
 	return 0;
 }

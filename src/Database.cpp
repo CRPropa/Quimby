@@ -386,4 +386,86 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 	}
 }
 
+Databases::Databases() :
+		count(0) {
+
+}
+
+void Databases::add(ref_ptr<Database> db) {
+	databases.insert(db);
+}
+
+void Databases::remove(ref_ptr<Database> db) {
+	databases.erase(db);
+}
+
+Vector3f Databases::getLowerBounds() const {
+	return lower;
+}
+
+Vector3f Databases::getUpperBounds() const {
+	return upper;
+}
+size_t Databases::getCount() const {
+	return count;
+}
+
+void Databases::update() {
+	lower = Vector3f(numeric_limits<float>::max());
+	upper = Vector3f(numeric_limits<float>::min());
+	count = 0;
+
+	for (iter_t i = databases.begin(); i != databases.end(); i++) {
+		Vector3f l = (*i)->getLowerBounds();
+		lower.setLower(l);
+		upper.setUpper(l);
+
+		Vector3f u = (*i)->getUpperBounds();
+		lower.setLower(u);
+		upper.setUpper(u);
+
+		count += (*i)->getCount();
+	}
+}
+
+class DatabasesVisitorAdapter: public DatabaseVisitor {
+	DatabaseVisitor &visitor;
+public:
+	DatabasesVisitorAdapter(DatabaseVisitor &visitor) :
+			visitor(visitor) {
+
+	}
+
+	virtual void begin(const Database &db) {
+	}
+
+	virtual void visit(const SmoothParticle &p) {
+		visitor.visit(p);
+	}
+
+	virtual void end() {
+	}
+};
+
+void Databases::accept(const Vector3f &lower, const Vector3f &upper,
+		DatabaseVisitor &visitor) const {
+	visitor.begin(*this);
+	DatabasesVisitorAdapter v(visitor);
+	for (iter_t i = databases.begin(); i != databases.end(); i++) {
+		// TODO: perform aabb test
+		cout << (*i)->getCount() << endl;
+		(*i)->accept(lower, upper, v);
+	}
+}
+
+void Databases::accept(DatabaseVisitor &visitor) const {
+	visitor.begin(*this);
+	DatabasesVisitorAdapter v(visitor);
+	for (iter_t i = databases.begin(); i != databases.end(); i++) {
+		// TODO: perform aabb test
+		(*i)->accept(v);
+	}
+	visitor.end();
+}
+
 } // namespace
