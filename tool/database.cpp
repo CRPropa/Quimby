@@ -25,9 +25,9 @@ int database(Arguments &arguments) {
 	string output = arguments.getString("-o", "");
 	float hubble = arguments.getFloat("-h", 0);
 	Vector3f pivot;
-	pivot.x = arguments.getFloat("-px", 120000);
-	pivot.y = arguments.getFloat("-py", 120000);
-	pivot.z = arguments.getFloat("-pz", 120000);
+	pivot.x = arguments.getFloat("-px", 0);
+	pivot.y = arguments.getFloat("-py", 0);
+	pivot.z = arguments.getFloat("-pz", 0);
 	size_t bins = arguments.getFloat("-bins", 100);
 
 	if ((files.size() == 0) || (output.size() == 0)) {

@@ -3,10 +3,10 @@ OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 DEPS=$(wildcard include/quimby/*.h)
 CXXFLAGS:=-Iinclude -fopenmp -O3 $(CXXFLAGS)
 
-quimby: $(OBJS)
+quimby-static: $(OBJS)
 	$(CXX) -static -o $@ $^ $(CXXFLAGS)
 
 clean:
 	rm -f $(OBJS)
-	rm -f quimby
+	rm -f quimby-static
 	
