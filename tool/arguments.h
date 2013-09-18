@@ -76,6 +76,8 @@ public:
 		for (i++; i < arguments.size(); i++) {
 			if (arguments[i][0] != '-')
 				v.push_back(arguments[i]);
+			else
+				break;
 		}
 
 	}

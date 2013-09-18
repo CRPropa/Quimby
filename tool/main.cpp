@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <string>
 #include <ctime>
+
 #include <omp.h>
 
 #include <fcntl.h>
@@ -133,7 +134,7 @@ int hc(Arguments &arguments) {
 }
 
 int bigfield(Arguments &arguments) {
-	uint64_t bins = arguments.getInt("-bins", 10);
+	uint64_t bins = arguments.getInt("-bins", 64);
 	std::cout << "Bins: " << bins << std::endl;
 
 	unsigned int chunks = arguments.getInt("-c", 1);
@@ -151,8 +152,8 @@ int bigfield(Arguments &arguments) {
 	std::string output = arguments.getString("-o", "field.raw");
 	std::cout << "Output: " << output << std::endl;
 
-	std::string database = arguments.getString("-db", "field.db");
-	std::cout << "Database: " << database << std::endl;
+	std::vector<std::string> databases;
+	arguments.getVector("-db", databases);
 
 	if (bins % chunks) {
 		std::cout << "Bins must be dividable by chunks!" << std::endl;
@@ -162,10 +163,19 @@ int bigfield(Arguments &arguments) {
 	float chunkSizeKpc = sizeKpc / chunks;
 	size_t chunkSizeBins = bins / chunks;
 
-	FileDatabase db;
-	if (!db.open(database)) {
-		std::cout << "could not open database: " << database << std::endl;
-		return 1;
+	Databases db;
+	std::cout << "Open databases: " << std::endl;
+	for (size_t iDB; iDB < databases.size(); iDB++) {
+		ref_ptr<FileDatabase> fdb = new FileDatabase();
+		if (!fdb->open(databases[iDB])) {
+			std::cout << "Error: Could not open database: " << databases[iDB]
+					<< std::endl;
+			return 1;
+		} else {
+			std::cout << "  " << databases[iDB] << ", particles: "
+					<< fdb->getCount() << std::endl;
+		}
+		db.add(fdb);
 	}
 
 	// calculate max size
