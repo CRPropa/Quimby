@@ -115,6 +115,10 @@ public:
 		return *this;
 	}
 
+	bool operator ==(const ref_ptr& rp) {
+		return (_ptr == rp.get());
+	}
+
 	template<class Other> ref_ptr& operator =(const ref_ptr<Other>& rp) {
 		assign(rp);
 		return *this;

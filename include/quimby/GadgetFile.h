@@ -10,10 +10,11 @@ class GadgetFile {
 
 public:
 	struct Header {
-		int particleNumberList[6];
+		unsigned int particleNumberList[6];
 		double massList[6];
 		double timeOfSnapshot;
 		double redshift;
+		double hubble;
 	};
 
 private:

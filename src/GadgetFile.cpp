@@ -125,6 +125,11 @@ bool GadgetFile::readHeader() {
 	blocksize -= read(header.massList, 6);
 	blocksize -= read(&header.timeOfSnapshot);
 	blocksize -= read(&header.redshift);
+	int tmpi[10];
+	blocksize -= read(tmpi, 10);
+	double tmpd[3];
+	blocksize -= read(tmpd, 3);
+	blocksize -= read(&header.hubble);
 	file.seekg(blocksize, std::ios::cur);
 	readBlockSize();
 
