@@ -46,7 +46,6 @@ add_executable( quimby-tool
 	tool/sph
 	tool/sph-dump
 	tool/database
-	tool/lmf
 )
 SET_TARGET_PROPERTIES(quimby-tool PROPERTIES OUTPUT_NAME "quimby")
 add_dependencies(quimby-tool quimby-lib) 
