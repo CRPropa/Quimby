@@ -215,6 +215,7 @@ inline Vector3<double> &Vector3<double>::operator %=(const double &f) {
 	return *this;
 }
 
+#ifndef SWIG
 template<typename T>
 inline std::ostream &operator <<(std::ostream &out, const Vector3<T> &v) {
 	out << v.x << " " << v.y << " " << v.z;
@@ -226,6 +227,7 @@ inline std::istream &operator >>(std::istream &in, Vector3<T> &v) {
 	in >> v.x >> v.y >> v.z;
 	return in;
 }
+#endif
 
 typedef Vector3<double> Vector3d;
 typedef Vector3<float> Vector3f;

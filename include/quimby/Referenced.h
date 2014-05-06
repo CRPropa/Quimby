@@ -136,6 +136,7 @@ public:
 		return *this;
 	}
 
+#ifndef SWIG
 	operator T*() const {
 		return _ptr;
 	}
@@ -143,6 +144,8 @@ public:
 	T& operator*() const {
 		return *_ptr;
 	}
+#endif
+
 	T* operator->() const {
 		return _ptr;
 	}

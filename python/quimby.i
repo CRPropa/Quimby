@@ -32,13 +32,14 @@
 	{
 		$action
 	}
-	catch (const std::exception& e) {
-		SWIG_exception(SWIG_RuntimeError, e.what());
-	}
 	catch( Swig::DirectorException &e ) {
 		PyErr_Print();
 		SWIG_exception(SWIG_RuntimeError, e.getMessage());
-	} catch (...) {
+	}
+	catch (const std::exception& e) {
+		SWIG_exception(SWIG_RuntimeError, e.what());
+	}
+    catch (...) {
 		SWIG_exception(SWIG_RuntimeError, "unknown exception");
 	}
 }
@@ -58,13 +59,7 @@
 %ignore operator>>;
 %ignore *::operator=;
 %ignore *::operator!;
-%ignore operator quimby::**;
-/*
- %ignore operator mpc::Candidate*;
- %ignore operator mpc::Module*;
- %ignore operator mpc::ModuleList*;
- %ignore operator mpc::MagneticField*;
- */
+
 
 %feature("ref") quimby::Referenced "$this->addReference();"
 %feature("unref") quimby::Referenced "$this->removeReference();"
@@ -79,7 +74,7 @@
 %template(SmoothParticleVector) std::vector<quimby::SmoothParticle>;
 
 %feature("director") DatabaseVisitor;
-%template(DatabaseRefPtr) quimby::ref_ptr<quimby::Database>;
+REF_PTR(Database, quimby::Database)
 %include "quimby/Database.h"
 
 %include "quimby/HCube.h"
@@ -96,6 +91,7 @@ TPL_REF_PTR(HCubeFile8, quimby::HCubeFile<8>)
 TPL_REF_PTR(HCubeFile16, quimby::HCubeFile<16>)
 TPL_REF_PTR(HCubeFile32, quimby::HCubeFile<32>)
 TPL_REF_PTR(HCubeFile64, quimby::HCubeFile<64>)
+
 
 %apply float &INOUT { float &rho };
 %include "quimby/MagneticField.h"
