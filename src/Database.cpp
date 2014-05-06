@@ -453,7 +453,6 @@ void Databases::accept(const Vector3f &lower, const Vector3f &upper,
 	DatabasesVisitorAdapter v(visitor);
 	for (iter_t i = databases.begin(); i != databases.end(); i++) {
 		// TODO: perform aabb test
-		cout << (*i)->getCount() << endl;
 		(*i)->accept(lower, upper, v);
 	}
 }

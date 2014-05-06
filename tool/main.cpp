@@ -132,6 +132,81 @@ int hc(Arguments &arguments) {
 	return 0;
 }
 
+int hcdb(Arguments &arguments) {
+	size_t n = arguments.getInt("-n", 4);
+	std::cout << "N: " << n << std::endl;
+
+	float sizeKpc = arguments.getFloat("-size", 10);
+	std::cout << "Size: " << sizeKpc << std::endl;
+
+	size_t depth = arguments.getInt("-depth", 2);
+	std::cout << "Depth: " << depth << std::endl;
+
+	std::string output = arguments.getString("-o", "hcube.hc4");
+	std::cout << "Output: " << output << std::endl;
+
+	std::vector<std::string> databases;
+	arguments.getVector("-db", databases);
+
+	Databases db;
+	std::cout << "Open databases: " << std::endl;
+	for (size_t iDB; iDB < databases.size(); iDB++) {
+		ref_ptr<FileDatabase> fdb = new FileDatabase();
+		if (!fdb->open(databases[iDB])) {
+			std::cout << "Error: Could not open database: " << databases[iDB]
+					<< std::endl;
+			return 1;
+		} else {
+			std::cout << "  " << databases[iDB] << ", particles: "
+					<< fdb->getCount() << std::endl;
+		}
+		db.add(fdb);
+	}
+
+	unsigned int bins = arguments.getInt("-bins", 10);
+	std::cout << "Bins: " << bins << std::endl;
+
+	float threshold = arguments.getFloat("-t", 1e-15);
+	std::cout << "Threshold: " << threshold << std::endl;
+
+	float error = arguments.getFloat("-e", 0.01);
+	std::cout << "Error: " << error << std::endl;
+
+	Vector3f offsetKpc;
+	offsetKpc.x = arguments.getFloat("-ox", 0);
+	offsetKpc.y = arguments.getFloat("-oy", 0);
+	offsetKpc.z = arguments.getFloat("-oz", 0);
+	std::cout << "Offset: " << offsetKpc << std::endl;
+
+	switch (n) {
+	case 2:
+		HCubeFile<2>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 4:
+		HCubeFile<4>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 8:
+		HCubeFile<8>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 16:
+		HCubeFile<16>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 32:
+		HCubeFile<32>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 64:
+		HCubeFile<64>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	case 128:
+		HCubeFile<128>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		break;
+	default:
+		std::cout << "Invalid n: " << n << std::endl;
+		break;
+	}
+	return 0;
+}
+
 int bigfield(Arguments &arguments) {
 	uint64_t bins = arguments.getInt("-bins", 64);
 	std::cout << "Bins: " << bins << std::endl;
@@ -860,6 +935,8 @@ int main(int argc, const char **argv) {
 			return bigfield(arguments);
 		else if (function == "hc")
 			return hc(arguments);
+		else if (function == "hcdb")
+			return hcdb(arguments);
 		else if (function == "bfieldtest")
 			return bfieldtest(arguments);
 		else if (function == "pp")

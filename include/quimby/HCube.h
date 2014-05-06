@@ -34,6 +34,11 @@ public:
 		} else {
 
 			for (size_t n = 0; n < N3; n++) {
+				if (depth == 0)
+					std::cout << "\n " << n;
+				else if(depth == 1)
+					std::cout << "." << n;
+				std::cout.flush();
 				HCube<N> *hc = this + (idx - thisidx);
 				size_t i = n / N2;
 				size_t j = (n % N2) / N;
