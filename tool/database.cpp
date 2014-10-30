@@ -15,6 +15,7 @@ const char database_usage[] =
 				"-f     list of input files, space seperated\n"
 				"-o     filename of the database\n"
 				"-h     Hubble constant to use, default: use value from file\n"
+				"-m     Mass to use, default: use value from file\n"
 				"-px, -py, -pz\n"
 				"       x, y, z of the pivot point for hubble streching, default: 120000\n"
 				"-bins  number of bins used for database lookup, default: 100\n";
@@ -28,6 +29,7 @@ int database(Arguments &arguments) {
 	pivot.x = arguments.getFloat("-px", 0);
 	pivot.y = arguments.getFloat("-py", 0);
 	pivot.z = arguments.getFloat("-pz", 0);
+	float mass = arguments.getFloat("-m", 0);
 	size_t bins = arguments.getFloat("-bins", 100);
 
 	if ((files.size() == 0) || (output.size() == 0)) {
@@ -60,7 +62,11 @@ int database(Arguments &arguments) {
 			h = file.getHeader().hubble;
 		cout << "  Hubble: " << h << endl;
 
-		float constMass = file.getHeader().massList[0];
+		float constMass = 0;
+		if (mass == 0)
+			constMass = file.getHeader().massList[0];
+		else
+			constMass = mass;
 
 		cout << "  Read POS Block..." << endl;
 		vector<float> pos;
@@ -98,6 +104,9 @@ int database(Arguments &arguments) {
 
 		}
 
+		size_t pnn = particles.size() + pn;
+		cout << "  Number of particles: " << pn << "/" << pnn << endl;
+		particles.reserve(pnn);
 		for (int iP = 0; iP < pn; iP++) {
 			SmoothParticle particle;
 			particle.smoothingLength = hsml[iP];
@@ -131,6 +140,7 @@ int database(Arguments &arguments) {
 	FileDatabase db;
 	db.open(output);
 	cout << "Resulting Database:" << endl;
+
 	cout << " count: " << db.getCount() << endl;
 	cout << " lower: " << db.getLowerBounds() << endl;
 	cout << " upper: " << db.getUpperBounds() << endl;
