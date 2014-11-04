@@ -4,13 +4,14 @@
 
 namespace quimby {
 
-const GadgetFile::Header &GadgetFile::getHeader() const {
+const GadgetFileHeader &GadgetFile::getHeader() const {
 	return header;
 }
 
 bool GadgetFile::open(const std::string &filename) {
 	swap = false;
 	file.open(filename.c_str(), std::ios::binary);
+	readHeader();
 	return file.good();
 }
 
@@ -73,6 +74,9 @@ size_t GadgetFile::findBlock(const std::string &label) {
 
 	}
 
+	file.seekg(0, std::ios::beg);
+    file.clear();
+
 	return 0;
 }
 
@@ -81,6 +85,7 @@ void GadgetFile::printBlocks() {
 	std::string blocklabel;
 
 	file.seekg(0, std::ios::beg);
+    file.clear();
 	while (file.good() && blocksize == 0) {
 		readBlockSize();
 		if (!good())
@@ -110,6 +115,9 @@ void GadgetFile::printBlocks() {
 		file.seekg(blocksize, std::ios::cur);
 		blocksize = 0;
 	}
+
+	file.seekg(0, std::ios::beg);
+    file.clear();
 }
 
 bool GadgetFile::readHeader() {
@@ -119,10 +127,12 @@ bool GadgetFile::readHeader() {
 	}
 
 	readBlockSize();
-	blocksize -= read(header.particleNumberList, 6);
+	header.particleNumberList.resize(6);
+	blocksize -= read(header.particleNumberList.data(), 6);
 	// if the value in massList is 0, then an array with per particle masses is available.
 	// Unit: 10^10 sun masses per h
-	blocksize -= read(header.massList, 6);
+	header.massList.resize(6);
+	blocksize -= read(header.massList.data(), 6);
 	blocksize -= read(&header.timeOfSnapshot);
 	blocksize -= read(&header.redshift);
 	int tmpi[10];

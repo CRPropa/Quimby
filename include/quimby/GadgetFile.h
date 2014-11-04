@@ -4,29 +4,30 @@
 #include <iostream>
 #include <vector>
 
+#include "quimby/Referenced.h"
+
 namespace quimby {
 
-class GadgetFile {
+struct GadgetFileHeader {
+	std::vector<unsigned int> particleNumberList;
+	std::vector<double> massList;
+	double timeOfSnapshot;
+	double redshift;
+	double hubble;
+};
 
-public:
-	struct Header {
-		unsigned int particleNumberList[6];
-		double massList[6];
-		double timeOfSnapshot;
-		double redshift;
-		double hubble;
-	};
+class GadgetFile : public Referenced {
 
 private:
 	std::ifstream file;
 	bool swapEndian;
 	int blksize;
 	bool swap;
-	Header header;
+	GadgetFileHeader header;
 
 public:
 
-	const Header &getHeader() const;
+	const GadgetFileHeader &getHeader() const;
 
 	bool open(const std::string &filename);
 

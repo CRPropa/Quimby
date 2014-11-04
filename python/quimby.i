@@ -15,6 +15,8 @@
 %include "typemaps.i"
 
 %template(FloatVector) std::vector<float>;
+%template(DoubleVector) std::vector<double>;
+%template(UnsignedIntVector) std::vector<unsigned int>;
 
 
 %{
@@ -24,6 +26,7 @@
 #include "quimby/SmoothParticle.h"
 #include "quimby/Vector3.h"
 #include "quimby/HCube.h"
+#include "quimby/GadgetFile.h"
 %}
 
 %exception
@@ -104,3 +107,6 @@ TPL_REF_PTR(HCubeMagneticField8, quimby::HCubeMagneticField<8>)
 TPL_REF_PTR(HCubeMagneticField16, quimby::HCubeMagneticField<16>)
 TPL_REF_PTR(HCubeMagneticField32, quimby::HCubeMagneticField<32>)
 TPL_REF_PTR(HCubeMagneticField64, quimby::HCubeMagneticField<64>)
+
+%include "quimby/GadgetFile.h"
+REF_PTR(GadgetFile, quimby::GadgetFile)
