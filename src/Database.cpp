@@ -259,6 +259,20 @@ public:
 	}
 };
 
+class YSorter {
+public:
+	bool operator()(const SmoothParticle &i, const SmoothParticle &j) {
+		return (i.position.y < j.position.y);
+	}
+};
+
+class ZSorter {
+public:
+	bool operator()(const SmoothParticle &i, const SmoothParticle &j) {
+		return (i.position.z < j.position.z);
+	}
+};
+
 void FileDatabase::create(vector<SmoothParticle> &particles,
 		const string &filename, size_t blocks_per_axis, bool verbose) {
 
@@ -270,9 +284,6 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 
 	if (verbose)
 		cout << "  sort paticles" << endl;
-
-	// sort the particles using position.x
-	sort(particles.begin(), particles.end(), XSorter());
 
 	if (verbose)
 		cout << "  find bounds" << endl;
@@ -291,6 +302,12 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 		lower.setLower(u);
 		upper.setUpper(u);
 		maxSL = max(maxSL, particles[i].smoothingLength);
+	}
+
+	if (verbose) {
+		cout << "  maxSL " << maxSL << endl;
+		cout << "  lower " << lower << endl;
+		cout << "  upper " << upper << endl;
 	}
 
 	// write meta information
@@ -313,20 +330,30 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 	unsigned int particleOffet = 0;
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
 	Vector3f box_lower, box_upper;
+
+	// sort the particles using position.x
+	sort(particles.begin(), particles.end(), XSorter());
+	size_t first_in_x = 0, first_out_x = 0;
+
 	for (size_t iX = 0; iX < blocks_per_axis; iX++) {
 		box_lower.x = lower.x + iX * blockSize.x;
 		box_upper.x = box_lower.x + blockSize.x;
 
-		// find all particles in X bin, limit number of particles in nested loop
-		size_t first_in = 0, first_out = count;
-		float bin_lower = box_lower.x - 2 * maxSL;
-		for (size_t i = 0; i < count; i++) {
+		first_in_x = first_out_x;
+
+		// find all particles in X bin
+		for (size_t i = first_in_x; i < count; i++) {
 			float px = particles[i].position.x;
-			if (px < bin_lower && i > first_in)
-				first_in = i;
-			if (px > box_upper.x && i < first_out)
-				first_out = i;
+			if (px > box_upper.x) {
+				first_out_x = i;
+				break;
+			}
 		}
+
+		// sort the particles using position.x
+		sort(particles.begin() + first_in_x, particles.begin() + first_out_x,
+				YSorter());
+		size_t first_in_y = first_in_x, first_out_y = first_in_x;
 
 		for (size_t iY = 0; iY < blocks_per_axis; iY++) {
 			if (verbose && (iY > 0)) {
@@ -337,40 +364,47 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 			box_lower.y = lower.y + iY * blockSize.y;
 			box_upper.y = box_lower.y + blockSize.y;
 
-			vector<size_t> indices;
-			for (size_t i = first_in; i < first_out; i++) {
-				Vector3f pl = particles[i].position
-						- Vector3f(particles[i].smoothingLength);
-				Vector3f pu = particles[i].position
-						+ Vector3f(particles[i].smoothingLength);
-				if (pl.x > box_upper.x)
-					continue;
-				if (pu.x < box_lower.x)
-					continue;
-				if (pl.y > box_upper.y)
-					continue;
-				if (pu.y < box_lower.y)
-					continue;
-				indices.push_back(i);
+			first_in_y = first_out_y;
+
+			// find all particles in Y bin
+			for (size_t i = first_in_y; i < first_out_x; i++) {
+				float py = particles[i].position.y;
+				if (py > box_upper.y) {
+					first_out_y = i;
+					break;
+				}
 			}
+
+			// sort the particles using position.x
+			sort(particles.begin() + first_in_y,
+					particles.begin() + first_out_y, ZSorter());
+			size_t first_in_z = first_in_y, first_out_z = first_in_y;
 
 			for (size_t iZ = 0; iZ < blocks_per_axis; iZ++) {
 				box_lower.z = lower.z + iZ * blockSize.z;
 				box_upper.z = box_lower.z + blockSize.z;
-				AABB<float> block_box(box_lower, box_upper);
+
+				first_in_z = first_out_z;
+
+				// find all particles in Y bin
+				for (size_t i = first_in_z; i < first_out_y; i++) {
+					float pz = particles[i].position.z;
+					if (pz > box_upper.z) {
+						first_out_z = i;
+						break;
+					}
+				}
+
 				Block &block = blocks[iX * blocks_per_axis * blocks_per_axis
 						+ iY * blocks_per_axis + iZ];
 				block.margin = 0;
 				block.start = particleOffet;
-				block.count = 0;
-				for (size_t i = 0; i < indices.size(); i++) {
-					SmoothParticle &p = particles[indices[i]];
-					if (!block_box.contains(p.position))
-						continue;
-					block.count++;
+				block.count = first_out_z - first_in_z;
+				for (size_t i = first_in_z; i < first_out_z; i++) {
+					SmoothParticle &p = particles[i];
 					block.margin = max(block.margin, p.smoothingLength);
-					out.write((char*) &p, sizeof(SmoothParticle));
 				}
+				out.write((char*) &particles[first_in_z], block.count*sizeof(SmoothParticle));
 				particleOffet += block.count;
 			}
 		}
