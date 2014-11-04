@@ -52,7 +52,6 @@ int database(Arguments &arguments) {
 			throw runtime_error("Failed to open file " + files[iArg]);
 		}
 
-		file.readHeader();
 		int pn = file.getHeader().particleNumberList[0];
 		if (pn < 1)
 			return 0;
@@ -95,7 +94,7 @@ int database(Arguments &arguments) {
 		vector<float> mass;
 		if (constMass == 0) {
 			cout << "  Read MASS Block..." << endl;
-			if (file.readFloatBlock("MASS ", mass) == false) {
+			if (file.readFloatBlock("MASS", mass) == false) {
 				throw runtime_error(
 						"Failed read MASS from file " + files[iArg]);
 			}
@@ -113,7 +112,12 @@ int database(Arguments &arguments) {
 			particle.position.x = pos[iP * 3];
 			particle.position.y = pos[iP * 3 + 1];
 			particle.position.z = pos[iP * 3 + 2];
-
+			if (particle.position.x < -1e8 || particle.position.x > 1e8)
+				std::cout << "particle " << iP << " has strange x position " << particle.position.x << std::endl;
+			if (particle.position.y < -1e8 || particle.position.y > 1e8)
+				std::cout << "particle " << iP << " has strange y position " << particle.position.y << std::endl;
+			if (particle.position.z < -1e8 || particle.position.z > 1e8)
+				std::cout << "particle " << iP << " has strange z position " << particle.position.z << std::endl;
 			particle.bfield.x = bfld[iP * 3];
 			particle.bfield.y = bfld[iP * 3 + 1];
 			particle.bfield.z = bfld[iP * 3 + 2];
