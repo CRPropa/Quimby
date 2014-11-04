@@ -32,6 +32,61 @@ const Vector3f &MagneticField::getOrigin() const {
 }
 
 //----------------------------------------------------------------------------
+// DatabaseMagneticField
+//----------------------------------------------------------------------------
+
+DatabaseMagneticField::DatabaseMagneticField() {
+}
+
+bool DatabaseMagneticField::addDatabase(const std::string filename) {
+	ref_ptr<FileDatabase> db = new FileDatabase();
+	if (!db->open(filename)) {
+		std::cout << "Error: Could not open database: " << filename << std::endl;
+		return false;
+	}
+
+	addDatabase(db);
+
+	return true;
+}
+
+void DatabaseMagneticField::addDatabase(ref_ptr<Database> database) {
+	dbs.add(database);
+}
+
+class GetFieldVisitor : public DatabaseVisitor {
+	Vector3f position, field;
+public:
+	GetFieldVisitor(const Vector3f &position) : position(position) {
+	}
+
+	void begin(const Database &db) {
+		field = Vector3f(0, 0, 0);
+	}
+
+	void visit(const SmoothParticle &p) {
+		Vector3f value = p.bfield * p.weight() * p.mass / p.rho;
+		float k = p.kernel(position);
+		field += value * k;
+	}
+
+	void end() {
+	}
+	
+	const Vector3f &getField() {
+		return field;
+	}
+};
+
+
+bool DatabaseMagneticField::getField(const Vector3f &position, Vector3f &b) {
+	GetFieldVisitor v(position);
+	dbs.accept(position, position, v);
+	b = v.getField();
+	return true;
+}
+
+//----------------------------------------------------------------------------
 // SampledMagneticField
 //----------------------------------------------------------------------------
 

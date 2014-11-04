@@ -29,6 +29,16 @@ public:
 	virtual bool getField(const Vector3f &position, Vector3f &b) const = 0;
 };
 
+class DatabaseMagneticField: public Referenced {
+protected:
+	Databases dbs;
+public:
+	DatabaseMagneticField();
+	bool addDatabase(const std::string filename);
+	void addDatabase(ref_ptr<Database> database);
+	bool getField(const Vector3f &position, Vector3f &b);
+};
+
 class SampledMagneticField: public MagneticField {
 	typedef Vector3<float> vector3_t;
 	typedef Grid<vector3_t> grid_t;
