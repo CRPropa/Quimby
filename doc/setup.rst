@@ -1,7 +1,6 @@
 Setup
 -----
 
-
 Requirements
 ~~~~~~~~~~~~
 
@@ -60,3 +59,8 @@ QUIMBY_ENABLE_TESTING
 
 Finally run 'make' and 'make install' to compile and install Quimby.
 
+.. _GADGET: http://www.mpa-garching.mpg.de/galform/gadget/
+.. _ROOT: http://root.cern.ch/
+.. _Python: http://www.python.org/
+.. _SWIG: http://www.swig.org/
+.. _CMake: http://www.cmake.org/

@@ -12,7 +12,7 @@ SmoothParticles have the following properties:
 * mass: The mass value of the particle in 10^10 Msol.
 * rho: The mass density value calculated from the clostest neighbours.
     
-Used kernel function [Dolag2008]
+Used kernel function [Dolag2008]_
 
 .. code-block:: c++
 
@@ -50,3 +50,11 @@ This index is relative to the index of the referencing cube.
 References are encoded using nan for the x component of the vector while the y and z components contain the offset to the next cube.
 This way the tree is encoded into the data.
 The HCube itself does not know its origin or size to reduce the required memory. 
+
+.. image:: /hcube.svg
+
+References
+~~~~~~~~~~
+
+.. [Dolag2008] `2009MNRAS.398.1678D Dolag, K., \& Stasyszyn, F.\ 2009, \mnras, 398, 1678`__
+__ http://adsabs.harvard.edu/abs/2009MNRAS.398.1678D

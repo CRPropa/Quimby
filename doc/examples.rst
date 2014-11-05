@@ -62,7 +62,7 @@ Now this visitor can be applied to the database
     std::cout << "Average magnetic field of " << avg.count;
     std::cout << " particles: " << avg.average << std::endl;
     
-Note however, that this example is numerically not stable: http://en.wikipedia.org/wiki/Numerical_stability
+.. note:: This example is numerically not stable: http://en.wikipedia.org/wiki/Numerical_stability
 
 Access magnetic field in C++
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,13 +74,14 @@ This time include the magnetic field headers
     #include "quimby/MagneticField.h"
     using namespace quimby;
 
-Be careful not to use 'using namespace' in headers!
+.. warning:: Be careful not to use 'using namespace' in header files!
+
 The magnetic field has its origin in 0, 0, 0 and has a size of 120 Mpc. 
 
 .. code-block:: c++
 
     Vector3f originKpc = Vector3f(0, 0, 0);
-    float siuzKpc = 120000;
+    float sizeKpc = 120000;
 
 In this example we use a precomputed HCube file with 4^3 samples per cube.
 
