@@ -86,8 +86,48 @@ The magnetic field has its origin in 0, 0, 0 and has a size of 120 Mpc.
 In this example we use a precomputed HCube file with 4^3 samples per cube.
 
 .. code-block:: c++
-    
+
     ref_ptr<HCubeFile4> hf4 = new HCubeFile4("test.hc4");
     ref_ptr<HCubeMagneticField4> hm4 = new HCubeMagneticField4(hf4, originKpc, sizeKpc);
 
 Now we can access the magnetic field:
+
+.. code-block:: c++
+
+    Vector3f bfield;
+    if (hm4->getField(Vector3f(60000, 60000, 60000), bfield))
+        std::cout << bfield << std::endl;
+    else
+        std::cout << "Failed to get B-Field!" << std::endl;
+
+
+Access Gadget Files in Python
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First include the package 'quimby', and create a GadgetFile instance:
+
+.. code-block:: python
+
+    import quimby
+    f = quimby.GadgetFile()
+
+Then open the file 'snapshot.0' and print information about the data blocks in the file.
+
+.. code-block:: python
+
+    f.open('snapshot.0')
+    f.printBlocks()
+
+Now get the header information and print the number of type 0 (barions) particles:
+
+.. code-block:: python
+
+    h = f.getHeader()
+    print h.particleNumberList[0]
+
+Finally get the float values from the "POS " block:
+
+.. code-block:: python
+
+    pos = quimby.FloatVector()
+    f.readFloatBlock("POS ", pos)

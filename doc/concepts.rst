@@ -53,8 +53,7 @@ The HCube itself does not know its origin or size to reduce the required memory.
 
 .. image:: /hcube.svg
 
-References
-~~~~~~~~~~
+.. rubric:: Bibliography
 
 .. [Dolag2008] `2009MNRAS.398.1678D Dolag, K., \& Stasyszyn, F.\ 2009, \mnras, 398, 1678`__
 __ http://adsabs.harvard.edu/abs/2009MNRAS.398.1678D
