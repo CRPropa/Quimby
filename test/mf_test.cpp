@@ -251,10 +251,10 @@ public:
 				TestPoint(Vector3f(120000, 120000, 120000), Vector3f(0, 1, 0)));
 		testPoints.push_back(
 				TestPoint(Vector3f(120500, 120500, 120500),
-						Vector3f(0, 0.958897, 0), 0.000001));
+						Vector3f(0, 0.998897, 0), 0.000001));
 		testPoints.push_back(
 				TestPoint(Vector3f(120550, 120550, 120550),
-						Vector3f(0, 0.950737, 0), 0.01));
+						Vector3f(0, 0.990737, 0), 0.01));
 	}
 
 };

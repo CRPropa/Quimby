@@ -279,7 +279,7 @@ int bigfield(Arguments &arguments) {
 		v.showProgress(true);
 
 		v.limit(0, chunkSizeBins - 1, 0, bins, 0, bins);
-		db.accept(lower, upper, v);
+		db.accept(v);
 		std::cout << std::endl;
 		::fwrite(data, n2 * sizeof(Vector3f), chunkSizeBins, fd);
 	}

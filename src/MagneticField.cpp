@@ -41,7 +41,8 @@ DatabaseMagneticField::DatabaseMagneticField() {
 bool DatabaseMagneticField::addDatabase(const std::string filename) {
 	ref_ptr<FileDatabase> db = new FileDatabase();
 	if (!db->open(filename)) {
-		std::cout << "Error: Could not open database: " << filename << std::endl;
+		std::cout << "Error: Could not open database: " << filename
+				<< std::endl;
 		return false;
 	}
 
@@ -54,10 +55,11 @@ void DatabaseMagneticField::addDatabase(ref_ptr<Database> database) {
 	dbs.add(database);
 }
 
-class GetFieldVisitor : public DatabaseVisitor {
+class GetFieldVisitor: public DatabaseVisitor {
 	Vector3f position, field;
 public:
-	GetFieldVisitor(const Vector3f &position) : position(position) {
+	GetFieldVisitor(const Vector3f &position) :
+			position(position) {
 	}
 
 	void begin(const Database &db) {
@@ -72,16 +74,26 @@ public:
 
 	void end() {
 	}
-	
+
+	bool intersects(const Vector3f &lower, const Vector3f &upper,
+			float margin) {
+		bool x = (position.x > (lower.x - margin))
+				&& (position.x < (upper.x + margin));
+		bool y = (position.y > (lower.y - margin))
+				&& (position.y < (upper.y + margin));
+		bool z = (position.z > (lower.z - margin))
+				&& (position.z < (upper.z + margin));
+		return (x && y && z);
+	}
+
 	const Vector3f &getField() {
 		return field;
 	}
 };
 
-
 bool DatabaseMagneticField::getField(const Vector3f &position, Vector3f &b) {
 	GetFieldVisitor v(position);
-	dbs.accept(position, position, v);
+	dbs.accept(v);
 	b = v.getField();
 	return true;
 }
@@ -108,9 +120,11 @@ size_t SampledMagneticField::toUpperIndex(double x) {
 
 class ApplyVisitor: public DatabaseVisitor {
 	SampledMagneticField *field;
+	AABB<float> box;
 public:
-	ApplyVisitor(SampledMagneticField *field) :
-			field(field) {
+	ApplyVisitor(SampledMagneticField *field, const Vector3f &originKpc,
+			float sizeKpc) :
+			field(field), box(originKpc, originKpc + Vector3f(sizeKpc)) {
 
 	}
 
@@ -120,6 +134,12 @@ public:
 
 	void visit(const SmoothParticle &p) {
 		field->sampleParticle(p);
+	}
+
+	bool intersects(const Vector3f &lower, const Vector3f &upper,
+			float margin) {
+		return box.intersects(lower - Vector3f(margin),
+				upper + Vector3f(margin));
 	}
 
 	void end() {
@@ -138,8 +158,8 @@ void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc) {
 void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,
 		Database &db) {
 	init(originKpc, sizeKpc);
-	ApplyVisitor v(this);
-	db.accept(originKpc, originKpc + Vector3f(sizeKpc, sizeKpc, sizeKpc), v);
+	ApplyVisitor v(this, originKpc, sizeKpc);
+	db.accept(v);
 }
 
 void SampledMagneticField::init(const Vector3f &originKpc, float sizeKpc,

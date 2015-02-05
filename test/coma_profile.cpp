@@ -51,6 +51,11 @@ public:
 			float b = p.bfield.length();
 			out << r << " " << b << std::endl;
 		}
+
+		bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) {
+			return true;
+		}
+
 		void end() {
 			out.close();
 		}
@@ -60,8 +65,7 @@ public:
 		std::cout << "** Write Median Profile" << std::endl;
 		MedianVisitor v;
 		v.out.open("coma_profile_median.csv");
-		db->accept(Vector3f(std::numeric_limits<float>::min()),
-				Vector3f(std::numeric_limits<float>::max()), v);
+		db->accept(v);
 		std::cout << std::endl;
 	}
 
@@ -146,6 +150,10 @@ public:
 			//out << r << " " << particles[i].rho << " " << directRho << " "
 			//		<< overlaps << std::endl;
 		}
+
+		bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) {
+			return true;
+		}
 		void end() {
 		}
 	};
@@ -165,8 +173,7 @@ public:
 		v.out.open("coma_profile_rho.csv");
 		v.out << "r rho_i rho_at_r_i overlaps" << std::endl;
 
-		db->accept(Vector3f(std::numeric_limits<float>::min()),
-				Vector3f(std::numeric_limits<float>::max()), v);
+		db->accept(v);
 
 #if GADGET_ROOT_ENABLED
 		v.file->Write();

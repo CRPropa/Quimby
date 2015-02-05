@@ -18,11 +18,12 @@ inline T clamp(const T &value, const T &min, const T&max) {
 
 class _CollectVisitor: public DatabaseVisitor {
 	vector<SmoothParticle> &particles;
-
+	Vector3f lower, upper;
 public:
 	size_t count;
-	_CollectVisitor(vector<SmoothParticle> &particles) :
-			particles(particles), count(0) {
+	_CollectVisitor(vector<SmoothParticle> &particles, const Vector3f &lower,
+			const Vector3f &upper) :
+			particles(particles), lower(lower), upper(upper), count(0) {
 	}
 
 	void begin(const Database &db) {
@@ -32,6 +33,11 @@ public:
 	void visit(const SmoothParticle &particle) {
 		count++;
 		particles.push_back(particle);
+	}
+
+	bool intersects(const Vector3f &lower, const Vector3f &upper,
+			float margin) {
+		return true;
 	}
 
 	void end() {
@@ -50,7 +56,8 @@ size_t SimpleSamplingVisitor::toUpperIndex(double x) {
 SimpleSamplingVisitor::SimpleSamplingVisitor(Vector3f *data, size_t N,
 		const Vector3f &offset, float size) :
 		data(data), N(N), offset(offset), size(size), progress(false), count(0), xmin(
-				0), xmax(N - 1), ymin(0), ymax(N - 1), zmin(0), zmax(N - 1) {
+				0), xmax(N - 1), ymin(0), ymax(N - 1), zmin(0), zmax(N - 1), box(
+				Vector3f(-1e32), Vector3f(1e32)) {
 	cell = size / N;
 }
 
@@ -62,6 +69,13 @@ void SimpleSamplingVisitor::limit(size_t xmin, size_t xmax, size_t ymin,
 	this->ymax = clamp(ymax, (size_t) 0, N - 1);
 	this->zmin = clamp(zmin, (size_t) 0, N - 1);
 	this->zmax = clamp(zmax, (size_t) 0, N - 1);
+	box.min = Vector3f(cell * this->xmin, cell * this->ymin, cell * this->zmin);
+	box.max = Vector3f(cell * this->xmax, cell * this->ymax, cell * this->zmax);
+}
+
+bool SimpleSamplingVisitor::intersects(const Vector3f &lower,
+		const Vector3f &upper, float margin) {
+	return box.intersects(lower - Vector3f(margin), upper + Vector3f(margin));
 }
 
 void SimpleSamplingVisitor::showProgress(bool progress) {
@@ -131,8 +145,8 @@ void SimpleSamplingVisitor::end() {
 
 size_t Database::getParticles(const Vector3f &lower, const Vector3f &upper,
 		vector<SmoothParticle> &particles) const {
-	_CollectVisitor v(particles);
-	accept(lower, upper, v);
+	_CollectVisitor v(particles, lower, upper);
+	accept(v);
 	return v.count;
 }
 
@@ -173,12 +187,20 @@ Vector3f FileDatabase::getLowerBounds() const {
 Vector3f FileDatabase::getUpperBounds() const {
 	return upper;
 }
+
+float FileDatabase::getMargin() const {
+	float margin = 0;
+	for (size_t i = 0; i < blocks.size(); i++) {
+		margin = std::max(margin, blocks[i].margin);
+	}
+	return margin;
+}
+
 size_t FileDatabase::getCount() const {
 	return count;
 }
 
-void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
-		DatabaseVisitor &visitor) const {
+void FileDatabase::accept(DatabaseVisitor &visitor) const {
 	if (count == 0)
 		return;
 
@@ -187,7 +209,6 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 	if (!in)
 		return;
 
-	AABB<float> box(l, u);
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
 	Vector3f box_lower, box_upper;
 
@@ -205,11 +226,9 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 				const Block &block = blocks[iX * blocks_per_axis
 						* blocks_per_axis + iY * blocks_per_axis + iZ];
 
-				AABB<float> block_box(box_lower - Vector3f(block.margin),
-						box_upper + Vector3f(block.margin));
-
-				if (!block_box.intersects(box))
+				if (!visitor.intersects(box_lower, box_upper, block.margin))
 					continue;
+
 				in.seekg(block.start * sizeof(SmoothParticle) + data_pos,
 						ios::beg);
 
@@ -221,32 +240,12 @@ void FileDatabase::accept(const Vector3f &l, const Vector3f &u,
 					Vector3f u = particle.position
 							+ Vector3f(particle.smoothingLength);
 					AABB<float> v(l, u);
-					if (!v.intersects(box))
-						continue;
-					visitor.visit(particle);
+					if (visitor.intersects(particle.position, particle.position,
+							particle.smoothingLength))
+						visitor.visit(particle);
 				}
 			}
 		}
-	}
-
-	visitor.end();
-}
-
-void FileDatabase::accept(DatabaseVisitor &visitor) const {
-	if (count == 0)
-		return;
-
-	ifstream in(filename.c_str(), ios::binary);
-	in.seekg(data_pos, ios::beg);
-	if (!in)
-		return;
-
-	visitor.begin(*this);
-
-	SmoothParticle particle;
-	for (size_t i = 0; i < count; i++) {
-		in.read((char*) &particle, sizeof(SmoothParticle));
-		visitor.visit(particle);
 	}
 
 	visitor.end();
@@ -404,7 +403,8 @@ void FileDatabase::create(vector<SmoothParticle> &particles,
 					SmoothParticle &p = particles[i];
 					block.margin = max(block.margin, p.smoothingLength);
 				}
-				out.write((char*) &particles[first_in_z], block.count*sizeof(SmoothParticle));
+				out.write((char*) &particles[first_in_z],
+						block.count * sizeof(SmoothParticle));
 				particleOffet += block.count;
 			}
 		}
@@ -477,28 +477,32 @@ public:
 		visitor.visit(p);
 	}
 
+	bool intersects(const Vector3f &lower, const Vector3f &upper,
+			float margin) {
+		return visitor.intersects(lower, upper, margin);
+	}
+
 	virtual void end() {
 	}
 };
-
-void Databases::accept(const Vector3f &lower, const Vector3f &upper,
-		DatabaseVisitor &visitor) const {
-	visitor.begin(*this);
-	DatabasesVisitorAdapter v(visitor);
-	for (iter_t i = databases.begin(); i != databases.end(); i++) {
-		// TODO: perform aabb test
-		(*i)->accept(lower, upper, v);
-	}
-}
 
 void Databases::accept(DatabaseVisitor &visitor) const {
 	visitor.begin(*this);
 	DatabasesVisitorAdapter v(visitor);
 	for (iter_t i = databases.begin(); i != databases.end(); i++) {
-		// TODO: perform aabb test
-		(*i)->accept(v);
+		Database *db = *i;
+		if (v.intersects(db->getLowerBounds(), db->getUpperBounds(),
+				db->getMargin()))
+			db->accept(v);
 	}
 	visitor.end();
 }
 
+float Databases::getMargin() const {
+	float margin = 0;
+	for (iter_t i = databases.begin(); i != databases.end(); i++) {
+		margin = std::max(margin, (*i)->getMargin());
+	}
+	return margin;
+}
 } // namespace

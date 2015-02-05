@@ -30,7 +30,7 @@ public:
 		idx++;
 		if (depth == maxdepth) {
 			SamplingVisitor visitor(*this, offsetKpc, sizeKpc);
-			db->accept(offsetKpc, offsetKpc + Vector3f(sizeKpc), visitor);
+			db->accept(visitor);
 		} else {
 
 			for (size_t n = 0; n < N3; n++) {
@@ -443,6 +443,7 @@ public:
 		HCube<N> &cube;
 		Vector3f offset;
 		float size, cell;
+		AABB<float> box;
 
 		size_t toLowerIndex(double x) {
 			return (size_t) clamp((int) ::floor(x / cell), (int) 0,
@@ -469,6 +470,8 @@ public:
 		SamplingVisitor(HCube<N> &cube, const Vector3f &offset, float size) :
 				cube(cube), offset(offset), size(size) {
 			cell = size / cube.getN();
+			box.min = offset;
+			box.max = offset + Vector3f(size);
 		}
 
 		void begin(const Database &db) {
@@ -479,6 +482,11 @@ public:
 					}
 				}
 			}
+		}
+
+		bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) {
+			AABB<float> other(lower - Vector3f(margin), upper + Vector3f(margin));
+			return box.intersects(other);
 		}
 
 		void visit(const SmoothParticle &part) {

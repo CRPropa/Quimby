@@ -16,6 +16,7 @@ public:
 	bool cells;
 	Vector3f offset;
 	size_t i;
+	AABB<float> box;
 
 	void begin(const Database &db) {
 		i = 0;
@@ -62,6 +63,12 @@ public:
 	void end() {
 		std::cout << std::endl << "Total: " << i << std::endl;
 	}
+
+	bool intersects(const Vector3f &lower, const Vector3f &upper,
+			float margin) {
+		return box.intersects(lower - Vector3f(margin),
+				upper + Vector3f(margin));
+	}
 };
 
 int mass(Arguments &arguments) {
@@ -98,9 +105,9 @@ int mass(Arguments &arguments) {
 	visitor.grid.create(bins, size);
 	visitor.grid.reset(0.0);
 
-	Vector3f lower = visitor.offset;
-	Vector3f upper = visitor.offset + Vector3f(size, size, size);
-	db.accept(lower, upper, visitor);
+	visitor.box.min = visitor.offset;
+	visitor.box.max = visitor.offset + Vector3f(size, size, size);
+	db.accept(visitor);
 
 	if (arguments.hasFlag("-dump")) {
 		if (arguments.hasFlag("-zyx")) {

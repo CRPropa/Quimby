@@ -47,6 +47,23 @@ public:
 		return true;
 	}
 
+	bool intersects(const Vector3<T> &mn, const Vector3<T> &mx) const {
+		if ((min.x > mx.x) || (max.x < mn.x)) {
+			return false;
+		}
+
+		if ((min.y > mx.y) || (max.y < mn.y)) {
+			return false;
+		}
+
+		if ((min.z > mx.z) || (max.z < mn.z)) {
+			return false;
+		}
+
+		return true;
+	}
+
+
 	bool contains(const Vector3<T> &v) const {
 		if ((min.x > v.x) || (max.x < v.x)) {
 			return false;

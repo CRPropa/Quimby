@@ -18,6 +18,7 @@ public:
 
 	}
 	virtual void begin(const Database &db) = 0;
+	virtual bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) = 0;
 	virtual void visit(const SmoothParticle &p) = 0;
 	virtual void end() = 0;
 };
@@ -31,13 +32,11 @@ public:
 			std::vector<SmoothParticle> &particles) const;
 
 	virtual Vector3f getLowerBounds() const = 0;
-
 	virtual Vector3f getUpperBounds() const = 0;
+	virtual float getMargin() const = 0;
 
 	virtual size_t getCount() const = 0;
 
-	virtual void accept(const Vector3f &lower, const Vector3f &upper,
-			DatabaseVisitor &visitor) const = 0;
 	virtual void accept(DatabaseVisitor &visitor) const = 0;
 };
 
@@ -62,8 +61,8 @@ public:
 	bool open(const std::string &filename);
 
 	Vector3f getLowerBounds() const;
-
 	Vector3f getUpperBounds() const;
+	float getMargin() const;
 
 	size_t getCount() const;
 
@@ -71,8 +70,6 @@ public:
 			const std::string &filename, size_t blocks_per_axis = 100,
 			bool verbose = false);
 
-	void accept(const Vector3f &lower, const Vector3f &upper,
-			DatabaseVisitor &visitor) const;
 	void accept(DatabaseVisitor &visitor) const;
 };
 
@@ -94,9 +91,8 @@ public:
 	Vector3f getLowerBounds() const;
 	Vector3f getUpperBounds() const;
 	size_t getCount() const;
+	float getMargin() const;
 
-	void accept(const Vector3f &lower, const Vector3f &upper,
-			DatabaseVisitor &visitor) const;
 	void accept(DatabaseVisitor &visitor) const;
 };
 
@@ -107,7 +103,7 @@ class SimpleSamplingVisitor: public DatabaseVisitor {
 	float size, cell;
 	bool progress;
 	size_t xmin, xmax, ymin, ymax, zmin, zmax;
-
+	AABB<float> box;
 	size_t toLowerIndex(double x);
 	size_t toUpperIndex(double x);
 
@@ -116,6 +112,7 @@ public:
 	SimpleSamplingVisitor(Vector3f *data, size_t N, const Vector3f &offset,
 			float size);
 	void begin(const Database &db);
+	bool intersects(const Vector3f &lower, const Vector3f &upper, float margin);
 	void visit(const SmoothParticle &part);
 	void end();
 
