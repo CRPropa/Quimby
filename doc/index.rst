@@ -18,6 +18,7 @@ Contents
    concepts
    setup
    cli
+   api
    examples
 
 License

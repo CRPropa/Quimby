@@ -28,7 +28,7 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ['breathe']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -275,3 +275,10 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+breathe_projects = { "quimby": "./_xml/" }
+breathe_projects_source = {
+     "quimby" : ("../include/quimby", ['AABB.h', 'AABC.h', 'Database.h', 'GadgetFile.h', 'Grid.h', 'HCube.h', 'Index3.h', 'MagneticField.h', 'Octree.h', 'PagedGrid.h', 'Referenced.h', 'SmoothParticle.h', 'SPHGrid.h', 'Vector3.h'])
+}
+
+breathe_default_project = "quimby"
