@@ -3,6 +3,7 @@
 #include "AABB.h"
 #include "SmoothParticle.h"
 #include "Referenced.h"
+#include "Grid.h"
 
 #include <algorithm>
 #include <limits>
@@ -110,6 +111,8 @@ class SimpleSamplingVisitor: public DatabaseVisitor {
 public:
 
 	SimpleSamplingVisitor(Vector3f *data, size_t N, const Vector3f &offset,
+			float size);
+	SimpleSamplingVisitor(Grid<Vector3f> &grid, const Vector3f &offset,
 			float size);
 	void begin(const Database &db);
 	bool intersects(const Vector3f &lower, const Vector3f &upper, float margin);

@@ -34,6 +34,7 @@ add_library( quimby-lib
     src/Database.cpp
     src/GadgetFile.cpp
     src/MagneticField.cpp
+    src/tga.cpp
 )
 SET_TARGET_PROPERTIES(quimby-lib PROPERTIES OUTPUT_NAME "Quimby")
 
@@ -74,6 +75,9 @@ if(QUIMBY_ENABLE_TESTING)
     add_executable(mf_test test/mf_test.cpp)
     add_executable(coma_profile test/coma_profile.cpp)
     target_link_libraries(coma_profile quimby-lib)
+
+    add_executable(benchmark test/benchmark.cpp)
+    target_link_libraries(benchmark quimby-lib)
     
     add_executable(database_test test/database_test.cpp)
     target_link_libraries(database_test quimby-lib)

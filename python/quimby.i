@@ -20,6 +20,7 @@
 
 
 %{
+#include "quimby/Grid.h"
 #include "quimby/Database.h"
 #include "quimby/MagneticField.h"
 #include "quimby/Referenced.h"
@@ -70,6 +71,10 @@
 %include "quimby/Vector3.h"
 %template(Vector3d) quimby::Vector3<double>;
 %template(Vector3f) quimby::Vector3<float>;
+
+%include "quimby/Grid.h"
+%template(Vector3dGrid) quimby::Grid< quimby::Vector3<double> >;
+%template(Vector3fGrid) quimby::Grid< quimby::Vector3<float> >;
 
 %include "quimby/Referenced.h"
 %include "quimby/SmoothParticle.h"

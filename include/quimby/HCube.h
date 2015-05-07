@@ -721,6 +721,14 @@ public:
 		return true;
 	}
 
+	static bool create(Grid<Vector3f> &grid, const Vector3f &offsetKpc,
+			float sizeKpc, float error, float threshold, size_t maxdepth,
+			const std::string &filename) {
+
+		return create(grid.elements.data(), grid.bins, offsetKpc, sizeKpc,
+				error, threshold, maxdepth, filename);
+	}
+
 	static bool createFromRaw(const std::string rawfilename, size_t dataN,
 			const Vector3f &offsetKpc, float sizeKpc, float error,
 			float threshold, size_t maxdepth, const std::string &filename) {
