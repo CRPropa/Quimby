@@ -283,38 +283,30 @@ int main(int argc, const char **argv) {
 	RandomWalkBenchmark rwb(origin, size);
 	Accessor nullaccessor;
 
-//ToDo: THREADS
 //ToDo: zorder
 //ToDo: mmap grid
+	cout << "accessor benchmark threads time" << endl;
+	const size_t samples = 3;
 	size_t max_threads = omp_get_max_threads();
 	for (size_t threads = 1; threads <= max_threads; threads++) {
-		cout << "threads: " << threads << "/" << max_threads << endl;
 
-		cout << "  run null benchmark" << endl;
-		cout << "    " << rab.run(nullaccessor, threads) << endl;
-		cout << "    " << rab.run(nullaccessor, threads) << endl;
+		for (size_t i = 0; i < samples; i++)
+			cout << "0 0 " << threads << " " << rab.run(nullaccessor, threads) << endl;
 
-		cout << "  run grid benchmark" << endl;
-		cout << "    " << rab.run(gridaccessor, threads) << endl;
-		cout << "    " << rab.run(gridaccessor, threads) << endl;
+		for (size_t i = 0; i < samples; i++)
+			cout << "1 0 " << threads << " " << rab.run(gridaccessor, threads) << endl;
 
-		cout << "  run hcube benchmark" << endl;
-		cout << "    " << rab.run(hcubeaccessor, threads) << endl;
-		cout << "    " << rab.run(hcubeaccessor, threads) << endl;
+		for (size_t i = 0; i < samples; i++)
+			cout << "2 0 " << threads << " " << rab.run(hcubeaccessor, threads) << endl;
 
-		cout << "random walk";
+		for (size_t i = 0; i < samples; i++)
+			cout << "0 1 " << threads << " " << rwb.run(nullaccessor, threads) << endl;
 
-		cout << "  run null benchmark" << endl;
-		cout << "    " << rwb.run(nullaccessor, threads) << endl;
-		cout << "    " << rwb.run(nullaccessor, threads) << endl;
+		for (size_t i = 0; i < samples; i++)
+			cout << "1 1 " << threads << " " << rwb.run(gridaccessor, threads) << endl;
 
-		cout << "  run grid benchmark" << endl;
-		cout << "    " << rwb.run(gridaccessor, threads) << endl;
-		cout << "    " << rwb.run(gridaccessor, threads) << endl;
-
-		cout << "  run hcube benchmark" << endl;
-		cout << "    " << rwb.run(hcubeaccessor, threads) << endl;
-		cout << "    " << rwb.run(hcubeaccessor, threads) << endl;
+		for (size_t i = 0; i < samples; i++)
+			cout << "2 1 " << threads << " " << rwb.run(hcubeaccessor, threads) << endl;
 
 	}
 
