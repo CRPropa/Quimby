@@ -1,8 +1,22 @@
 cmake_minimum_required(VERSION 2.6)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-	SET(CMAKE_CXX_FLAGS "-fopenmp -fPIC -D_FILE_OFFSET_BITS=64 ${CMAKE_CXX_FLAGS}")
+	SET(CMAKE_CXX_FLAGS " -fPIC -D_FILE_OFFSET_BITS=64 ${CMAKE_CXX_FLAGS}")
 endif()
+
+# ----------------------------------------------------------------------------
+# OpenMP (optional for shared memory multiprocessing)
+# ----------------------------------------------------------------------------
+option(ENABLE_OPENMP "OpenMP for multithreading" ON)
+if(ENABLE_OPENMP)
+include(FindOpenMP)
+    if(OPENMP_FOUND)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    endif(OPENMP_FOUND)
+endif(ENABLE_OPENMP)
+
 
 # ----------------------------------------------------------------------------
 # ROOT
