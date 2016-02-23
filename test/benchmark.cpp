@@ -59,6 +59,15 @@ public:
 
 };
 
+float consume(const Vector3f &v) {
+	float b = 1;
+	for (size_t i = 0; i<100; i++) {
+		float a = i*cos(v.x) * cos(v.y) * cos(v.z) / sqrt(0.1 + (i*sin(v.x) * sin(v.x)) + (i*sin(v.y) * sin(v.y)) + (i*sin(v.z) * sin(v.z)));
+		b += sqrt(a);
+	}
+	return b;
+}
+
 class Accessor {
 public:
 	virtual Vector3f get(const Vector3f &pos) {
@@ -107,7 +116,7 @@ public:
 
 	}
 	double run(Accessor &accessor, size_t threads = 1,
-			size_t samples = 10000000) {
+			size_t samples = 100000000) {
 		Timer timer;
 
 		omp_set_num_threads(threads);
@@ -119,15 +128,17 @@ public:
 			srand48_r(seed, &drand_buf);
 
 			float s = size * (1 - 1e-6);
-#pragma omp parallel for
+#pragma omp for
 			for (size_t i = 0; i < samples; i++) {
-				double x, y, z;
+				double x = 0, y = 0, z = 0;
 				drand48_r(&drand_buf, &x);
 				drand48_r(&drand_buf, &y);
 				drand48_r(&drand_buf, &z);
 				accessor.get(origin + Vector3f(x, y, z) * s);
 			}
 
+
+			//std::cout << "loop "<< "[" << omp_get_thread_num() << "]\n";
 		}
 		return timer.seconds();
 	}
@@ -143,7 +154,7 @@ public:
 
 	}
 	double run(Accessor &accessor, size_t threads = 1,
-			size_t samples = 10000000) {
+			size_t samples = 100000000) {
 		Timer timer;
 
 		omp_set_num_threads(threads);
@@ -159,7 +170,7 @@ public:
 
 			Vector3f pos = origin + Vector3f(size / 2., size / 2., size / 2.);
 
-#pragma omp parallel for
+#pragma omp for
 			for (size_t i = 0; i < samples; i++) {
 				double x, y, z;
 				drand48_r(&drand_buf, &x);
@@ -286,10 +297,10 @@ int main(int argc, const char **argv) {
 //ToDo: zorder
 //ToDo: mmap grid
 	cout << "accessor benchmark threads time" << endl;
-	const size_t samples = 3;
+	const size_t samples = 10;
 	size_t max_threads = omp_get_max_threads();
-	for (size_t threads = 1; threads <= max_threads; threads++) {
 
+	for (size_t threads = 1; threads <= max_threads; threads++) {
 		for (size_t i = 0; i < samples; i++)
 			cout << "0 0 " << threads << " " << rab.run(nullaccessor, threads) << endl;
 
