@@ -435,10 +435,12 @@ Databases::Databases() :
 
 void Databases::add(ref_ptr<Database> db) {
 	databases.insert(db);
+	update();
 }
 
 void Databases::remove(ref_ptr<Database> db) {
 	databases.erase(db);
+	update();
 }
 
 Vector3f Databases::getLowerBounds() const {

@@ -23,16 +23,39 @@ public:
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
 			float error, float threshold, size_t maxdepth, size_t depth,
 			size_t &idx) {
-		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
-		size_t thisidx = idx;
-		idx++;
-		if (depth == maxdepth) {
-			SamplingVisitor visitor(*this, offsetKpc, sizeKpc);
-			db->accept(visitor);
-		} else {
 
+		size_t sample_depth = 4;
+		size_t remaining_depth = std::max(maxdepth - sample_depth, 0ul);
+		if (depth > remaining_depth) {
+			// sample data with max depth resolution
+			size_t n = N;
+			for (size_t i = 1; i < sample_depth; i++)
+				n *= N;
+			size_t n3 = n*n*n;
+			Vector3f *data = new Vector3f[n3];
+
+			// zero
+			memset(data, 0, sizeof(Vector3f) * n3);
+
+			// create visitor
+			Vector3f lower = offsetKpc;
+			Vector3f upper = lower + Vector3f(sizeKpc, sizeKpc, sizeKpc);
+
+			SimpleSamplingVisitor v(data, n, lower, sizeKpc);
+			v.showProgress(true);
+
+			db->accept(v);
+
+			// call this->init with sampled data
+			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, error, threshold, maxdepth, depth, idx);
+
+			delete[] data;
+		} else {
+			const float s = sizeKpc / N;
+			size_t thisidx = idx;
+			idx++;
 			for (size_t n = 0; n < N3; n++) {
 				if (depth == 0)
 					std::cout << "\n " << n;
@@ -67,6 +90,7 @@ public:
 		size_t thisidx = idx;
 		idx++;
 		if (depth == maxdepth) {
+			//std::cout << "init data final" << std::endl;
 			float dataStep = dataSize / dataN;
 			size_t oX = offsetKpc.x / dataStep;
 			size_t oY = offsetKpc.y / dataStep;
@@ -75,8 +99,9 @@ public:
 			for (size_t iX = 0; iX < N; iX++) {
 				for (size_t iY = 0; iY < N; iY++) {
 					for (size_t iZ = 0; iZ < N; iZ++) {
-						elements[iX * N2 + iY * N + iZ] = data[(iX + oX)
-								* dataN2 + (iY + oY) * dataN + (iZ + oZ)];
+						size_t idx_data = (iX + oX) * dataN2 + (iY + oY) * dataN + (iZ + oZ);
+						size_t idx_target = iX * N2 + iY * N + iZ;
+						elements[idx_target] = data[idx_data];
 					}
 				}
 			}

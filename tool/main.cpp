@@ -150,7 +150,7 @@ int hcdb(Arguments &arguments) {
 
 	Databases db;
 	std::cout << "Open databases: " << std::endl;
-	for (size_t iDB; iDB < databases.size(); iDB++) {
+	for (size_t iDB = 0; iDB < databases.size(); iDB++) {
 		ref_ptr<FileDatabase> fdb = new FileDatabase();
 		if (!fdb->open(databases[iDB])) {
 			std::cout << "Error: Could not open database: " << databases[iDB]
@@ -162,10 +162,10 @@ int hcdb(Arguments &arguments) {
 		}
 		db.add(fdb);
 	}
-
-	unsigned int bins = arguments.getInt("-bins", 10);
-	std::cout << "Bins: " << bins << std::endl;
-
+	
+	std::cout << "Database lower: " << db.getLowerBounds() << "\n";
+	std::cout << "Database upper: " << db.getUpperBounds() << "\n";
+	
 	float threshold = arguments.getFloat("-t", 1e-15);
 	std::cout << "Threshold: " << threshold << std::endl;
 
