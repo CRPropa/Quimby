@@ -65,6 +65,7 @@ public:
 };
 
 class DirectMagneticField: public MagneticField {
+#ifndef SWIG
 public:
 	struct Statistics {
 		size_t totalSum;
@@ -86,6 +87,12 @@ public:
 			return (double) actualSum / (double) actualCount;
 		}
 	};
+
+	const Statistics &getStatistics() const {
+		return _statistics;
+	}
+
+#endif
 private:
 	mutable Statistics _statistics;
 	Grid<std::vector<size_t> > _grid;
@@ -105,9 +112,7 @@ public:
 	const std::vector<SmoothParticle> getParticles() const {
 		return _particles;
 	}
-	const Statistics &getStatistics() const {
-		return _statistics;
-	}
+
 
 };
 

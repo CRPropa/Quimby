@@ -57,7 +57,7 @@ SimpleSamplingVisitor::SimpleSamplingVisitor(Vector3f *data, size_t N,
 		const Vector3f &offset, float size) :
 		data(data), N(N), offset(offset), size(size), progress(false), count(0), xmin(
 				0), xmax(N - 1), ymin(0), ymax(N - 1), zmin(0), zmax(N - 1), box(
-				Vector3f(-1e32), Vector3f(1e32)) {
+				offset, offset + Vector3f(size)) {
 	cell = size / N;
 }
 
@@ -65,7 +65,7 @@ SimpleSamplingVisitor::SimpleSamplingVisitor(Grid<Vector3f> &grid,
 		const Vector3f &offset, float size) :
 		data(grid.elements.data()), N(grid.bins), offset(offset), size(size), progress(false), count(0), xmin(
 				0), xmax(N - 1), ymin(0), ymax(N - 1), zmin(0), zmax(N - 1), box(
-				Vector3f(-1e32), Vector3f(1e32)) {
+				offset, offset + Vector3f(size)) {
 	cell = size / N;
 }
 

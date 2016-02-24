@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -26,7 +27,7 @@ public:
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
-		size_t sample_depth = 4;
+		size_t sample_depth = log2(256) / log2(N);
 		size_t remaining_depth = std::max(maxdepth - sample_depth, 0ul);
 		if (depth > remaining_depth) {
 			// sample data with max depth resolution
@@ -41,10 +42,11 @@ public:
 
 			// create visitor
 			Vector3f lower = offsetKpc;
-			Vector3f upper = lower + Vector3f(sizeKpc, sizeKpc, sizeKpc);
+			//Vector3f upper = lower + Vector3f(sizeKpc, sizeKpc, sizeKpc);
 
+			//std::cout << "Sample: " << lower << " - " << sizeKpc << std::endl;
 			SimpleSamplingVisitor v(data, n, lower, sizeKpc);
-			v.showProgress(true);
+			//v.showProgress(true);
 
 			db->accept(v);
 
