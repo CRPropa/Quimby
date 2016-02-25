@@ -2,6 +2,7 @@
 
 #include "Vector3.h"
 #include "Database.h"
+#include "MagneticField.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -20,7 +21,54 @@ class HCube {
 	Vector3f elements[N * N * N];
 
 public:
+	void init(MagneticField *field, const Vector3f &offsetKpc, float sizeKpc,
+			float error, float threshold, size_t maxdepth, size_t depth,
+			size_t &idx) {
+		const size_t N3 = N * N * N;
+		const size_t N2 = N * N;
 
+		const float s = sizeKpc / N;
+		const Vector3f o = offsetKpc + Vector3f(s / 2.);
+		
+        size_t thisidx = idx;
+        idx++;
+
+		if (depth == maxdepth) {
+			for (size_t iX = 0; iX < N; iX++) {
+				for (size_t iY = 0; iY < N; iY++) {
+					for (size_t iZ = 0; iZ < N; iZ++) {
+						size_t idx_target = iX * N2 + iY * N + iZ;
+						field->getField(o + Vector3f(iX *s, iY * s, iZ * s), elements[idx_target]);
+					}
+				}
+			}
+    	} else {
+			for (size_t n = 0; n < N3; n++) {
+				if (depth == 0)
+					std::cout << "\n " << n;
+				else if(depth == 1)
+					std::cout << "." << n;
+				std::cout.flush();
+				HCube<N> *hc = this + (idx - thisidx);
+				size_t i = n / N2;
+				size_t j = (n % N2) / N;
+				size_t k = n % N;
+				size_t tmpidx = idx;
+				hc->init(field, offsetKpc + Vector3f(i * s, j * s, k * s), s,
+						error, threshold, maxdepth, depth + 1, tmpidx);
+				Vector3f mean;
+				if (hc->collapse(mean, error, threshold)) {
+					setValue(i, j, k, mean);
+				} else {
+					setCube(i, j, k, idx - thisidx);
+					idx = tmpidx;
+				}
+			}
+
+		}
+	}
+
+	
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
 			float error, float threshold, size_t maxdepth, size_t depth,
 			size_t &idx) {
@@ -729,6 +777,24 @@ public:
 		return true;
 	}
 
+	static bool create(MagneticField *field, const Vector3f &offsetKpc, float sizeKpc,
+			float error, float threshold, size_t maxdepth,
+			const std::string &filename) {
+
+		MappedWriteFile mapping(filename, HCube<N>::memoryUsage(maxdepth));
+
+		HCube<N> *hcube = new (mapping.data()) HCube<N>;
+		size_t idx = 0;
+		hcube->init(field, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx);
+
+        off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
+
+        mapping.unmap();
+		mapping.truncate(rsize);
+
+		return true;
+	}
+	
 	static bool create(Vector3f *data, size_t dataN, const Vector3f &offsetKpc,
 			float sizeKpc, float error, float threshold, size_t maxdepth,
 			const std::string &filename) {

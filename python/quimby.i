@@ -27,6 +27,7 @@
 #include "quimby/SmoothParticle.h"
 #include "quimby/Vector3.h"
 #include "quimby/HCube.h"
+#include "quimby/HCubeMagneticField.h"
 #include "quimby/GadgetFile.h"
 %}
 
@@ -85,6 +86,13 @@
 REF_PTR(Database, quimby::Database)
 %include "quimby/Database.h"
 
+%apply float &INOUT { float &rho };
+REF_PTR(MagneticField, quimby::MagneticField)
+REF_PTR(SampledMagneticField, quimby::SampledMagneticField)
+REF_PTR(DirectMagneticField, quimby::DirectMagneticField)
+%include "quimby/MagneticField.h"
+
+
 %include "quimby/HCube.h"
 %template(HCube2) quimby::HCube<2>;
 %template(HCube4) quimby::HCube<4>;
@@ -101,11 +109,7 @@ TPL_REF_PTR(HCubeFile32, quimby::HCubeFile<32>)
 TPL_REF_PTR(HCubeFile64, quimby::HCubeFile<64>)
 
 
-%apply float &INOUT { float &rho };
-%include "quimby/MagneticField.h"
-REF_PTR(MagneticField, quimby::MagneticField)
-REF_PTR(SampledMagneticField, quimby::SampledMagneticField)
-REF_PTR(DirectMagneticField, quimby::DirectMagneticField)
+%include "quimby/HCubeMagneticField.h"
 TPL_REF_PTR(HCubeMagneticField2, quimby::HCubeMagneticField<2>)
 TPL_REF_PTR(HCubeMagneticField4, quimby::HCubeMagneticField<4>)
 TPL_REF_PTR(HCubeMagneticField8, quimby::HCubeMagneticField<8>)

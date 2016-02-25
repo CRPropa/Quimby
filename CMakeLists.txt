@@ -110,7 +110,7 @@ endif()
 # ----------------------------------------------------------------------------
 # Python
 # ----------------------------------------------------------------------------
-option(QUIMBY_ENABLE_PYTHON "Create python library via SWIG" OFF)
+option(QUIMBY_ENABLE_PYTHON "Create python library via SWIG" ON)
 if(QUIMBY_ENABLE_PYTHON)
 	include(python/Python.cmake)
 	include_directories(${PYTHON_INCLUDE_PATH})
