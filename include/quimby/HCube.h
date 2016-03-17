@@ -75,9 +75,14 @@ public:
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
-		size_t sample_depth = log2(256) / log2(N);
-		size_t remaining_depth = std::max(maxdepth - sample_depth, 0ul);
-		if (depth > remaining_depth) {
+		size_t desired_depth = int(log2(1024) / log2(N));
+		size_t remaining_depth = 1 + maxdepth - depth;
+		//std::cout << "init: desired_depth=" << desired_depth << ", remaining_depth=" << remaining_depth << ", offset="<< offsetKpc << ", idx=" << idx << std::endl;
+		if (remaining_depth <= desired_depth) {
+			size_t sample_depth = std::min(remaining_depth, desired_depth);
+			size_t starting_depth = std::max(maxdepth - sample_depth, 0ul);
+
+			//std::cout << "Sample. N=" << N << ", depth=" << depth << ", remaining_depth=" << remaining_depth << std::endl;
 			// sample data with max depth resolution
 			size_t n = N;
 			for (size_t i = 1; i < sample_depth; i++)
