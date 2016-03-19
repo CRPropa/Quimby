@@ -224,6 +224,7 @@ int hcdb(Arguments &arguments) {
 	}
 	o << "  ],\n";
 	o << "  \"n\": " << n << ",\n";
+	o << "  \"depth\": " << depth << ",\n";
 	o << "  \"filename\": \"" << filename << "\",\n";
 	o << "  \"offset\": [" << offsetKpc.x << ", " << offsetKpc.y << ", "<< offsetKpc.z << "],\n";
 	o << "  \"size\": " << sizeKpc << ",\n";
