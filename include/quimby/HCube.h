@@ -712,7 +712,7 @@ public:
 	void open(const std::string &filename, MappingType mtype = Auto) {
 		close();
 
-		_fd = ::open(filename.c_str(), O_RDWR);
+		_fd = ::open(filename.c_str(), O_RDONLY);
 		if (_fd == -1) {
 			perror("HCubeFile");
 			throw std::runtime_error("[HCubeFile] error opening file!");

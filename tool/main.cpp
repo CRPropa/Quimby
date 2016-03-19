@@ -1,5 +1,4 @@
 #include "arguments.h"
-#include "json.hpp"
 
 #include "quimby/GadgetFile.h"
 #include "quimby/Grid.h"
