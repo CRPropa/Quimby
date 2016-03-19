@@ -206,21 +206,31 @@ int hcdb(Arguments &arguments) {
 		break;
 	}
 
-	nlohmann::json cfg;
-	cfg["n"] = n;
-
-
-	cfg["offset"] = {offsetKpc.x, offsetKpc.y, offsetKpc.z};
-	cfg["size"] = sizeKpc;
-	cfg["threshold"] = threshold;
-	cfg["error"] = error;
-	cfg["databases"] = databases;
-	size_t s = output.find_last_of("/");
-	cfg["filename"] = output.substr(s == std::string::npos ? 0 : (s+1));
 	size_t d = output.find_last_of(".");
 	std::string cfgname = output.substr(0, d) + ".cfg";
 	std::ofstream o(cfgname.c_str());
-	o << std::setw(4) << cfg;
+
+	size_t s = output.find_last_of("/");
+	std::string filename = output.substr(s == std::string::npos ? 0 : (s+1));
+
+	o << "{\n";
+	o << "  \"databases\": [\n";
+	for (size_t iDB = 0; iDB < databases.size(); iDB++) {
+		o << "    \"" << databases[iDB] << "\"";
+		if (iDB + 1 == databases.size())
+			o << "\n";
+		else
+			o << ",\n";
+
+	}
+	o << "  ],\n";
+	o << "  \"n\": " << n << ",\n";
+	o << "  \"filename\": \"" << filename << "\",\n";
+	o << "  \"offset\": [" << offsetKpc.x << ", " << offsetKpc.y << ", "<< offsetKpc.z << "],\n";
+	o << "  \"size\": " << sizeKpc << ",\n";
+	o << "  \"threshold\": " << threshold << ",\n";
+	o << "  \"error\": " << error << "\n";
+	o << "}\n";
 
 	return 0;
 }

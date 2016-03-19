@@ -32,7 +32,7 @@ void tga_write_header(std::ostream &o, size_t width, size_t height) {
 	o.put(0);
 }
 
-#define rgb(r, g, b) ((255 << 24) | (r<<16) | (g << 8) | (b << 0) )
+#define rgb(r, g, b) ((255ul << 24) | (r<<16) | (g << 8) | (b << 0) )
 #define rgba(r, g, b, a) ((a << 24) | (r<<16) | (g << 8) | (b << 0) )
 
 uint32_t cmap_hot[] = { 0xFF000000, 0xFFFF0000, 0xFFFF8800, 0xFFFFFF00,
