@@ -1,4 +1,5 @@
 #include "arguments.h"
+#include "json.hpp"
 
 #include "quimby/GadgetFile.h"
 #include "quimby/Grid.h"
@@ -204,6 +205,23 @@ int hcdb(Arguments &arguments) {
 		std::cout << "Invalid n: " << n << std::endl;
 		break;
 	}
+
+	nlohmann::json cfg;
+	cfg["n"] = n;
+
+
+	cfg["offset"] = {offsetKpc.x, offsetKpc.y, offsetKpc.z};
+	cfg["size"] = sizeKpc;
+	cfg["threshold"] = threshold;
+	cfg["error"] = error;
+	cfg["databases"] = databases;
+	size_t s = output.find_last_of("/");
+	cfg["filename"] = output.substr(s == std::string::npos ? 0 : (s+1));
+	size_t d = output.find_last_of(".");
+	std::string cfgname = output.substr(0, d) + ".cfg";
+	std::ofstream o(cfgname.c_str());
+	o << std::setw(4) << cfg;
+
 	return 0;
 }
 

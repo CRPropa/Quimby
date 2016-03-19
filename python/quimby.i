@@ -119,3 +119,21 @@ TPL_REF_PTR(HCubeMagneticField64, quimby::HCubeMagneticField<64>)
 
 %include "quimby/GadgetFile.h"
 REF_PTR(GadgetFile, quimby::GadgetFile)
+
+%pythoncode %{
+
+def loadHCubeMagneticField(cfgfile, modus=None):
+    import json, os
+    cfg = json.load(open(cfgfile))
+    offset = Vector3f(float(cfg["offset"][0]),float(cfg["offset"][1]),float(cfg["offset"][2]))
+    size = float(cfg["size"])
+    n = cfg["n"]
+    filename = u"%s.hc%d" % (cfgfile[:-5], n)
+    if "filename" in cfg:
+        filename = cfg["filename"]
+        filename = os.path.join(os.path.dirname(cfgfile), filename)
+    hcf = globals()['HCubeFile%d'%n](filename.encode("utf-8"))
+    hcm = globals()['HCubeMagneticField%d'%n](hcf, offset, size)
+    return hcm  
+
+%}
