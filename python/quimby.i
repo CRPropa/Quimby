@@ -122,7 +122,11 @@ REF_PTR(GadgetFile, quimby::GadgetFile)
 
 %pythoncode %{
 
-def loadHCubeMagneticField(cfgfile, modus=None):
+Auto = HCubeFile2.Auto
+OnDemand = HCubeFile2.OnDemand
+ReadAhead = HCubeFile2.ReadAhead
+
+def loadHCubeMagneticField(cfgfile, modus=Auto):
     import json, os
     cfg = json.load(open(cfgfile))
     offset = Vector3f(float(cfg["offset"][0]),float(cfg["offset"][1]),float(cfg["offset"][2]))
@@ -132,7 +136,7 @@ def loadHCubeMagneticField(cfgfile, modus=None):
     if "filename" in cfg:
         filename = cfg["filename"]
         filename = os.path.join(os.path.dirname(cfgfile), filename)
-    hcf = globals()['HCubeFile%d'%n](filename.encode("utf-8"))
+    hcf = globals()['HCubeFile%d'%n](filename.encode("utf-8"), modus)
     hcm = globals()['HCubeMagneticField%d'%n](hcf, offset, size)
     return hcm  
 
