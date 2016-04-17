@@ -35,7 +35,7 @@ public:
 	DatabaseMagneticField();
 	bool addDatabase(const std::string filename);
 	void addDatabase(ref_ptr<Database> database);
-	bool getField(const Vector3f &position, Vector3f &b);
+	bool getField(const Vector3f &position, Vector3f &b) const;
 };
 
 class SampledMagneticField: public MagneticField {

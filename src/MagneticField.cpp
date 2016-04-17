@@ -91,7 +91,7 @@ public:
 	}
 };
 
-bool DatabaseMagneticField::getField(const Vector3f &position, Vector3f &b) {
+bool DatabaseMagneticField::getField(const Vector3f &position, Vector3f &b) const {
 	GetFieldVisitor v(position);
 	dbs.accept(v);
 	b = v.getField();
