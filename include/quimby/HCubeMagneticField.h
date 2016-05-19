@@ -3,6 +3,8 @@
 #include "MagneticField.h"
 #include "HCube.h"
 
+#include <sstream>
+
 namespace quimby {
 
 template<size_t N>
@@ -21,8 +23,16 @@ public:
 	}
 
 	bool getField(const Vector3f &position, Vector3f &b) const {
-		b = _hcfile->hcube()->getValue(position - _originKpc, _sizeKpc);
-		return true;
+        try {
+            b = _hcfile->hcube()->getValue(position - _originKpc, _sizeKpc);
+            return true;
+        } catch(invalid_position &e) {
+            std::ostringstream str;
+            str << "HCubeMagneticField: invalid position: (" << position << ") kpc.";
+            str << "Origin: (" << _originKpc << ") kpc.";
+            str << "Size: " << _sizeKpc << " kpc.";
+            throw std::runtime_error(str.str());
+        }  
 	}
 
 };

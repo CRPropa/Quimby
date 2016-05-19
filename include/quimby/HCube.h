@@ -14,7 +14,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+
 namespace quimby {
+
+class invalid_position : std::exception {
+public:
+    virtual const char* what() const throw() {
+        return "Invalid position.";
+    }
+};
 
 template<size_t N>
 class HCube {
@@ -453,19 +461,25 @@ public:
 		size_t j = position.y / s;
 		size_t k = position.z / s;
 		if (i >= N) {
+#ifdef DEBUG
 			std::cout << "invalid i: " << i << " x:" << position.x << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid x");
+#endif
+			throw invalid_position();
 		}
 		if (j >= N) {
+#ifdef DEBUG
 			std::cout << "invalid j: " << j << " y:" << position.y << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid y");
+#endif
+			throw invalid_position();
 		}
 		if (k >= N) {
+#ifdef DEBUG
 			std::cout << "invalid k: " << k << " z:" << position.z << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid z");
+#endif
+			throw invalid_position();
 		}
 		const Vector3f &v = at(i, j, k);
 		if (isCube(v)) {
@@ -483,19 +497,25 @@ public:
 		size_t j = position.y / s;
 		size_t k = position.z / s;
 		if (i >= N) {
-			std::cout << "invalid i: " << i << " x:" << position.x << " size: "
+#ifdef DEBUG
+            std::cout << "invalid i: " << i << " x:" << position.x << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid x");
+#endif
+			throw invalid_position();
 		}
 		if (j >= N) {
+#ifdef DEBUG
 			std::cout << "invalid j: " << j << " y:" << position.y << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid y");
+#endif
+			throw invalid_position();
 		}
 		if (k >= N) {
+#ifdef DEBUG
 			std::cout << "invalid k: " << k << " z" << position.z << " size: "
 					<< size << std::endl;
-			throw std::runtime_error("invalid z");
+#endif
+			throw invalid_position();
 		}
 		const Vector3f &v = at(i, j, k);
 		if (isCube(v)) {
