@@ -133,7 +133,7 @@ public:
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
 						error, threshold, maxdepth, depth + 1, tmpidx, target_depth);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold) || (depth > target_depth)) {
+				if (hc->collapse(mean, error, threshold) || (depth >= target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -180,7 +180,7 @@ public:
 						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
 						threshold, maxdepth, depth + 1, tmpidx, target_depth);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold) || (depth > target_depth)) {
+				if (hc->collapse(mean, error, threshold) || (depth >= target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
