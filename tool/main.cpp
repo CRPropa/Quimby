@@ -73,6 +73,9 @@ int hc(Arguments &arguments) {
 	size_t depth = arguments.getInt("-depth", 2);
 	std::cout << "Depth: " << depth << std::endl;
 
+	size_t target_depth = arguments.getInt("-target-depth", depth);
+	std::cout << "Target Depth: " << target_depth << std::endl;
+
 	std::string output = arguments.getString("-o", "hcube.hc4");
 	std::cout << "Output: " << output << std::endl;
 
@@ -140,7 +143,13 @@ int hcdb(Arguments &arguments) {
 	std::cout << "Size: " << sizeKpc << std::endl;
 
 	size_t depth = arguments.getInt("-depth", 2);
-	std::cout << "Depth: " << depth << std::endl;
+	size_t samples = pow(n, depth+1);
+	std::cout << "Depth: " << depth << " (" << (sizeKpc / samples ) << " kpc)" << std::endl;
+
+
+	size_t target_depth = arguments.getInt("-target-depth", depth);
+	size_t target_samples = pow(n, target_depth+1);
+	std::cout << "Target Depth: " << target_depth << " (" << (sizeKpc / target_samples ) << " kpc)" << std::endl;
 
 	std::string output = arguments.getString("-o", "hcube.hc4");
 	std::cout << "Output: " << output << std::endl;
@@ -180,25 +189,25 @@ int hcdb(Arguments &arguments) {
 
 	switch (n) {
 	case 2:
-		HCubeFile<2>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<2>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 4:
-		HCubeFile<4>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<4>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 8:
-		HCubeFile<8>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<8>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 16:
-		HCubeFile<16>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<16>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 32:
-		HCubeFile<32>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<32>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 64:
-		HCubeFile<64>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<64>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	case 128:
-		HCubeFile<128>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, output);
+		HCubeFile<128>::create(&db, offsetKpc, sizeKpc, error, threshold, depth, target_depth, output);
 		break;
 	default:
 		std::cout << "Invalid n: " << n << std::endl;
@@ -211,6 +220,7 @@ int hcdb(Arguments &arguments) {
 
 	size_t s = output.find_last_of("/");
 	std::string filename = output.substr(s == std::string::npos ? 0 : (s+1));
+
 
 	o << "{\n";
 	o << "  \"databases\": [\n";
@@ -229,7 +239,10 @@ int hcdb(Arguments &arguments) {
 	o << "  \"offset\": [" << offsetKpc.x << ", " << offsetKpc.y << ", "<< offsetKpc.z << "],\n";
 	o << "  \"size\": " << sizeKpc << ",\n";
 	o << "  \"threshold\": " << threshold << ",\n";
-	o << "  \"error\": " << error << "\n";
+	o << "  \"error\": " << error << ",\n";
+	o << "  \"samples\": " << samples << ",\n";
+	o << "  \"resolution\": " << (sizeKpc / target_samples) << ",\n";
+	o << "  \"sampling_resolution\": " << (sizeKpc / samples) << "\n";
 	o << "}\n";
 
 	return 0;

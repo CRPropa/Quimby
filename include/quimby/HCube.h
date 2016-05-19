@@ -79,7 +79,7 @@ public:
 	
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
 			float error, float threshold, size_t maxdepth, size_t depth,
-			size_t &idx) {
+			size_t &idx, size_t target_depth) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
@@ -112,7 +112,7 @@ public:
 			db->accept(v);
 
 			// call this->init with sampled data
-			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, error, threshold, maxdepth, depth, idx);
+			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, error, threshold, maxdepth, depth, idx, target_depth);
 
 			delete[] data;
 		} else {
@@ -131,9 +131,9 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						error, threshold, maxdepth, depth + 1, tmpidx);
+						error, threshold, maxdepth, depth + 1, tmpidx, target_depth);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold)) {
+				if (hc->collapse(mean, error, threshold) || (depth > target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -146,7 +146,7 @@ public:
 
 	void init(const Vector3f *data, size_t dataN, float dataSize,
 			const Vector3f &offsetKpc, float sizeKpc, float error,
-			float threshold, size_t maxdepth, size_t depth, size_t &idx) {
+			float threshold, size_t maxdepth, size_t depth, size_t &idx, size_t target_depth) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
@@ -178,9 +178,9 @@ public:
 				size_t tmpidx = idx;
 				hc->init(data, dataN, dataSize,
 						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
-						threshold, maxdepth, depth + 1, tmpidx);
+						threshold, maxdepth, depth + 1, tmpidx, target_depth);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold)) {
+				if (hc->collapse(mean, error, threshold) || (depth > target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -785,14 +785,16 @@ public:
 	}
 
 	static bool create(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth,
+			float error, float threshold, size_t maxdepth, size_t target_depth,
 			const std::string &filename) {
 
-		MappedWriteFile mapping(filename, HCube<N>::memoryUsage(maxdepth));
+		size_t max_size = std::min((size_t)1<<40UL, HCube<N>::memoryUsage(maxdepth));
+
+		MappedWriteFile mapping(filename, max_size);
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
-		hcube->init(db, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx);
+		hcube->init(db, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx, target_depth);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
@@ -829,7 +831,7 @@ public:
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
 		hcube->init(data, dataN, sizeKpc, offsetKpc, sizeKpc, error, threshold,
-				maxdepth, 0, idx);
+				maxdepth, 0, idx, maxdepth);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
