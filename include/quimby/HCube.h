@@ -191,8 +191,13 @@ public:
 
 			db->accept(v);
 
-			// call this->init with sampled data
-			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, depth, idx, flags);
+			if (v.getCount()) {
+				// call this->init with sampled data
+				init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, depth, idx, flags);
+			} else {
+				// no samples, all values are zero
+				memset(this, 0, sizeof(HCube<N>));
+			}
 
 			delete[] data;
 		} else {

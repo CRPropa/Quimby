@@ -122,6 +122,7 @@ public:
 	void limit(size_t xmin, size_t xmax, size_t ymin, size_t ymax, size_t zmin,
 			size_t zmax);
 	void showProgress(bool progress);
+	size_t getCount();
 };
 
 } // namespace

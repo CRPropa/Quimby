@@ -94,6 +94,10 @@ void SimpleSamplingVisitor::begin(const Database &db) {
 	count = 0;
 }
 
+size_t SimpleSamplingVisitor::getCount() {
+	return count;
+}
+
 void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 	const size_t N2 = N * N;
 
