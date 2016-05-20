@@ -25,12 +25,74 @@ public:
 };
 
 struct HCubeInitFlags {
+	HCubeInitFlags() : presampling(1024) {
+	}
 	Vector3f offsetKpc;
 	float sizeKpc;
 	float error;
 	float threshold;
 	size_t maxdepth;
 	size_t target_depth;
+	size_t presampling;
+};
+
+class HCubeInitCheckpoint {
+	typedef std::pair<Vector3f, float> id_t;
+	typedef std::map< id_t, size_t > map_t;
+	typedef map_t::iterator iter_t;
+	map_t indices;
+	
+	std::ofstream outfile;
+
+public:
+	
+	
+	HCubeInitCheckpoint(const std::string &filename) {
+		init(filename);
+	}
+	
+	void init(const std::string &filename) {
+		// load idx pairs
+		std::ifstream infile(filename.c_str(), std::ios::binary);
+
+		while (infile.good()) {
+			Vector3f v;
+			float s;
+			size_t e;
+			infile.read((char *)&v, sizeof(Vector3f));
+			infile.read((char *)&s, sizeof(float));
+			infile.read((char *)&e, sizeof(size_t));
+			if (infile) {
+				indices[std::make_pair(v, s)] = e;
+			}
+		}
+		infile.ignore(std::numeric_limits < std::streamsize > ::max(), '\n');
+		infile.close();
+	
+		// truncate invalid pairs
+
+		// prepare write
+		outfile.open(filename.c_str(), std::ios::app | std::ios::binary);
+	}
+	
+	size_t end(const Vector3f &v, float s) {
+		iter_t i = indices.find(std::make_pair(v, s));
+		if (i != indices.end())
+			return i->second;
+		else
+			return 0;
+	}
+	
+	void done(Vector3f v, float s, size_t end) {
+		outfile.write((char*)&v, sizeof(Vector3f));
+		outfile.write((char*)&s, sizeof(float));
+		outfile.write((char*)&end, sizeof(size_t));
+		outfile.flush();
+	}
+	
+	bool empty() {
+		return (indices.size() == 0);
+	}
 };
 
 template<size_t N>
@@ -86,11 +148,22 @@ public:
 
 	
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			size_t depth, size_t &idx, const HCubeInitFlags &flags) {
+			size_t depth, size_t &idx, const HCubeInitFlags &flags, HCubeInitCheckpoint &checkpoint) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
-		size_t desired_depth = int(log2(1024) / log2(N));
+		size_t start_idx = idx;
+#ifdef DEBUG
+		std:: cout << "Start " << offsetKpc << ", " << sizeKpc << "." << std::endl;
+#endif
+		size_t end_idx = checkpoint.end(offsetKpc, sizeKpc);
+		if (end_idx) {
+			std:: cout << "Skipping " << offsetKpc << ", " << sizeKpc << " -> " << end_idx << "." << std::endl;
+			idx = end_idx;
+			return;
+		}
+		
+		size_t desired_depth = int(log2(flags.presampling) / log2(N));
 		size_t remaining_depth = 1 + flags.maxdepth - depth;
 		//std::cout << "init: desired_depth=" << desired_depth << ", remaining_depth=" << remaining_depth << ", offset="<< offsetKpc << ", idx=" << idx << std::endl;
 		if (remaining_depth <= desired_depth) {
@@ -138,7 +211,7 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						depth + 1, tmpidx, flags);
+						depth + 1, tmpidx, flags, checkpoint);
 				Vector3f mean;
 				if (hc->collapse(mean, flags.error, flags.threshold) || (depth >= flags.target_depth)) {
 					setValue(i, j, k, mean);
@@ -149,6 +222,12 @@ public:
 			}
 
 		}
+		
+		checkpoint.done(offsetKpc, sizeKpc, idx);
+#ifdef DEBUG
+		std:: cout << "Done " << offsetKpc << ", " << sizeKpc << " -> " << idx << "." << std::endl;
+#endif
+
 	}
 
 	void init(const Vector3f *data, size_t dataN, float dataSize,
@@ -655,9 +734,12 @@ private:
 	size_t _data_size;
 public:
 
-	MappedWriteFile(const std::string filename, size_t size) :
+	MappedWriteFile(const std::string filename, size_t size, bool resume = false) :
 			_file(-1), _data(MAP_FAILED), _data_size(size) {
-		_file = ::open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
+		if (resume)
+			_file = ::open(filename.c_str(), O_RDWR, 0666);
+		else
+			_file = ::open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
 		if (_file == -1)
 			throw std::runtime_error("[MappedFile] error opening file!");
 		truncate(_data_size);
@@ -793,7 +875,9 @@ public:
 
 		size_t max_size = std::min((size_t)1<<40UL, HCube<N>::memoryUsage(maxdepth));
 
-		MappedWriteFile mapping(filename, max_size);
+		HCubeInitCheckpoint checkpoint(filename + ".checkpoint");
+		bool resume = !checkpoint.empty();
+		MappedWriteFile mapping(filename, max_size, resume);
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
@@ -805,8 +889,10 @@ public:
 		flags.target_depth = target_depth;
 		flags.threshold = threshold;
 		flags.sizeKpc = sizeKpc;
-		hcube->init(db, offsetKpc, sizeKpc, 0, idx, flags);
 
+		hcube->init(db, offsetKpc, sizeKpc, 0, idx, flags, checkpoint);
+
+		
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
 		mapping.unmap();
