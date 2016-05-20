@@ -158,7 +158,9 @@ public:
 #endif
 		size_t end_idx = checkpoint.end(offsetKpc, sizeKpc);
 		if (end_idx) {
+#ifdef DEBUG
 			std:: cout << "Skipping " << offsetKpc << ", " << sizeKpc << " -> " << end_idx << "." << std::endl;
+#endif
 			idx = end_idx;
 			return;
 		}
@@ -880,11 +882,13 @@ public:
 
 		size_t max_size = std::min((size_t)1<<40UL, HCube<N>::memoryUsage(maxdepth));
 
-		HCubeInitCheckpoint checkpoint(filename + ".checkpoint");
+		std::string checkpoint_filename = filename + ".checkpoint";
+		HCubeInitCheckpoint checkpoint(checkpoint_filename);
 		bool resume = !checkpoint.empty();
+		
 		MappedWriteFile mapping(filename, max_size, resume);
-
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
+
 		size_t idx = 0;
 		HCubeInitFlags flags;
 		flags.error = error;
@@ -903,6 +907,8 @@ public:
 		mapping.unmap();
 		mapping.truncate(rsize);
 
+		std::remove(checkpoint_filename.c_str());
+		
 		return true;
 	}
 
