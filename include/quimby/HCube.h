@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <iostream>
 
 namespace quimby {
 
@@ -24,14 +24,22 @@ public:
     }
 };
 
+struct HCubeInitFlags {
+	Vector3f offsetKpc;
+	float sizeKpc;
+	float error;
+	float threshold;
+	size_t maxdepth;
+	size_t target_depth;
+};
+
 template<size_t N>
 class HCube {
 	Vector3f elements[N * N * N];
 
 public:
 	void init(MagneticField *field, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth, size_t depth,
-			size_t &idx) {
+			size_t depth, size_t &idx, const HCubeInitFlags &flags) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
@@ -41,7 +49,7 @@ public:
         size_t thisidx = idx;
         idx++;
 
-		if (depth == maxdepth) {
+		if (depth == flags.maxdepth) {
 			for (size_t iX = 0; iX < N; iX++) {
 				for (size_t iY = 0; iY < N; iY++) {
 					for (size_t iZ = 0; iZ < N; iZ++) {
@@ -63,9 +71,9 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(field, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						error, threshold, maxdepth, depth + 1, tmpidx);
+						depth + 1, tmpidx, flags);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold)) {
+				if (hc->collapse(mean, flags.error, flags.threshold)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -78,17 +86,16 @@ public:
 
 	
 	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth, size_t depth,
-			size_t &idx, size_t target_depth) {
+			size_t depth, size_t &idx, const HCubeInitFlags &flags) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
 		size_t desired_depth = int(log2(1024) / log2(N));
-		size_t remaining_depth = 1 + maxdepth - depth;
+		size_t remaining_depth = 1 + flags.maxdepth - depth;
 		//std::cout << "init: desired_depth=" << desired_depth << ", remaining_depth=" << remaining_depth << ", offset="<< offsetKpc << ", idx=" << idx << std::endl;
 		if (remaining_depth <= desired_depth) {
 			size_t sample_depth = std::min(remaining_depth, desired_depth);
-			size_t starting_depth = std::max(maxdepth - sample_depth, 0ul);
+			size_t starting_depth = std::max(flags.maxdepth - sample_depth, 0ul);
 
 			//std::cout << "Sample. N=" << N << ", depth=" << depth << ", remaining_depth=" << remaining_depth << std::endl;
 			// sample data with max depth resolution
@@ -112,7 +119,7 @@ public:
 			db->accept(v);
 
 			// call this->init with sampled data
-			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, error, threshold, maxdepth, depth, idx, target_depth);
+			init(data, n, sizeKpc, Vector3f(0, 0, 0), sizeKpc, depth, idx, flags);
 
 			delete[] data;
 		} else {
@@ -131,9 +138,9 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						error, threshold, maxdepth, depth + 1, tmpidx, target_depth);
+						depth + 1, tmpidx, flags);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold) || (depth >= target_depth)) {
+				if (hc->collapse(mean, flags.error, flags.threshold) || (depth >= flags.target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -145,14 +152,13 @@ public:
 	}
 
 	void init(const Vector3f *data, size_t dataN, float dataSize,
-			const Vector3f &offsetKpc, float sizeKpc, float error,
-			float threshold, size_t maxdepth, size_t depth, size_t &idx, size_t target_depth) {
+			const Vector3f &offsetKpc, float sizeKpc, size_t depth, size_t &idx, const HCubeInitFlags &flags) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		size_t thisidx = idx;
 		idx++;
-		if (depth == maxdepth) {
+		if (depth == flags.maxdepth) {
 			//std::cout << "init data final" << std::endl;
 			float dataStep = dataSize / dataN;
 			size_t oX = offsetKpc.x / dataStep;
@@ -177,10 +183,9 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(data, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
-						threshold, maxdepth, depth + 1, tmpidx, target_depth);
+						offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold) || (depth >= target_depth)) {
+				if (hc->collapse(mean, flags.error, flags.threshold) || (depth >= flags.target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -218,15 +223,14 @@ public:
 	}
 
 	void init(std::istream &in, size_t dataN, float dataSize,
-			const Vector3f &offsetKpc, float sizeKpc, float error,
-			float threshold, size_t maxdepth, size_t depth, size_t &idx) {
+			const Vector3f &offsetKpc, float sizeKpc, size_t depth, size_t &idx, const HCubeInitFlags &flags) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		size_t thisidx = idx;
 		idx++;
-		if (depth == maxdepth) {
-			load(in, dataN, dataSize, offsetKpc, sizeKpc, threshold);
+		if (depth == flags.maxdepth) {
+			load(in, dataN, dataSize, offsetKpc, sizeKpc, flags.threshold);
 		} else {
 			for (size_t n = 0; n < N3; n++) {
 				if (depth == 0) {
@@ -246,10 +250,9 @@ public:
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(in, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s, error,
-						threshold, maxdepth, depth + 1, tmpidx);
+						offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
 				Vector3f mean;
-				if (hc->collapse(mean, error, threshold)) {
+				if (hc->collapse(mean, flags.error, flags.threshold)) {
 					setValue(i, j, k, mean);
 				} else {
 					setCube(i, j, k, idx - thisidx);
@@ -794,7 +797,15 @@ public:
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
-		hcube->init(db, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx, target_depth);
+		HCubeInitFlags flags;
+		flags.error = error;
+		flags.maxdepth = maxdepth;
+		flags.offsetKpc = offsetKpc;
+		flags.sizeKpc = sizeKpc;
+		flags.target_depth = target_depth;
+		flags.threshold = threshold;
+		flags.sizeKpc = sizeKpc;
+		hcube->init(db, offsetKpc, sizeKpc, 0, idx, flags);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
@@ -812,7 +823,15 @@ public:
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
-		hcube->init(field, offsetKpc, sizeKpc, error, threshold, maxdepth, 0, idx);
+		HCubeInitFlags flags;
+		flags.error = error;
+		flags.maxdepth = maxdepth;
+		flags.offsetKpc = offsetKpc;
+		flags.sizeKpc = sizeKpc;
+		flags.target_depth = maxdepth;
+		flags.threshold = threshold;
+		flags.sizeKpc = sizeKpc;
+		hcube->init(field, offsetKpc, sizeKpc, 0, idx, flags);
 
         off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
@@ -830,8 +849,16 @@ public:
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
-		hcube->init(data, dataN, sizeKpc, offsetKpc, sizeKpc, error, threshold,
-				maxdepth, 0, idx, maxdepth);
+		HCubeInitFlags flags;
+		flags.error = error;
+		flags.maxdepth = maxdepth;
+		flags.offsetKpc = offsetKpc;
+		flags.sizeKpc = sizeKpc;
+		flags.target_depth = maxdepth;
+		flags.threshold = threshold;
+		flags.sizeKpc = sizeKpc;
+
+		hcube->init(data, dataN, sizeKpc, offsetKpc, sizeKpc, 0, idx, flags);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
@@ -857,8 +884,16 @@ public:
 
 		HCube<N> *hcube = new (mapping.data()) HCube<N>;
 		size_t idx = 0;
-		hcube->init(in, dataN, sizeKpc, offsetKpc, sizeKpc, error, threshold,
-				maxdepth, 0, idx);
+		
+		HCubeInitFlags flags;
+		flags.error = error;
+		flags.maxdepth = maxdepth;
+		flags.offsetKpc = offsetKpc;
+		flags.sizeKpc = sizeKpc;
+		flags.target_depth = maxdepth;
+		flags.threshold = threshold;
+		flags.sizeKpc = sizeKpc;
+		hcube->init(in, dataN, sizeKpc, offsetKpc, sizeKpc, 0, idx, flags);
 
 		off_t rsize = hcube->getCubeCount() * sizeof(HCube<N> );
 
@@ -877,3 +912,5 @@ typedef HCubeFile<32> HCubeFile32;
 typedef HCubeFile<64> HCubeFile64;
 
 } // namespace
+
+
