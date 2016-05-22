@@ -727,14 +727,20 @@ typedef HCube<16> HCube16;
 typedef HCube<32> HCube32;
 typedef HCube<64> HCube64;
 
-
-
 template<int N>
 class HCubeFile: public MMapFile {
 
 	typedef HCube<N> hcube_t;
 	
 public:
+
+	HCubeFile() {
+		
+	}
+	
+	HCubeFile(const std::string& filename, MappingType mtype = Auto) : MMapFile(filename, mtype) {
+		
+	}
 	
 	const HCube<N> *hcube() {
 		return data< hcube_t>();
