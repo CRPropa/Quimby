@@ -166,30 +166,27 @@ FileDatabase::FileDatabase() :
 		count(0), blocks_per_axis(0) {
 }
 
-FileDatabase::FileDatabase(const string &filename) :
+FileDatabase::FileDatabase(const string &filename, MappingType mtype) :
 		count(0), blocks_per_axis(0) {
-	if (!open(filename))
+	if (!open(filename, mtype))
 		throw runtime_error("[FileDatabase] could not open database file!");
 }
 
-bool FileDatabase::open(const string &filename) {
+bool FileDatabase::open(const string &filename, MappingType mtype) {
 	this->filename = filename;
-	ifstream in(filename.c_str(), ios::binary);
-	in.read((char*) &count, sizeof(count));
-	in.read((char*) &lower, sizeof(lower));
-	in.read((char*) &upper, sizeof(upper));
-	in.read((char*) &blocks_per_axis, sizeof(blocks_per_axis));
+	file.open(filename);
+	size_t offset = 0;
+	offset = file.read(count, offset);
+	offset = file.read(lower, offset);
+	offset = file.read(upper, offset);
+	offset = file.read(blocks_per_axis, offset);
 	blocks.resize(blocks_per_axis * blocks_per_axis * blocks_per_axis);
 	for (size_t i = 0; i < blocks.size(); i++)
-		in.read((char*) &blocks[i], sizeof(Block));
+		offset = file.read(blocks[i], offset);
 
-	data_pos = in.tellg();
-	if (in.bad()) {
-		this->filename.clear();
-		count = 0;
-	}
-
-	return in.good();
+	particles = file.data<SmoothParticle>(offset);
+	
+	return true;
 }
 
 Vector3f FileDatabase::getLowerBounds() const {
@@ -216,11 +213,6 @@ void FileDatabase::accept(DatabaseVisitor &visitor) const {
 	if (count == 0)
 		return;
 
-	ifstream in(filename.c_str(), ios::binary);
-	in.seekg(data_pos, ios::beg);
-	if (!in)
-		return;
-
 	Vector3f blockSize = (upper - lower) / blocks_per_axis;
 	Vector3f box_lower, box_upper;
 
@@ -241,12 +233,8 @@ void FileDatabase::accept(DatabaseVisitor &visitor) const {
 				if (!visitor.intersects(box_lower, box_upper, block.margin))
 					continue;
 
-				in.seekg(block.start * sizeof(SmoothParticle) + data_pos,
-						ios::beg);
-
 				for (size_t i = 0; i < block.count; i++) {
-					SmoothParticle particle;
-					in.read((char*) &particle, sizeof(SmoothParticle));
+					SmoothParticle particle = particles[block.start + i];
 					Vector3f l = particle.position
 							- Vector3f(particle.smoothingLength);
 					Vector3f u = particle.position

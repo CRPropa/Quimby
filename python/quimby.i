@@ -26,6 +26,7 @@
 #include "quimby/Referenced.h"
 #include "quimby/SmoothParticle.h"
 #include "quimby/Vector3.h"
+#include "quimby/MMapFile.h"
 #include "quimby/HCube.h"
 #include "quimby/HCubeMagneticField.h"
 #include "quimby/GadgetFile.h"
@@ -82,6 +83,8 @@
 
 %template(SmoothParticleVector) std::vector<quimby::SmoothParticle>;
 
+%include "quimby/MMapFile.h"
+
 %feature("director") DatabaseVisitor;
 REF_PTR(Database, quimby::Database)
 %include "quimby/Database.h"
@@ -121,10 +124,6 @@ TPL_REF_PTR(HCubeMagneticField64, quimby::HCubeMagneticField<64>)
 REF_PTR(GadgetFile, quimby::GadgetFile)
 
 %pythoncode %{
-
-Auto = HCubeFile2.Auto
-OnDemand = HCubeFile2.OnDemand
-ReadAhead = HCubeFile2.ReadAhead
 
 def loadHCubeMagneticField(cfgfile, modus=Auto):
     import json, os

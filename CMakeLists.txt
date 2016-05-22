@@ -57,6 +57,7 @@ add_library( quimby-lib
     src/Database.cpp
     src/GadgetFile.cpp
     src/MagneticField.cpp
+    src/MMapFile.cpp
     src/tga.cpp
 )
 SET_TARGET_PROPERTIES(quimby-lib PROPERTIES OUTPUT_NAME "Quimby")

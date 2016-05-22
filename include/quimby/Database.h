@@ -4,6 +4,7 @@
 #include "SmoothParticle.h"
 #include "Referenced.h"
 #include "Grid.h"
+#include "MMapFile.h"
 
 #include <algorithm>
 #include <limits>
@@ -18,9 +19,9 @@ public:
 	virtual ~DatabaseVisitor() {
 
 	}
-	virtual void begin(const Database &db) = 0;
-	virtual bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) = 0;
-	virtual void visit(const SmoothParticle &p) = 0;
+	virtual void begin(const Database& db) = 0;
+	virtual bool intersects(const Vector3f& lower, const Vector3f& upper, float margin) = 0;
+	virtual void visit(const SmoothParticle& p) = 0;
 	virtual void end() = 0;
 };
 
@@ -29,8 +30,8 @@ public:
 
 	virtual ~Database() {
 	}
-	size_t getParticles(const Vector3f &lower, const Vector3f &upper,
-			std::vector<SmoothParticle> &particles) const;
+	size_t getParticles(const Vector3f& lower, const Vector3f& upper,
+	                    std::vector<SmoothParticle>& particles) const;
 
 	virtual Vector3f getLowerBounds() const = 0;
 	virtual Vector3f getUpperBounds() const = 0;
@@ -38,7 +39,7 @@ public:
 
 	virtual size_t getCount() const = 0;
 
-	virtual void accept(DatabaseVisitor &visitor) const = 0;
+	virtual void accept(DatabaseVisitor& visitor) const = 0;
 };
 
 class FileDatabase: public Database {
@@ -53,25 +54,28 @@ class FileDatabase: public Database {
 	size_t blocks_per_axis;
 	std::vector<Block> blocks;
 	std::string filename;
-	std::ifstream::pos_type data_pos;
+
+	const SmoothParticle *particles;
+	MMapFile file;
 
 public:
 
 	FileDatabase();
-	FileDatabase(const std::string &filename);
-	bool open(const std::string &filename);
-
+	FileDatabase(const std::string& filename, MappingType mtype = Auto);
+	bool open(const std::string& filename, MappingType mtype = Auto);
+	void close();
+	
 	Vector3f getLowerBounds() const;
 	Vector3f getUpperBounds() const;
 	float getMargin() const;
 
 	size_t getCount() const;
 
-	static void create(std::vector<SmoothParticle> &particles,
-			const std::string &filename, size_t blocks_per_axis = 100,
-			bool verbose = false);
+	static void create(std::vector<SmoothParticle>& particles,
+	                   const std::string& filename, size_t blocks_per_axis = 100,
+	                   bool verbose = false);
 
-	void accept(DatabaseVisitor &visitor) const;
+	void accept(DatabaseVisitor& visitor) const;
 };
 
 class Databases: public Database {
@@ -94,11 +98,11 @@ public:
 	size_t getCount() const;
 	float getMargin() const;
 
-	void accept(DatabaseVisitor &visitor) const;
+	void accept(DatabaseVisitor& visitor) const;
 };
 
 class SimpleSamplingVisitor: public DatabaseVisitor {
-	Vector3f *data;
+	Vector3f* data;
 	size_t N, count;
 	Vector3f offset;
 	float size, cell;
@@ -110,17 +114,17 @@ class SimpleSamplingVisitor: public DatabaseVisitor {
 
 public:
 
-	SimpleSamplingVisitor(Vector3f *data, size_t N, const Vector3f &offset,
-			float size);
-	SimpleSamplingVisitor(Grid<Vector3f> &grid, const Vector3f &offset,
-			float size);
-	void begin(const Database &db);
-	bool intersects(const Vector3f &lower, const Vector3f &upper, float margin);
-	void visit(const SmoothParticle &part);
+	SimpleSamplingVisitor(Vector3f* data, size_t N, const Vector3f& offset,
+	                      float size);
+	SimpleSamplingVisitor(Grid<Vector3f>& grid, const Vector3f& offset,
+	                      float size);
+	void begin(const Database& db);
+	bool intersects(const Vector3f& lower, const Vector3f& upper, float margin);
+	void visit(const SmoothParticle& part);
 	void end();
 
 	void limit(size_t xmin, size_t xmax, size_t ymin, size_t ymax, size_t zmin,
-			size_t zmax);
+	           size_t zmax);
 	void showProgress(bool progress);
 	size_t getCount();
 };
