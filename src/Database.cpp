@@ -100,6 +100,7 @@ size_t SimpleSamplingVisitor::getCount() {
 
 void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 	const size_t N2 = N * N;
+	count++;
 
 	SmoothParticle particle = part;
 //			particle.smoothingLength += _broadeningFactor
@@ -140,7 +141,6 @@ void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 	}
 
 	if (progress) {
-		count++;
 		if (count % 10000 == 0) {
 			cout << ".";
 			cout.flush();

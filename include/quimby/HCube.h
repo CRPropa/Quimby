@@ -17,7 +17,7 @@
 
 namespace quimby {
 
-class invalid_position : std::exception {
+class invalid_position : public std::exception {
 public:
     virtual const char* what() const throw() {
         return "Invalid position.";
