@@ -189,6 +189,12 @@ bool FileDatabase::open(const string &filename, MappingType mtype) {
 	return true;
 }
 
+void FileDatabase::close() {
+	file.close();
+	count = 0;
+	blocks_per_axis = 0;
+}
+	
 Vector3f FileDatabase::getLowerBounds() const {
 	return lower;
 }
