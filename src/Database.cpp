@@ -126,6 +126,8 @@ void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 	z_min = clamp(z_min, zmin, zmax);
 	z_max = clamp(z_max, zmin, zmax);
 
+	Vector3f o = offset + Vector3f(cell / 2);
+	
 #pragma omp parallel for
 	for (size_t x = x_min; x <= x_max; x++) {
 		Vector3f p;
@@ -134,7 +136,7 @@ void SimpleSamplingVisitor::visit(const SmoothParticle &part) {
 			p.y = y * cell;
 			for (size_t z = z_min; z <= z_max; z++) {
 				p.z = z * cell;
-				float k = particle.kernel(offset + p);
+				float k = particle.kernel(o + p);
 				data[x * N2 + y * N + z] += value * k;
 			}
 		}
