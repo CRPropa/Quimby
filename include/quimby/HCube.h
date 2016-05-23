@@ -12,9 +12,9 @@ namespace quimby {
 
 class invalid_position : public std::exception {
 public:
-    virtual const char* what() const throw() {
-        return "Invalid position.";
-    }
+	virtual const char* what() const throw() {
+		return "Invalid position.";
+	}
 };
 
 struct HCubeInitFlags {
@@ -34,17 +34,17 @@ class HCubeInitCheckpoint {
 	typedef std::map< id_t, size_t > map_t;
 	typedef map_t::iterator iter_t;
 	map_t indices;
-	
+
 	std::ofstream outfile;
 
 public:
-	
-	
-	HCubeInitCheckpoint(const std::string &filename) {
+
+
+	HCubeInitCheckpoint(const std::string& filename) {
 		init(filename);
 	}
-	
-	void init(const std::string &filename) {
+
+	void init(const std::string& filename) {
 		// load idx pairs
 		std::ifstream infile(filename.c_str(), std::ios::binary);
 
@@ -52,37 +52,40 @@ public:
 			Vector3f v;
 			float s;
 			size_t e;
-			infile.read((char *)&v, sizeof(Vector3f));
-			infile.read((char *)&s, sizeof(float));
-			infile.read((char *)&e, sizeof(size_t));
+			infile.read((char*)&v, sizeof(Vector3f));
+			infile.read((char*)&s, sizeof(float));
+			infile.read((char*)&e, sizeof(size_t));
+
 			if (infile) {
 				indices[std::make_pair(v, s)] = e;
 			}
 		}
+
 		infile.ignore(std::numeric_limits < std::streamsize > ::max(), '\n');
 		infile.close();
-	
+
 		// truncate invalid pairs
 
 		// prepare write
 		outfile.open(filename.c_str(), std::ios::app | std::ios::binary);
 	}
-	
-	size_t end(const Vector3f &v, float s) {
+
+	size_t end(const Vector3f& v, float s) {
 		iter_t i = indices.find(std::make_pair(v, s));
+
 		if (i != indices.end())
 			return i->second;
 		else
 			return 0;
 	}
-	
+
 	void done(Vector3f v, float s, size_t end) {
 		outfile.write((char*)&v, sizeof(Vector3f));
 		outfile.write((char*)&s, sizeof(float));
 		outfile.write((char*)&end, sizeof(size_t));
 		outfile.flush();
 	}
-	
+
 	bool empty() {
 		return (indices.size() == 0);
 	}
@@ -90,44 +93,47 @@ public:
 
 template<size_t N>
 class HCube {
-	Vector3f elements[N * N * N];
+	Vector3f elements[N* N* N];
 
 public:
-	void init(MagneticField *field, const Vector3f &offsetKpc, float sizeKpc,
-			size_t depth, size_t &idx, const HCubeInitFlags &flags) {
+
+	void init(MagneticField* field, const Vector3f& offsetKpc, float sizeKpc,
+	          size_t depth, size_t& idx, const HCubeInitFlags& flags) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
 		const float s = sizeKpc / N;
 		const Vector3f o = offsetKpc + Vector3f(s / 2.);
-		
-        size_t thisidx = idx;
-        idx++;
+
+		size_t thisidx = idx;
+		idx++;
 
 		if (depth == flags.maxdepth) {
 			for (size_t iX = 0; iX < N; iX++) {
 				for (size_t iY = 0; iY < N; iY++) {
 					for (size_t iZ = 0; iZ < N; iZ++) {
 						size_t idx_target = iX * N2 + iY * N + iZ;
-						field->getField(o + Vector3f(iX *s, iY * s, iZ * s), elements[idx_target]);
+						field->getField(o + Vector3f(iX * s, iY * s, iZ * s), elements[idx_target]);
 					}
 				}
 			}
-    	} else {
+		} else {
 			for (size_t n = 0; n < N3; n++) {
 				if (depth == 0)
 					std::cout << "\n " << n;
-				else if(depth == 1)
+				else if (depth == 1)
 					std::cout << "." << n;
+
 				std::cout.flush();
-				HCube<N> *hc = this + (idx - thisidx);
+				HCube<N>* hc = this + (idx - thisidx);
 				size_t i = n / N2;
 				size_t j = (n % N2) / N;
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(field, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						depth + 1, tmpidx, flags);
+				         depth + 1, tmpidx, flags);
 				Vector3f mean;
+
 				if (hc->collapse(mean, flags.error, flags.threshold)) {
 					setValue(i, j, k, mean);
 				} else {
@@ -139,9 +145,9 @@ public:
 		}
 	}
 
-	
-	void init(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			size_t depth, size_t &idx, const HCubeInitFlags &flags, HCubeInitCheckpoint &checkpoint) {
+
+	void init(Database* db, const Vector3f& offsetKpc, float sizeKpc,
+	          size_t depth, size_t& idx, const HCubeInitFlags& flags, HCubeInitCheckpoint& checkpoint) {
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 
@@ -150,6 +156,7 @@ public:
 		std:: cout << "Start " << offsetKpc << ", " << sizeKpc << "." << std::endl;
 #endif
 		size_t end_idx = checkpoint.end(offsetKpc, sizeKpc);
+
 		if (end_idx) {
 #ifdef DEBUG
 			std:: cout << "Skipping " << offsetKpc << ", " << sizeKpc << " -> " << end_idx << "." << std::endl;
@@ -157,9 +164,10 @@ public:
 			idx = end_idx;
 			return;
 		}
-		
+
 		size_t desired_depth = int(log2(flags.presampling) / log2(N));
 		size_t remaining_depth = 1 + flags.maxdepth - depth;
+
 		//std::cout << "init: desired_depth=" << desired_depth << ", remaining_depth=" << remaining_depth << ", offset="<< offsetKpc << ", idx=" << idx << std::endl;
 		if (remaining_depth <= desired_depth) {
 			size_t sample_depth = std::min(remaining_depth, desired_depth);
@@ -168,10 +176,12 @@ public:
 			//std::cout << "Sample. N=" << N << ", depth=" << depth << ", remaining_depth=" << remaining_depth << std::endl;
 			// sample data with max depth resolution
 			size_t n = N;
+
 			for (size_t i = 1; i < sample_depth; i++)
 				n *= N;
-			size_t n3 = n*n*n;
-			Vector3f *data = new Vector3f[n3];
+
+			size_t n3 = n * n * n;
+			Vector3f* data = new Vector3f[n3];
 
 			// zero
 			::memset(data, 0, sizeof(Vector3f) * n3);
@@ -199,20 +209,23 @@ public:
 			const float s = sizeKpc / N;
 			size_t thisidx = idx;
 			idx++;
+
 			for (size_t n = 0; n < N3; n++) {
 				if (depth == 0)
 					std::cout << "\n " << n;
-				else if(depth == 1)
+				else if (depth == 1)
 					std::cout << "." << n;
+
 				std::cout.flush();
-				HCube<N> *hc = this + (idx - thisidx);
+				HCube<N>* hc = this + (idx - thisidx);
 				size_t i = n / N2;
 				size_t j = (n % N2) / N;
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(db, offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						depth + 1, tmpidx, flags, checkpoint);
+				         depth + 1, tmpidx, flags, checkpoint);
 				Vector3f mean;
+
 				if (hc->collapse(mean, flags.error, flags.threshold) || (depth >= flags.target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
@@ -222,7 +235,7 @@ public:
 			}
 
 		}
-		
+
 		checkpoint.done(offsetKpc, sizeKpc, idx);
 #ifdef DEBUG
 		std:: cout << "Done " << offsetKpc << ", " << sizeKpc << " -> " << idx << "." << std::endl;
@@ -230,13 +243,14 @@ public:
 
 	}
 
-	void init(const Vector3f *data, size_t dataN, float dataSize,
-			const Vector3f &offsetKpc, float sizeKpc, size_t depth, size_t &idx, const HCubeInitFlags &flags) {
+	void init(const Vector3f* data, size_t dataN, float dataSize,
+	          const Vector3f& offsetKpc, float sizeKpc, size_t depth, size_t& idx, const HCubeInitFlags& flags) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		size_t thisidx = idx;
 		idx++;
+
 		if (depth == flags.maxdepth) {
 			//std::cout << "init data final" << std::endl;
 			float dataStep = dataSize / dataN;
@@ -244,6 +258,7 @@ public:
 			size_t oY = offsetKpc.y / dataStep;
 			size_t oZ = offsetKpc.z / dataStep;
 			const size_t dataN2 = dataN * dataN;
+
 			for (size_t iX = 0; iX < N; iX++) {
 				for (size_t iY = 0; iY < N; iY++) {
 					for (size_t iZ = 0; iZ < N; iZ++) {
@@ -256,14 +271,15 @@ public:
 		} else {
 
 			for (size_t n = 0; n < N3; n++) {
-				HCube<N> *hc = this + (idx - thisidx);
+				HCube<N>* hc = this + (idx - thisidx);
 				size_t i = n / N2;
 				size_t j = (n % N2) / N;
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(data, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
+				         offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
 				Vector3f mean;
+
 				if (hc->collapse(mean, flags.error, flags.threshold) || (depth >= flags.target_depth)) {
 					setValue(i, j, k, mean);
 				} else {
@@ -275,8 +291,49 @@ public:
 		}
 	}
 
-	void load(std::istream &in, size_t dataN, float dataSize,
-			const Vector3f &offsetKpc, float sizeKpc, float threshold) {
+	void init(const std::vector< const HCube<N> * >& srcs, size_t& idx, const HCubeInitFlags& flags, size_t levels = 0) {
+		const size_t N2 = N * N;
+		const size_t N3 = N2 * N;
+		const size_t thisidx = idx;
+
+		if (srcs.size() != pow(N3, levels + 1)) {
+			throw std::runtime_error("HCube::init: invalid number of source HCubes.");
+		}
+
+		idx++;
+
+		for (size_t n = 0; n < N3; n++) {
+
+			HCube<N>* hc = this + (idx - thisidx);
+			size_t tmpidx = idx;
+
+			if (levels == 0) {
+				size_t count = srcs[n]->getCubeCount();
+				memcpy(hc, srcs[n], count * sizeof(HCube<N>));
+				tmpidx += count;
+			} else {
+				const size_t Nl = pow(N3, levels);
+				std::vector< const HCube<N> * > s(srcs.data() + n * Nl, srcs.data() + (n + 1)*Nl);
+				hc->init(s, tmpidx, flags, levels - 1);
+			}
+
+			Vector3f mean;
+
+			size_t i = n / N2;
+			size_t j = (n % N2) / N;
+			size_t k = n % N;
+			if (hc->collapse(mean, flags.error, flags.threshold) || (levels >= flags.target_depth)) {
+				setValue(i, j, k, mean);
+			} else {
+				setCube(i, j, k, idx - thisidx);
+				idx = tmpidx;
+			}
+		}
+
+	}
+
+	void load(std::istream& in, size_t dataN, float dataSize,
+	          const Vector3f& offsetKpc, float sizeKpc, float threshold) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
@@ -286,14 +343,16 @@ public:
 		size_t oY = offsetKpc.y / dataStep;
 		size_t oZ = offsetKpc.z / dataStep;
 		const size_t dataN2 = dataN * dataN;
+
 		for (size_t iX = 0; iX < N; iX++) {
 			for (size_t iY = 0; iY < N; iY++) {
 				size_t offsetN = (iX + oX) * dataN2 + (iY + oY) * dataN + oZ;
 				in.seekg(offsetN * sizeof(Vector3f), std::ios::beg);
-				in.read((char *) (elements + (iX * N2 + iY * N)),
-						N * sizeof(Vector3f));
+				in.read((char*)(elements + (iX * N2 + iY * N)),
+				        N * sizeof(Vector3f));
 			}
 		}
+
 //		const float t2 = threshold * threshold;
 //		for (size_t n = 0; n < N3; n++) {
 //			if (elements[n].length2() < t2)
@@ -301,13 +360,14 @@ public:
 //		}
 	}
 
-	void init(std::istream &in, size_t dataN, float dataSize,
-			const Vector3f &offsetKpc, float sizeKpc, size_t depth, size_t &idx, const HCubeInitFlags &flags) {
+	void init(std::istream& in, size_t dataN, float dataSize,
+	          const Vector3f& offsetKpc, float sizeKpc, size_t depth, size_t& idx, const HCubeInitFlags& flags) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		size_t thisidx = idx;
 		idx++;
+
 		if (depth == flags.maxdepth) {
 			load(in, dataN, dataSize, offsetKpc, sizeKpc, flags.threshold);
 		} else {
@@ -317,20 +377,23 @@ public:
 				} else if (depth == 1) {
 					if (n && (n % N == 0)) {
 						std::cout << ".";
+
 						if (n % N2 == 0)
 							std::cout << std::endl;
 						else
 							std::cout.flush();
 					}
 				}
-				HCube<N> *hc = this + (idx - thisidx);
+
+				HCube<N>* hc = this + (idx - thisidx);
 				size_t i = n / N2;
 				size_t j = (n % N2) / N;
 				size_t k = n % N;
 				size_t tmpidx = idx;
 				hc->init(in, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
+				         offsetKpc + Vector3f(i * s, j * s, k * s), s, depth + 1, tmpidx, flags);
 				Vector3f mean;
+
 				if (hc->collapse(mean, flags.error, flags.threshold)) {
 					setValue(i, j, k, mean);
 				} else {
@@ -338,48 +401,54 @@ public:
 					idx = tmpidx;
 				}
 			}
+
 			if (depth == 1) {
 				std::cout << "." << std::endl;
 			}
 		}
 	}
 #if 0
-	static void create(HCube<N> &hc, std::ostream &out, std::istream &in,
-			size_t dataN, float dataSize, const Vector3f &offsetKpc,
-			float sizeKpc, float error, float threshold, size_t maxdepth,
-			size_t depth, size_t &idx) {
+	static void create(HCube<N>& hc, std::ostream& out, std::istream& in,
+	                   size_t dataN, float dataSize, const Vector3f& offsetKpc,
+	                   float sizeKpc, float error, float threshold, size_t maxdepth,
+	                   size_t depth, size_t& idx) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		HCube<N> thishc;
 		size_t thisidx = idx;
 		idx++;
+
 		for (size_t n = 0; n < N3; n++) {
 			if (depth == 0) {
 				std::cout << (n + 1) << "/" << N3 << std::endl;
 			} else if (depth == 1) {
 				if (n && (n % N == 0)) {
 					std::cout << ".";
+
 					if (n % N2 == 0)
-					std::cout << std::endl;
+						std::cout << std::endl;
 					else
-					std::cout.flush();
+						std::cout.flush();
 				}
 			}
+
 			size_t i = n / N2;
 			size_t j = (n % N2) / N;
 			size_t k = n % N;
+
 			if (depth == (maxdepth - 1)) {
 				HCube<N> hc; //  = this + (idx - thisidx)
 				hc.load(in, dataN, dataSize,
-						offsetKpc + Vector3f(i * s, j * s, k * s), s,
-						threshold);
+				        offsetKpc + Vector3f(i * s, j * s, k * s), s,
+				        threshold);
 				Vector3f mean;
+
 				if (hc.collapse(mean, error)) {
 					thishc.setValue(i, j, k, mean);
 				} else {
-					out.seekp(idx * sizeof(HCube<N> ), std::ios::beg);
-					out.write((char *) &hc, sizeof(HCube<N> ));
+					out.seekp(idx * sizeof(HCube<N>), std::ios::beg);
+					out.write((char*) &hc, sizeof(HCube<N>));
 					thishc.setCube(i, j, k, idx - thisidx);
 					idx++;
 				}
@@ -390,8 +459,8 @@ public:
 		}
 
 		if (depth == 0) {
-			out.seekp(thisidx * sizeof(HCube<N> ), std::ios::beg);
-			out.write((char *) &thishc, sizeof(HCube<N> ));
+			out.seekp(thisidx * sizeof(HCube<N>), std::ios::beg);
+			out.write((char*) &thishc, sizeof(HCube<N>));
 		}
 
 		if (depth == 1) {
@@ -400,26 +469,29 @@ public:
 
 	}
 #endif
-	static void create(HCube<N> &thishc, std::ostream &out, std::istream &in,
-			size_t dataN, float dataSize, const Vector3f &offsetKpc,
-			float sizeKpc, float error, float threshold, size_t maxdepth,
-			size_t depth, size_t &idx) {
+	static void create(HCube<N>& thishc, std::ostream& out, std::istream& in,
+	                   size_t dataN, float dataSize, const Vector3f& offsetKpc,
+	                   float sizeKpc, float error, float threshold, size_t maxdepth,
+	                   size_t depth, size_t& idx) {
 		const float s = sizeKpc / N;
 		const size_t N3 = N * N * N;
 		const size_t N2 = N * N;
 		size_t thisidx = idx;
+
 		for (size_t n = 0; n < N3; n++) {
 			if (depth == 0) {
 				std::cout << (n + 1) << "/" << N3 << std::endl;
 			} else if (depth == 1) {
 				if (n && (n % N == 0)) {
 					std::cout << ".";
+
 					if (n % N2 == 0)
 						std::cout << std::endl;
 					else
 						std::cout.flush();
 				}
 			}
+
 			size_t i = n / N2;
 			size_t j = (n % N2) / N;
 			size_t k = n % N;
@@ -427,19 +499,22 @@ public:
 			size_t tmpidx = idx + 1;
 			size_t nextidx = tmpidx;
 			Vector3f subOffsetKpc = offsetKpc + Vector3f(i * s, j * s, k * s);
+
 			if (depth == (maxdepth - 1)) {
 				hc.load(in, dataN, dataSize, subOffsetKpc, s, threshold);
 			} else {
 				create(hc, out, in, dataN, dataSize, subOffsetKpc, s, error,
-						threshold, maxdepth, depth + 1, tmpidx);
+				       threshold, maxdepth, depth + 1, tmpidx);
 			}
+
 			Vector3f mean;
+
 			if (hc.collapse(mean, error, threshold)) {
 				thishc.setValue(i, j, k, mean);
 			} else {
 				idx = tmpidx;
-				out.seekp(nextidx * sizeof(HCube<N> ), std::ios::beg);
-				out.write((char *) &hc, sizeof(HCube<N> ));
+				out.seekp(nextidx * sizeof(HCube<N>), std::ios::beg);
+				out.write((char*) &hc, sizeof(HCube<N>));
 				thishc.setCube(i, j, k, nextidx - thisidx);
 			}
 		}
@@ -450,61 +525,64 @@ public:
 
 	}
 
-	static void create(std::ostream &out, std::istream &in, size_t dataN,
-			float dataSize, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth) {
+	static void create(std::ostream& out, std::istream& in, size_t dataN,
+	                   float dataSize, const Vector3f& offsetKpc, float sizeKpc,
+	                   float error, float threshold, size_t maxdepth) {
 		size_t idx = 0;
 		HCube<N> hc;
 		create(hc, out, in, dataN, dataSize, offsetKpc, sizeKpc, error,
-				threshold, maxdepth, 0, idx);
+		       threshold, maxdepth, 0, idx);
 		out.seekp(0, std::ios::beg);
-		out.write((char *) &hc, sizeof(HCube<N> ));
+		out.write((char*) &hc, sizeof(HCube<N>));
 	}
 
 	size_t getN() {
 		return N;
 	}
 
-	Vector3f &at(size_t i, size_t j, size_t k) {
+	Vector3f& at(size_t i, size_t j, size_t k) {
 		return elements[i * N * N + j * N + k];
 	}
 
-	const Vector3f &at(size_t i, size_t j, size_t k) const {
+	const Vector3f& at(size_t i, size_t j, size_t k) const {
 		return elements[i * N * N + j * N + k];
 	}
 
-	void setValue(size_t i, size_t j, size_t k, const Vector3f &f) {
+	void setValue(size_t i, size_t j, size_t k, const Vector3f& f) {
 		at(i, j, k) = f;
 	}
 
-	static bool isCube(const Vector3f &v) {
+	static bool isCube(const Vector3f& v) {
 		return (v.x != v.x);
 	}
 
-	HCube<N> *toCube(const Vector3f &v) {
-		uint32_t *a = (uint32_t *) &v.y;
-		uint32_t *b = (uint32_t *) &v.z;
-		uint64_t c = (uint64_t) *a | (uint64_t) (*b) << 32;
-		HCube<N> *h = this;
+	HCube<N>* toCube(const Vector3f& v) {
+		uint32_t* a = (uint32_t*) &v.y;
+		uint32_t* b = (uint32_t*) &v.z;
+		uint64_t c = (uint64_t) * a | (uint64_t)(*b) << 32;
+		HCube<N>* h = this;
 		return (h + c);
 	}
 
-	const HCube<N> *toCube(const Vector3f &v) const {
-		uint32_t *a = (uint32_t *) &v.y;
-		uint32_t *b = (uint32_t *) &v.z;
-		uint64_t c = (uint64_t) *a | (uint64_t) (*b) << 32;
-		const HCube<N> *h = this;
+	const HCube<N>* toCube(const Vector3f& v) const {
+		uint32_t* a = (uint32_t*) &v.y;
+		uint32_t* b = (uint32_t*) &v.z;
+		uint64_t c = (uint64_t) * a | (uint64_t)(*b) << 32;
+		const HCube<N>* h = this;
 		return (h + c);
 	}
 
-	bool collapse(Vector3f &mean, float error, float threshold) {
+	bool collapse(Vector3f& mean, float error, float threshold) {
 		const size_t N3 = N * N * N;
 		mean = Vector3f(0, 0, 0);
+
 		for (size_t i = 0; i < N3; i++) {
 			if (isCube(elements[i]))
 				return false;
+
 			mean += elements[i];
 		}
+
 		mean /= N3;
 
 		const float t2 = threshold * threshold;
@@ -514,10 +592,13 @@ public:
 
 		for (size_t i = 0; i < N3; i++) {
 			float d2 = (elements[i] - mean).length2();
+
 			if (d2 > e2)
 				collapseByError = false;
+
 			if (d2 > t2)
 				collapseByThreshold = false;
+
 			if (!collapseByThreshold && !collapseByError)
 				return false;
 		}
@@ -529,81 +610,91 @@ public:
 		setCube(at(i, j, k), cube);
 	}
 
-	static void setCube(Vector3f &v, uint64_t cube) {
+	static void setCube(Vector3f& v, uint64_t cube) {
 		v.x = std::numeric_limits<float>::quiet_NaN();
-		uint32_t *a = (uint32_t *) &v.y;
+		uint32_t* a = (uint32_t*) &v.y;
 		*a = (cube & 0xffffffff);
-		uint32_t *b = (uint32_t *) &v.z;
+		uint32_t* b = (uint32_t*) &v.z;
 		*b = (cube >> 32 & 0xffffffff);
 	}
 
-	const Vector3f &getValue(const Vector3f &position, float size) const {
+	const Vector3f& getValue(const Vector3f& position, float size) const {
 		float s = size / N;
 		size_t i = position.x / s;
 		size_t j = position.y / s;
 		size_t k = position.z / s;
+
 		if (i >= N) {
 #ifdef DEBUG
 			std::cout << "invalid i: " << i << " x:" << position.x << " size: "
-					<< size << std::endl;
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
+
 		if (j >= N) {
 #ifdef DEBUG
 			std::cout << "invalid j: " << j << " y:" << position.y << " size: "
-					<< size << std::endl;
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
+
 		if (k >= N) {
 #ifdef DEBUG
 			std::cout << "invalid k: " << k << " z:" << position.z << " size: "
-					<< size << std::endl;
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
-		const Vector3f &v = at(i, j, k);
+
+		const Vector3f& v = at(i, j, k);
+
 		if (isCube(v)) {
-			const HCube *c = toCube(v);
+			const HCube* c = toCube(v);
 			return c->getValue(position - Vector3f(i * s, j * s, k * s), s);
 		} else {
 			return v;
 		}
 	}
 
-	size_t getDepth(const Vector3f &position, float size,
-			size_t depth = 0) const {
+	size_t getDepth(const Vector3f& position, float size,
+	                size_t depth = 0) const {
 		const float s = size / N;
 		size_t i = position.x / s;
 		size_t j = position.y / s;
 		size_t k = position.z / s;
+
 		if (i >= N) {
 #ifdef DEBUG
-            std::cout << "invalid i: " << i << " x:" << position.x << " size: "
-					<< size << std::endl;
+			std::cout << "invalid i: " << i << " x:" << position.x << " size: "
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
+
 		if (j >= N) {
 #ifdef DEBUG
 			std::cout << "invalid j: " << j << " y:" << position.y << " size: "
-					<< size << std::endl;
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
+
 		if (k >= N) {
 #ifdef DEBUG
 			std::cout << "invalid k: " << k << " z" << position.z << " size: "
-					<< size << std::endl;
+			          << size << std::endl;
 #endif
 			throw invalid_position();
 		}
-		const Vector3f &v = at(i, j, k);
+
+		const Vector3f& v = at(i, j, k);
+
 		if (isCube(v)) {
-			const HCube *c = toCube(v);
+			const HCube* c = toCube(v);
 			return c->getDepth(position - Vector3f(i * s, j * s, k * s), s,
-					depth + 1);
+			                   depth + 1);
 		} else {
 			return depth;
 		}
@@ -612,33 +703,35 @@ public:
 	size_t getCubeCount() const {
 		size_t n = N * N * N;
 		size_t count = 1;
+
 		for (size_t i = 0; i < n; i++) {
 			if (isCube(elements[i])) {
-				const HCube *c = toCube(elements[i]);
+				const HCube* c = toCube(elements[i]);
 				count += c->getCubeCount();
 			}
 		}
+
 		return count;
 	}
 
 	class SamplingVisitor: public DatabaseVisitor {
-		HCube<N> &cube;
+		HCube<N>& cube;
 		Vector3f offset;
 		float size, cell;
 		AABB<float> box;
 
 		size_t toLowerIndex(double x) {
 			return (size_t) clamp((int) ::floor(x / cell), (int) 0,
-					(int) cube.getN() - 1);
+			                      (int) cube.getN() - 1);
 		}
 
 		size_t toUpperIndex(double x) {
 			return (size_t) clamp((int) ::ceil(x / cell), (int) 0,
-					(int) cube.getN() - 1);
+			                      (int) cube.getN() - 1);
 		}
 
 		template<class T>
-		static T clamp(const T &value, const T &min, const T&max) {
+		static T clamp(const T& value, const T& min, const T& max) {
 			if (value < min)
 				return min;
 			else if (value > max)
@@ -649,14 +742,14 @@ public:
 
 	public:
 
-		SamplingVisitor(HCube<N> &cube, const Vector3f &offset, float size) :
-				cube(cube), offset(offset), size(size) {
+		SamplingVisitor(HCube<N>& cube, const Vector3f& offset, float size) :
+			cube(cube), offset(offset), size(size) {
 			cell = size / cube.getN();
 			box.min = offset;
 			box.max = offset + Vector3f(size);
 		}
 
-		void begin(const Database &db) {
+		void begin(const Database& db) {
 			for (size_t i = 0; i < N; i++) {
 				for (size_t j = 0; j < N; j++) {
 					for (size_t k = 0; k < N; k++) {
@@ -666,18 +759,18 @@ public:
 			}
 		}
 
-		bool intersects(const Vector3f &lower, const Vector3f &upper, float margin) {
+		bool intersects(const Vector3f& lower, const Vector3f& upper, float margin) {
 			AABB<float> other(lower - Vector3f(margin), upper + Vector3f(margin));
 			return box.intersects(other);
 		}
 
-		void visit(const SmoothParticle &part) {
+		void visit(const SmoothParticle& part) {
 			SmoothParticle particle = part;
 //			particle.smoothingLength += _broadeningFactor
 //					* _grid.getCellLength();
 
 			Vector3f value = particle.bfield * particle.weight() * particle.mass
-					/ particle.rho;
+			                 / particle.rho;
 			float r = particle.smoothingLength + cell;
 
 			Vector3f relativePosition = particle.position - offset;
@@ -691,11 +784,14 @@ public:
 			size_t z_max = toUpperIndex(relativePosition.z + r);
 
 			Vector3f p;
-#pragma omp parallel for
+			#pragma omp parallel for
+
 			for (size_t x = x_min; x <= x_max; x++) {
 				p.x = x * cell;
+
 				for (size_t y = y_min; y <= y_max; y++) {
 					p.y = y * cell;
+
 					for (size_t z = z_min; z <= z_max; z++) {
 						p.z = z * cell;
 						float k = particle.kernel(offset + p);
@@ -714,8 +810,10 @@ public:
 	static size_t memoryUsage(size_t depth) {
 		size_t n = N * N * N;
 		size_t size = 0;
+
 		for (size_t i = 0; i <= depth; i++)
 			size += ::pow(n, i) * n * sizeof(Vector3f);
+
 		return size;
 	}
 };
@@ -731,33 +829,33 @@ template<int N>
 class HCubeFile: public MMapFile {
 
 	typedef HCube<N> hcube_t;
-	
+
 public:
 
 	HCubeFile() {
-		
+
 	}
-	
+
 	HCubeFile(const std::string& filename, MappingType mtype = Auto) : MMapFile(filename, mtype) {
-		
+
 	}
-	
-	const HCube<N> *hcube() {
+
+	const HCube<N>* hcube() {
 		return data< hcube_t>();
 	}
 
-	static bool create(Database *db, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth, size_t target_depth,
-			const std::string &filename) {
+	static bool create(Database* db, const Vector3f& offsetKpc, float sizeKpc,
+	                   float error, float threshold, size_t maxdepth, size_t target_depth,
+	                   const std::string& filename) {
 
-		size_t max_size = std::min((size_t)1<<40UL, hcube_t::memoryUsage(maxdepth));
+		size_t max_size = std::min((size_t)1 << 40UL, hcube_t::memoryUsage(maxdepth));
 
 		std::string checkpoint_filename = filename + ".checkpoint";
 		HCubeInitCheckpoint checkpoint(checkpoint_filename);
 		bool resume = !checkpoint.empty();
-		
+
 		MMapFileWrite mapping(filename, max_size, resume);
-		hcube_t *hcube = new (mapping.data()) hcube_t;
+		hcube_t* hcube = new(mapping.data()) hcube_t;
 
 		size_t idx = 0;
 		HCubeInitFlags flags;
@@ -771,24 +869,57 @@ public:
 
 		hcube->init(db, offsetKpc, sizeKpc, 0, idx, flags, checkpoint);
 
-		
+
 		off_t rsize = hcube->getCubeCount() * sizeof(hcube_t);
 
 		mapping.unmap();
 		mapping.truncate(rsize);
 
 		std::remove(checkpoint_filename.c_str());
-		
+
 		return true;
 	}
 
-	static bool create(MagneticField *field, const Vector3f &offsetKpc, float sizeKpc,
-			float error, float threshold, size_t maxdepth,
-			const std::string &filename) {
+	static bool create(std::vector<std::string> &files, size_t levels,
+	                   float error, float threshold, size_t maxdepth, size_t target_depth,
+	                   const std::string& filename) {
+
+		size_t max_size = std::min((size_t)1 << 40UL, hcube_t::memoryUsage(maxdepth));
+
+		MMapFileWrite mapping(filename, max_size, false);
+		hcube_t* hcube = new(mapping.data()) hcube_t;
+
+		size_t idx = 0;
+		HCubeInitFlags flags;
+		flags.error = error;
+		flags.maxdepth = maxdepth;
+		flags.target_depth = target_depth;
+		flags.threshold = threshold;
+
+		std::vector< HCubeFile<N> > srcs_file(files.size());
+		std::vector< const HCube<N> * > srcs(files.size());
+		for (size_t i = 0; i < files.size(); i++) {
+			srcs_file[i].open(files[i]);
+			srcs[i] = srcs_file[i].hcube();
+		}
+		
+		hcube->init(srcs, idx, flags, levels);
+
+		off_t rsize = hcube->getCubeCount() * sizeof(hcube_t);
+
+		mapping.unmap();
+		mapping.truncate(rsize);
+
+		return true;
+	}
+	
+	static bool create(MagneticField* field, const Vector3f& offsetKpc, float sizeKpc,
+	                   float error, float threshold, size_t maxdepth,
+	                   const std::string& filename) {
 
 		MMapFileWrite mapping(filename, hcube_t::memoryUsage(maxdepth));
 
-		hcube_t *hcube = new (mapping.data()) hcube_t;
+		hcube_t* hcube = new(mapping.data()) hcube_t;
 		size_t idx = 0;
 		HCubeInitFlags flags;
 		flags.error = error;
@@ -800,21 +931,21 @@ public:
 		flags.sizeKpc = sizeKpc;
 		hcube->init(field, offsetKpc, sizeKpc, 0, idx, flags);
 
-        off_t rsize = hcube->getCubeCount() * sizeof(hcube_t);
+		off_t rsize = hcube->getCubeCount() * sizeof(hcube_t);
 
-        mapping.unmap();
+		mapping.unmap();
 		mapping.truncate(rsize);
 
 		return true;
 	}
-	
-	static bool create(Vector3f *data, size_t dataN, const Vector3f &offsetKpc,
-			float sizeKpc, float error, float threshold, size_t maxdepth,
-			const std::string &filename) {
+
+	static bool create(Vector3f* data, size_t dataN, const Vector3f& offsetKpc,
+	                   float sizeKpc, float error, float threshold, size_t maxdepth,
+	                   const std::string& filename) {
 
 		MMapFileWrite mapping(filename, hcube_t::memoryUsage(maxdepth));
 
-		hcube_t *hcube = new (mapping.data()) hcube_t;
+		hcube_t* hcube = new(mapping.data()) hcube_t;
 		size_t idx = 0;
 		HCubeInitFlags flags;
 		flags.error = error;
@@ -835,23 +966,23 @@ public:
 		return true;
 	}
 
-	static bool create(Grid<Vector3f> &grid, const Vector3f &offsetKpc,
-			float sizeKpc, float error, float threshold, size_t maxdepth,
-			const std::string &filename) {
+	static bool create(Grid<Vector3f>& grid, const Vector3f& offsetKpc,
+	                   float sizeKpc, float error, float threshold, size_t maxdepth,
+	                   const std::string& filename) {
 
 		return create(grid.elements.data(), grid.bins, offsetKpc, sizeKpc,
-				error, threshold, maxdepth, filename);
+		              error, threshold, maxdepth, filename);
 	}
 
 	static bool createFromRaw(const std::string rawfilename, size_t dataN,
-			const Vector3f &offsetKpc, float sizeKpc, float error,
-			float threshold, size_t maxdepth, const std::string &filename) {
+	                          const Vector3f& offsetKpc, float sizeKpc, float error,
+	                          float threshold, size_t maxdepth, const std::string& filename) {
 		std::ifstream in(rawfilename.c_str(), std::ios::binary);
 		MMapFileWrite mapping(filename, hcube_t::memoryUsage(maxdepth));
 
-		hcube_t *hcube = new (mapping.data()) hcube_t;
+		hcube_t* hcube = new(mapping.data()) hcube_t;
 		size_t idx = 0;
-		
+
 		HCubeInitFlags flags;
 		flags.error = error;
 		flags.maxdepth = maxdepth;

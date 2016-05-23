@@ -24,7 +24,7 @@ public:
 
 	MMapFile();
 	MMapFile(const std::string& filename, MappingType mtype = Auto);
-	~MMapFile();
+	virtual ~MMapFile();
 
 	void open(const std::string& filename, MappingType mtype = Auto);
 	void close();
