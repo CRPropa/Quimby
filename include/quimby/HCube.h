@@ -18,7 +18,7 @@ public:
 };
 
 struct HCubeInitFlags {
-	HCubeInitFlags() : presampling(1024) {
+	HCubeInitFlags() : presampling(512) {
 	}
 	Vector3f offsetKpc;
 	float sizeKpc;

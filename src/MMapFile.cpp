@@ -64,8 +64,9 @@ void MMapFile::open(const std::string& filename, MappingType mtype ) {
 	_data = mmap(NULL, _size, PROT_READ, flags, _fd, 0);
 
 	if (_data == MAP_FAILED) {
+		perror("MMapFile");
 		close();
-		throw std::runtime_error("[HCubeFile] error mapping file!");
+		throw std::runtime_error("[HCubeFile] error mapping file: " + filename);
 	}
 }
 
@@ -100,11 +101,13 @@ MMapFileWrite::MMapFileWrite(const std::string filename, size_t size, bool resum
 
 	truncate(_data_size);
 
-	_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_SHARED,
+	_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
 	               _file, 0);
 
-	if (_data == MAP_FAILED)
-		throw std::runtime_error("[MappedFile] error mapping file!");
+	if (_data == MAP_FAILED) {
+	    perror("MappedFile");
+		throw std::runtime_error("[MappedFileWrite] error mapping file: " + filename);
+	}
 }
 
 void MMapFileWrite::truncate(size_t size) {
@@ -112,7 +115,7 @@ void MMapFileWrite::truncate(size_t size) {
 		return;
 
 	if (ftruncate(_file, size) == -1)
-		throw std::runtime_error("[MappedFile] error truncating file!");
+		throw std::runtime_error("[MappedFile Write] error truncating file!");
 }
 
 MMapFileWrite::~MMapFileWrite() {
