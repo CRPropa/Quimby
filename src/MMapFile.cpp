@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdexcept>
+#include <iostream>
 
 namespace quimby {
 
@@ -42,7 +43,7 @@ void MMapFile::open(const std::string& filename, MappingType mtype ) {
 
 	_size = ::lseek(_fd, 0, SEEK_END);
 
-	int flags = MAP_PRIVATE;
+	int flags = MAP_SHARED;
 
 	if (mtype == ReadAhead)
 		flags |= MAP_POPULATE;
@@ -101,11 +102,12 @@ MMapFileWrite::MMapFileWrite(const std::string filename, size_t size, bool resum
 
 	truncate(_data_size);
 
-	_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
+	_data = ::mmap(NULL, _data_size, PROT_READ | PROT_WRITE, MAP_SHARED,
 	               _file, 0);
 
 	if (_data == MAP_FAILED) {
-	    perror("MappedFile");
+        std::cout << "[MappedFileWrite] " << _data_size << std::endl;
+	    perror("[MappedFileWrite]");
 		throw std::runtime_error("[MappedFileWrite] error mapping file: " + filename);
 	}
 }
