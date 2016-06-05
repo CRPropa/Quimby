@@ -77,8 +77,8 @@ void SimpleSamplingVisitor::limit(size_t xmin, size_t xmax, size_t ymin,
 	this->ymax = clamp(ymax, (size_t) 0, N - 1);
 	this->zmin = clamp(zmin, (size_t) 0, N - 1);
 	this->zmax = clamp(zmax, (size_t) 0, N - 1);
-	box.min = Vector3f(cell * this->xmin, cell * this->ymin, cell * this->zmin);
-	box.max = Vector3f(cell * this->xmax, cell * this->ymax, cell * this->zmax);
+	box.min = offset + Vector3f(cell * this->xmin, cell * this->ymin, cell * this->zmin);
+	box.max = offset + Vector3f(cell * this->xmax, cell * this->ymax, cell * this->zmax);
 }
 
 bool SimpleSamplingVisitor::intersects(const Vector3f &lower,
