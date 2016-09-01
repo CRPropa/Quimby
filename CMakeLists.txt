@@ -13,6 +13,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 	SET(CMAKE_CXX_FLAGS " -fPIC -D_FILE_OFFSET_BITS=64 ${CMAKE_CXX_FLAGS}")
 endif()
 
+	
 # ----------------------------------------------------------------------------
 # OpenMP (optional for shared memory multiprocessing)
 # ----------------------------------------------------------------------------
@@ -125,10 +126,19 @@ if(QUIMBY_ENABLE_PYTHON)
 	include(python/Python.cmake)
 	include_directories(${PYTHON_INCLUDE_PATH})
 	
+	option(ENABLE_SWIG_BUILTIN "Use SWIG's -builtin option" ON)
+	if(ENABLE_SWIG_BUILTIN)
+		set(BUILTIN "-builtin")
+		set(PY3 "-py3")
+	else(ENABLE_SWIG_BUILTIN)
+		set(BUILTIN "")
+		set(PY3 "")
+	endif(ENABLE_SWIG_BUILTIN)
+	
 	file(GLOB_RECURSE QUIMBY_INCLUDES include/*.h)
 	set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/quimby_wrap.cxx PROPERTIES GENERATED true )
 	add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/quimby_wrap.cxx
-	                COMMAND swig -c++ -python ${QUIMBY_SWIG_DEFINES} -I${CMAKE_SOURCE_DIR}/include -o ${CMAKE_CURRENT_BINARY_DIR}/quimby_wrap.cxx -outdir ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/python/quimby.i 
+	                COMMAND swig ${BUILTIN} -c++ -python ${PY3} ${QUIMBY_SWIG_DEFINES} -I${CMAKE_SOURCE_DIR}/include -o ${CMAKE_CURRENT_BINARY_DIR}/quimby_wrap.cxx -outdir ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/python/quimby.i 
 	                DEPENDS ${CMAKE_SOURCE_DIR}/python/quimby.i DEPENDS ${QUIMBY_INCLUDES} )
 	add_library(quimby-swig MODULE ${CMAKE_CURRENT_BINARY_DIR}/quimby_wrap.cxx)
 	set_target_properties(quimby-swig PROPERTIES PREFIX "")
